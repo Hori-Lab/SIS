@@ -344,12 +344,12 @@ module dcd
          end select
          
          if (nblock_size == 48) then
-            read(self%hdl) rdummy !self%box(1)
+            read(self%hdl) self%box(1)
             read(self%hdl) rdummy
-            read(self%hdl) rdummy !self%box(2)
+            read(self%hdl) self%box(2)
             read(self%hdl) rdummy
             read(self%hdl) rdummy
-            read(self%hdl) rdummy !self%box(3)
+            read(self%hdl) self%box(3)
          else
             do i = 1, nblock_size, 4
                read(self%hdl) idummy

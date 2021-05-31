@@ -10,6 +10,7 @@ subroutine energy()
 
    call energy_bond(energies(ENE%BOND))
    call energy_angl(energies(ENE%ANGL))
+   call energy_bp(energies(ENE%BP))
 
    energies(ENE%TOTAL) = sum(energies(1:ENE%MAX))
 

@@ -9,7 +9,7 @@ subroutine energy_bond(Ebd)
    real(PREC), intent(inout) :: Ebd
 
    integer :: ibd, imp1, imp2
-   real(PREC) :: k, l, v(3), d
+   real(PREC) :: k, l, d
 
    do ibd = 1, nbond
       imp1 = bond_mp(1, ibd)
@@ -17,8 +17,7 @@ subroutine energy_bond(Ebd)
       k = bond_para(1, ibd)
       l = bond_para(2, ibd)
 
-      v(:) = xyz(:, imp1) - xyz(:, imp2)
-      d = sqrt(dot_product(v,v))
+      d = norm2(xyz(:, imp1) - xyz(:, imp2))
 
       Ebd = Ebd + 0.5 * k * (d - l) ** 2
    enddo

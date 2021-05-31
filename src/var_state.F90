@@ -6,12 +6,6 @@ module var_state
    implicit none
   
    ! ----------------------------------------------------------------
-   integer, save :: nunit
-   integer, save :: nmp
-   integer, parameter :: nchains = 64
-   integer, parameter :: nrepeat = 47
-   integer, parameter :: nmp_chain = 3 * nrepeat
-
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), save :: energies(0:ENE%MAX)
 

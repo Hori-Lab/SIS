@@ -14,7 +14,7 @@ FLAG = $(CPP) $(OPT)
 FMOD1 = const.o const_idx.o
 
 # Variable modules
-FMOD2 = var_state.o var_potential.o var_io.o
+FMOD2 = var_top.o var_state.o var_potential.o var_io.o
 
 # File modules 
 FMOD3 = dcd.o
@@ -22,7 +22,7 @@ FMOD3 = dcd.o
 # subroutines
 FOBJ1 = \
 	energy.o\
-	energy_bond.o energy_angl.o\
+	energy_bond.o energy_angl.o energy_bp.o\
 	read_sisinfo.o
 
 OBJS = $(FMOD1) $(FMOD2) $(FMOD3) $(FOBJ1)
