@@ -21,7 +21,8 @@ FMOD3 = dcd.o
 
 # subroutines
 FOBJ1 = \
-	energy.o energy_bond.o\
+	energy.o\
+	energy_bond.o energy_angl.o\
 	read_sisinfo.o
 
 OBJS = $(FMOD1) $(FMOD2) $(FMOD3) $(FOBJ1)

@@ -6,7 +6,7 @@ subroutine energy_bond(Ebd)
   
    implicit none
   
-   real(PREC), intent(out) :: Ebd
+   real(PREC), intent(inout) :: Ebd
 
    integer :: ibd, imp1, imp2
    real(PREC) :: k, l, v(3), d
