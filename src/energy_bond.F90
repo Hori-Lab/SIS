@@ -1,0 +1,26 @@
+subroutine energy_bond(Ebd)
+      
+   use const
+   use var_state, only : xyz
+   use var_potential, only : nbond, bond_mp, bond_para
+  
+   implicit none
+  
+   real(PREC), intent(out) :: Ebd
+
+   integer :: ibd, imp1, imp2
+   real(PREC) :: k, l, v(3), d
+
+   do ibd = 1, nbond
+      imp1 = bond_mp(1, ibd)
+      imp2 = bond_mp(2, ibd)
+      k = bond_para(1, ibd)
+      l = bond_para(2, ibd)
+
+      v(:) = xyz(:, imp1) - xyz(:, imp2)
+      d = sqrt(dot_product(v,v))
+
+      Ebd = Ebd + 0.5 * k * (d - l) ** 2
+   enddo
+  
+end subroutine energy_bond
