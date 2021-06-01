@@ -44,10 +44,10 @@ subroutine energy_bp(Ebp)
                   cycle
 
                endif
-                  
+
                d = mp_distance(imp, jmp)
 
-               if (d >= 18.0) cycle
+               if (d >= Ubp_cutoff) cycle
                
                u = Ubp_bond_k * (d - Ubp_bond_r)**2
 

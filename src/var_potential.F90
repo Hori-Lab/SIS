@@ -12,6 +12,7 @@ module var_potential
    integer, allocatable, save :: angl_mp(:,:)
    real(PREC), allocatable, save :: angl_para(:,:)
 
+   real(PREC), parameter :: Ubp_cutoff = 18.0
    real(PREC), parameter :: Ubp0 = - 5.0 / 3.0
    real(PREC), parameter :: Ubp_bond_k = 3.0
    real(PREC), parameter :: Ubp_bond_r = 13.8
