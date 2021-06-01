@@ -148,17 +148,8 @@ module dcd
       class(file_dcd), intent(inout) :: self
     
       integer :: i
-      integer :: imp, iunit
       integer :: idummy
-    
-      ! ---------------------------------------------------------------------
-      ! variables in the header section
-      integer :: ntitle, nblock_size
-      integer :: i4
-      real(4) :: r4
-      character(4) :: c4
-      character(80) :: title
-      ! ---------------------------------------------------------------------
+      integer :: nblock_size
             
       ! ---------------------------------------------------------------------
       rewind(self%hdl)
@@ -204,17 +195,8 @@ module dcd
       class(file_dcd), intent(inout) :: self
     
       integer :: i
-      integer :: imp, iunit
       integer :: idummy
-    
-      ! ---------------------------------------------------------------------
-      ! variables in the header section
-      integer :: ntitle, nblock_size
-      integer :: i4
-      real(4) :: r4
-      character(4) :: c4
-      character(80) :: title
-      ! ---------------------------------------------------------------------
+      integer :: nblock_size
             
       ! ---------------------------------------------------------------------
       rewind(self%hdl)
@@ -247,17 +229,8 @@ module dcd
       class(file_dcd), intent(inout) :: other
     
       integer :: i
-      integer :: imp, iunit
       integer :: idummy
-    
-      ! ---------------------------------------------------------------------
-      ! variables in the header section
-      integer :: num, ntitle, nblock_size
-      !integer :: nset, istrt, nsavc, nstep, nver
-      !real(4) :: delta
-      !character(4) :: iunit
-      character(80) :: title
-      ! ---------------------------------------------------------------------
+      integer :: nblock_size
             
       ! ---------------------------------------------------------------------
       rewind(self%hdl)
@@ -319,10 +292,9 @@ module dcd
       integer, intent(out) :: istat
 
       integer :: i
-      integer :: imp
       integer :: idummy
       real(8) :: rdummy
-      integer :: num, nblock_size
+      integer :: nblock_size
       ! ---------------------------------------------------------------------
 
       rewind(self%hdl)
@@ -501,8 +473,6 @@ module dcd
       real(PREC), intent(in) :: xyz(3,nmp)
 
       integer :: imp
-      integer :: idummy
-      real(8) :: rdummy
       integer :: num, nblock_size
       ! ---------------------------------------------------------------------
 
