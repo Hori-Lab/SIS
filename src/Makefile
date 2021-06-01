@@ -21,6 +21,7 @@ FMOD3 = dcd.o
 
 # subroutines
 FOBJ1 = \
+      list_local.o list_bp.o \
 	energy.o\
 	energy_bond.o energy_angl.o energy_bp.o\
 	read_sisinfo.o

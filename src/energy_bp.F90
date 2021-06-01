@@ -1,107 +1,92 @@
 subroutine energy_bp(Ebp)
 
    use const
-   use const_idx, only : SEQT
    use var_state, only : xyz
-   use var_top, only : nmp_chain, seq, imp_chain, nchains
    use var_potential
 
    implicit none
   
    real(PREC), intent(inout) :: Ebp
 
-   integer :: ichain, jchain
-   integer :: i, j, j_start, imp, jmp
+   integer :: ibp, imp, jmp
    real(PREC) :: nhb, u
    real(PREC) :: d, theta, phi
 
-   do ichain = 1, nchains
-      do jchain = ichain, nchains
+   integer :: n_form
 
-         do i = 2, nmp_chain(ichain)-1
+   n_form = 0
 
-            imp = imp_chain(i, ichain)
+   do ibp = 1, nbp
 
-            if (ichain == jchain) then
-               j_start = i + 5
-            else
-               j_start = 2
-            endif
+      imp = bp_mp(1, ibp)
+      jmp = bp_mp(2, ibp)
+      nhb = bp_mp(3, ibp)
+      
+      d = mp_distance(imp, jmp)
 
-            do j = j_start, nmp_chain(jchain)-1
-               
-               jmp = imp_chain(j, jchain)
+      if (d >= Ubp_cutoff) cycle
+      
+      u = Ubp_bond_k * (d - Ubp_bond_r)**2
 
-               if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
-                   (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
-                  nhb = 3
+      theta = mp_angle(imp, jmp, jmp-1)
+      u = u + Ubp_angl_k * (theta - Ubp_angl_theta1)**2
 
-               else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
-                        (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
-                  nhb = 2
+      theta = mp_angle(imp-1, imp, jmp)
+      u = u + Ubp_angl_k * (theta - Ubp_angl_theta1)**2
 
-               else
-                  cycle
+      theta = mp_angle(imp, jmp, jmp+1)
+      u = u + Ubp_angl_k * (theta - Ubp_angl_theta2)**2
 
-               endif
+      theta = mp_angle(imp+1, imp, jmp)
+      u = u + Ubp_angl_k * (theta - Ubp_angl_theta2)**2
 
-               d = mp_distance(imp, jmp)
+      phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
+      u = u + Ubp_dihd_k * (1.0 + cos(phi + Ubp_dihd_phi1))
 
-               if (d >= Ubp_cutoff) cycle
-               
-               u = Ubp_bond_k * (d - Ubp_bond_r)**2
+      phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
+      u = u + Ubp_dihd_k * (1.0 + cos(phi + Ubp_dihd_phi2))
 
-               theta = mp_angle(imp, jmp, jmp-1)
-               u = u + Ubp_angl_k * (theta - Ubp_angl_theta1)**2
+      u = nhb * Ubp0 * exp(-u)
 
-               theta = mp_angle(imp-1, imp, jmp)
-               u = u + Ubp_angl_k * (theta - Ubp_angl_theta1)**2
+      Ebp = Ebp + u
 
-               theta = mp_angle(imp, jmp, jmp+1)
-               u = u + Ubp_angl_k * (theta - Ubp_angl_theta2)**2
+      if (u < -0.6) then
+         n_form = n_form + 1
+      endif
 
-               theta = mp_angle(imp+1, imp, jmp)
-               u = u + Ubp_angl_k * (theta - Ubp_angl_theta2)**2
-
-               phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
-               u = u + Ubp_dihd_k * (1.0 + cos(phi + Ubp_dihd_phi1))
-
-               phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
-               u = u + Ubp_dihd_k * (1.0 + cos(phi + Ubp_dihd_phi2))
-
-               Ebp = Ebp + nhb * Ubp0 * exp(-u)
-
-            enddo
-         enddo
-
-      enddo
    enddo
+
+   write(*,*) '#n_form: ', n_form
 
 contains
 
    function pbc_vec(v) result (new_vec)
       
-      use var_top, only : pbc_box, pbc_box_half
+      use var_top, only : flg_pbc, pbc_box, pbc_box_half
 
       real(PREC) :: new_vec(3)
       real(PREC), intent(in) :: v(3)
 
       integer :: i
 
+      if (.not. flg_pbc) then
+         new_vec(:) = v(:)
+         return
+      endif
+
       do i = 1, 3
          if(v(i) > pbc_box_half(i)) then
             new_vec(i) = v(i) - pbc_box(i)
-
+   
          else if(v(i) < -pbc_box_half(i)) then
             new_vec(i) = v(i) + pbc_box(i)
-
+   
          else
             new_vec(i) = v(i)
-
+   
          end if
-
       end do
-    
+
    end function pbc_vec
 
    function mp_distance(imp1, imp2) result(d)

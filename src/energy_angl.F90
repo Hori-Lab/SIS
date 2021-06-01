@@ -2,14 +2,15 @@ subroutine energy_angl(Eangl)
 
    use const
    use var_state, only : xyz
-   use var_potential, only : nangl, angl_mp, angl_para
+   use var_potential, only : nangl, angl_mp, angl_k, angl_t0 !angl_para
 
    implicit none
   
    real(PREC), intent(inout) :: Eangl
 
    integer :: ibd, imp1, imp2, imp3
-   real(PREC) :: k, t0, t
+   !real(PREC) :: k, t0
+   real(PREC) :: t
 
    do ibd = 1, nangl
       imp1 = angl_mp(1, ibd)
@@ -18,10 +19,11 @@ subroutine energy_angl(Eangl)
 
       t = xyz_angle(xyz(:,imp1), xyz(:,imp2), xyz(:,imp3))
       
-      k = angl_para(1, ibd)
-      t0 = angl_para(2, ibd)
+      !k = angl_para(1, ibd)
+      !t0 = angl_para(2, ibd)
 
-      Eangl = Eangl + 0.5 * k * (t - t0) ** 2
+      !Eangl = Eangl + 0.5 * k * (t - t0) ** 2
+      Eangl = Eangl + 0.5 * angl_k * (t - angl_t0) ** 2
    enddo
   
 contains

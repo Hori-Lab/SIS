@@ -3,14 +3,14 @@ program sn
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
    use const_idx, only : ENE, SEQT
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc
    use var_state, only : xyz, energies
    use var_io, only : hdl_dcd, hdl_out
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   character(CHAR_FILE_PATH) cfile_sis, cfile_dcd, cfile_out
+   character(CHAR_FILE_PATH) cfile_dcd, cfile_out
 
    type(file_dcd) :: fdcd
 
@@ -20,21 +20,25 @@ program sn
    integer :: nrepeat
    integer :: nmp_dcd
 
-   integer :: iarg
-   integer :: iargc
+   character(500) :: cline
 
-   iarg = iargc()
-   if (iarg /= 3) then
-      write(6,*) 'Usage: PROGRAM [sisinfo file] [dcd file] [output prefix]'
+   if (command_argument_count() /= 4) then
+      !write(6,*) 'Usage: PROGRAM [sisinfo file] [dcd file] [output prefix]'
+      write(6,*) 'Usage: PROGRAM [nrepeat] [nchain] [dcd file] [output prefix]'
       stop (2) 
    end if
 
-   call getarg(1, cfile_sis) 
-   call getarg(2, cfile_dcd) 
-   call getarg(3, cfile_out) 
+   call get_command_argument(1, cline)
+   read(cline, *) nrepeat
+   call get_command_argument(2, cline)
+   read(cline, *) nchains
+   call get_command_argument(3, cfile_dcd)  
+   call get_command_argument(4, cfile_out)  
 
-   nrepeat = 47
-   nchains = 64
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! Temporary hard-code the system setup
+   !nrepeat = 47
+   !nchains =  1
    allocate(nmp_chain(nchains))
    nmp_chain(:) = 3 * nrepeat
    nmp = sum(nmp_chain)
@@ -51,20 +55,30 @@ program sn
          imp_chain(3*(j-1)+3, i) = imp+3
          imp = imp + 3
       enddo
+      write(*,'(a,141(i1))') '# ', seq(:,i)
+      write(*,*) '# ', imp_chain(1,i), imp_chain((nrepeat-1)*3+3, i)
    enddo
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   call read_sisinfo(cfile_sis)
+   call list_local()
+   call list_bp()
+   !call read_sisinfo(cfile_sis)
 
    fdcd = file_dcd(hdl_dcd, cfile_dcd, DCD_OPEN_MODE%READ)
 
    call fdcd%read_header()
 
-   open(hdl_out, file = cfile_out, status = 'unknown', action = 'write')
-
    call fdcd%read_nmp(nmp_dcd, istat)
 
-   pbc_box(:) = fdcd%box(:)
-   pbc_box_half = 0.5 * pbc_box(:)
+   if (fdcd%box(1) > 0.0) then
+      flg_pbc = .True.
+      pbc_box(:) = fdcd%box(:)
+      pbc_box_half = 0.5 * pbc_box(:)
+      write(*,*) '#Box: ', pbc_box
+   else
+      flg_pbc = .False.
+      write(*,*) '#No PBC'
+   endif
 
    if (nmp_dcd /= nmp) then
       write(*,*) "nmp = ", nmp, " is inconsistent with nmp_chain = ", nmp_chain, " and nchains = ", nchains
@@ -72,6 +86,9 @@ program sn
    endif
 
    allocate(xyz(3, nmp))
+
+   open(hdl_out, file = cfile_out, status = 'unknown', action = 'write')
+   write(hdl_out, '(a)') '#(1)nframe  (2)Etotal  (3)Ebond   (4)Eangl   (5)Ebp   (6)Eele'
 
    nframe = 0
    do
@@ -81,11 +98,15 @@ program sn
 
       call energy()
       
-      write(*,*) (energies(i), i=1,ENE%MAX), energies(ENE%TOTAL)
+      write(hdl_out, *) nframe, (energies(i), i=0,ENE%MAX)
+
+      !if (nframe == 2) then
+      !   exit
+      !endif
 
    enddo
 
-   write(*,*) 'nframe =', nframe
+   write(*,*) '#nframe:', nframe
 
    call fdcd%close()
 
