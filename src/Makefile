@@ -4,7 +4,8 @@ TARGET = ../sis
 #------ gfortran
 FC = gfortran
 CPP = -cpp
-OPT = -O3 -Wall -ffree-line-length-none -fbounds-check -fno-range-check -fallow-invalid-boz -frecursive
+#OPT = -O3 -Wall -ffree-line-length-none -fbounds-check -fno-range-check -fallow-invalid-boz -frecursive
+OPT = -fopenmp -O3 -Wall -ffree-line-length-none -fbounds-check -fno-range-check -fallow-invalid-boz -frecursive
 
 FLAG = $(CPP) $(OPT)
 

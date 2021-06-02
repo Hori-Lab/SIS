@@ -120,9 +120,10 @@ program sn
       
       write(hdl_out, *) nframe, (energies(i), i=0,ENE%MAX)
 
-      if (nframe == 1) then
-         exit
-      endif
+      !! Debug
+      !if (nframe == 1) then
+      !   exit
+      !endif
 
    enddo
 

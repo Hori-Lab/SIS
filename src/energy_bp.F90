@@ -13,14 +13,11 @@ subroutine energy_bp(Ebp)
    integer :: ibp, imp, jmp
    real(PREC) :: nhb, u
    real(PREC) :: d, theta, phi
+   real(PREC) :: e_bp(nbp)
 
-   !integer :: n_form
-   !integer :: n_inter, n_intra
+   e_bp(:) = 0.0e0_PREC
 
-   !n_form = 0
-   !n_inter = 0
-   !n_intra = 0
-
+   !$omp parallel do private(imp,jmp,nhb,d,u)
    do ibp = 1, nbp
 
       imp = bp_mp(1, ibp)
@@ -51,31 +48,26 @@ subroutine energy_bp(Ebp)
       phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
       u = u + Ubp_dihd_k * (1.0 + cos(phi + Ubp_dihd_phi2))
 
-      u = nhb * Ubp0 * exp(-u)
-
-      Ebp = Ebp + u
-
-      if (u < -kT) then
-         !n_form = n_form + 1
-
-         !if (ichain_mp(imp) == ichain_mp(jmp)) then
-         !   n_intra = n_intra + 1
-         !else
-         !   n_inter = n_inter + 1
-         !endif
-
-         if (flg_out_bp) then
-            write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP)
-         endif
-      endif
+      e_bp(ibp) = nhb * Ubp0 * exp(-u)
 
    enddo
+   !$omp end parallel do
 
-   !if (flg_out_bp) then
-   !   write(hdl_bp) int(0,kind=KIND_OUT_BP)
-   !endif
+   Ebp = sum(e_bp)
 
-   !write(*,*) '#n_form: ', n_form, n_intra, n_inter
+   if (flg_out_bp) then
+
+      do ibp = 1, nbp
+         if (e_bp(ibp) < -kT) then
+            imp = bp_mp(1, ibp)
+            jmp = bp_mp(2, ibp)
+            write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP)
+         endif
+      enddo
+
+      write(hdl_bp) int(0,kind=KIND_OUT_BP)
+
+   endif
 
 contains
 
