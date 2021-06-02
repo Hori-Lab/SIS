@@ -3,14 +3,14 @@ program sn
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
    use const_idx, only : ENE, SEQT
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp
    use var_state, only : xyz, energies
-   use var_io, only : hdl_dcd, hdl_out
+   use var_io, only : hdl_dcd, hdl_out, flg_out_bp, hdl_bp, KIND_OUT_BP
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   character(CHAR_FILE_PATH) cfile_dcd, cfile_out
+   character(CHAR_FILE_PATH) cfile_dcd, cfile_prefix, cfile_out, cfile_bp
 
    type(file_dcd) :: fdcd
 
@@ -33,10 +33,16 @@ program sn
    call get_command_argument(2, cline)
    read(cline, *) nchains
    call get_command_argument(3, cfile_dcd)  
-   call get_command_argument(4, cfile_out)  
+   call get_command_argument(4, cfile_prefix)  
+
+   cfile_out = trim(cfile_prefix) // '.out'
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Temporary hard-code the system setup
+   flg_out_bp = .True.
+   cfile_bp = trim(cfile_prefix) // '.bp'
+   open(hdl_bp, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
+   write(hdl_bp) int(KIND_OUT_BP,kind=4)
    !nrepeat = 47
    !nchains =  1
    allocate(nmp_chain(nchains))
@@ -44,6 +50,7 @@ program sn
    nmp = sum(nmp_chain)
    allocate(seq(3*nrepeat, nchains))
    allocate(imp_chain(3*nrepeat, nchains))
+   allocate(ichain_mp(nmp))
    imp = 0
    do i = 1, nchains
       do j = 1, nrepeat
@@ -53,6 +60,9 @@ program sn
          imp_chain(3*(j-1)+1, i) = imp+1
          imp_chain(3*(j-1)+2, i) = imp+2
          imp_chain(3*(j-1)+3, i) = imp+3
+         ichain_mp(imp+1) = i
+         ichain_mp(imp+2) = i
+         ichain_mp(imp+3) = i
          imp = imp + 3
       enddo
       write(*,'(a,141(i1))') '# ', seq(:,i)
@@ -87,7 +97,7 @@ program sn
 
    allocate(xyz(3, nmp))
 
-   open(hdl_out, file = cfile_out, status = 'unknown', action = 'write')
+   open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
    write(hdl_out, '(a)') '#(1)nframe  (2)Etotal  (3)Ebond   (4)Eangl   (5)Ebp   (6)Eele'
 
    nframe = 0
@@ -100,9 +110,9 @@ program sn
       
       write(hdl_out, *) nframe, (energies(i), i=0,ENE%MAX)
 
-      !if (nframe == 2) then
-      !   exit
-      !endif
+      if (nframe == 1) then
+         exit
+      endif
 
    enddo
 
@@ -111,6 +121,9 @@ program sn
    call fdcd%close()
 
    close(hdl_out)
+   if (flg_out_bp) then
+      close(hdl_bp)
+   endif
 
    deallocate(xyz)
 
