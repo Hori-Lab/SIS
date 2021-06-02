@@ -11,7 +11,7 @@ FLAG = $(CPP) $(OPT)
 # ------------------------------------------
 
 # Constant modules 
-FMOD1 = const.o const_idx.o
+FMOD1 = const.o const_idx.o const_phys.o
 
 # Variable modules
 FMOD2 = var_top.o var_state.o var_potential.o var_io.o

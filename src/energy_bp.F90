@@ -1,8 +1,8 @@
 subroutine energy_bp(Ebp)
 
    use const
-   use var_top, only : ichain_mp
-   use var_state, only : xyz
+   !use var_top, only : ichain_mp
+   use var_state, only : xyz, kT
    use var_potential
    use var_io, only : flg_out_bp, hdl_bp, KIND_OUT_BP
 
@@ -14,12 +14,12 @@ subroutine energy_bp(Ebp)
    real(PREC) :: nhb, u
    real(PREC) :: d, theta, phi
 
-   integer :: n_form
-   integer :: n_inter, n_intra
+   !integer :: n_form
+   !integer :: n_inter, n_intra
 
-   n_form = 0
-   n_inter = 0
-   n_intra = 0
+   !n_form = 0
+   !n_inter = 0
+   !n_intra = 0
 
    do ibp = 1, nbp
 
@@ -55,14 +55,14 @@ subroutine energy_bp(Ebp)
 
       Ebp = Ebp + u
 
-      if (u < -0.6) then
-         n_form = n_form + 1
+      if (u < -kT) then
+         !n_form = n_form + 1
 
-         if (ichain_mp(imp) == ichain_mp(jmp)) then
-            n_intra = n_intra + 1
-         else
-            n_inter = n_inter + 1
-         endif
+         !if (ichain_mp(imp) == ichain_mp(jmp)) then
+         !   n_intra = n_intra + 1
+         !else
+         !   n_inter = n_inter + 1
+         !endif
 
          if (flg_out_bp) then
             write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP)
@@ -71,11 +71,11 @@ subroutine energy_bp(Ebp)
 
    enddo
 
-   if (flg_out_bp) then
-      write(hdl_bp) int(0,kind=KIND_OUT_BP)
-   endif
+   !if (flg_out_bp) then
+   !   write(hdl_bp) int(0,kind=KIND_OUT_BP)
+   !endif
 
-   write(*,*) '#n_form: ', n_form, n_intra, n_inter
+   !write(*,*) '#n_form: ', n_form, n_intra, n_inter
 
 contains
 

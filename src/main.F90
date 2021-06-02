@@ -2,9 +2,10 @@ program sn
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
+   use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp
-   use var_state, only : xyz, energies
+   use var_state, only : xyz, energies, tempK, kT
    use var_io, only : hdl_dcd, hdl_out, flg_out_bp, hdl_bp, KIND_OUT_BP
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -30,8 +31,10 @@ program sn
 
    call get_command_argument(1, cline)
    read(cline, *) nrepeat
+   write(*, '(a,i5)') '#Nrepeat: ', nrepeat
    call get_command_argument(2, cline)
    read(cline, *) nchains
+   write(*, '(a,i8)') '#Nchain: ', nchains
    call get_command_argument(3, cfile_dcd)  
    call get_command_argument(4, cfile_prefix)  
 
@@ -48,6 +51,7 @@ program sn
    allocate(nmp_chain(nchains))
    nmp_chain(:) = 3 * nrepeat
    nmp = sum(nmp_chain)
+   write(*, '(a,i10)') '#Nnt: ', nmp
    allocate(seq(3*nrepeat, nchains))
    allocate(imp_chain(3*nrepeat, nchains))
    allocate(ichain_mp(nmp))
@@ -65,9 +69,15 @@ program sn
          ichain_mp(imp+3) = i
          imp = imp + 3
       enddo
-      write(*,'(a,141(i1))') '# ', seq(:,i)
-      write(*,*) '# ', imp_chain(1,i), imp_chain((nrepeat-1)*3+3, i)
+      !write(*,'(a,141(i1))') '# ', seq(:,i)
+      !write(*,*) '# ', imp_chain(1,i), imp_chain((nrepeat-1)*3+3, i)
    enddo
+
+   tempK = 273.15 + 22.0
+   kT = BOLTZ_KCAL_MOL * tempK
+   write(*, '(a,f7.3)') '#T/K: ', tempK
+   write(*, '(a,f7.5)') '#kT/kcal/mol: ', kT
+
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    call list_local()

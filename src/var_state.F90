@@ -6,6 +6,9 @@ module var_state
    implicit none
   
    ! ----------------------------------------------------------------
+   real(PREC), save :: tempK
+   real(PREC), save :: kT
+
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), save :: energies(0:ENE%MAX)
 
