@@ -4,7 +4,7 @@ subroutine energy_bp(Ebp)
    !use var_top, only : ichain_mp
    use var_state, only : xyz, kT
    use var_potential
-   use var_io, only : flg_out_bp, hdl_bp, KIND_OUT_BP
+   use var_io, only : flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP
 
    implicit none
   
@@ -58,7 +58,10 @@ subroutine energy_bp(Ebp)
    if (flg_out_bp) then
 
       do ibp = 1, nbp
-         if (e_bp(ibp) < -kT) then
+
+         nhb = bp_mp(3, ibp)
+
+         if (e_bp(ibp) < - nhb * kT) then
             imp = bp_mp(1, ibp)
             jmp = bp_mp(2, ibp)
             write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP)
@@ -66,7 +69,22 @@ subroutine energy_bp(Ebp)
       enddo
 
       write(hdl_bp) int(0,kind=KIND_OUT_BP)
+   endif
 
+   if (flg_out_bpe) then
+
+      do ibp = 1, nbp
+
+         nhb = bp_mp(3, ibp)
+
+         if (e_bp(ibp) < - nhb * kT) then
+            imp = bp_mp(1, ibp)
+            jmp = bp_mp(2, ibp)
+            write(hdl_bpe, '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, e_bp(ibp)
+         endif
+      enddo
+
+      write(hdl_bpe, *) ''
    endif
 
 contains
