@@ -25,7 +25,7 @@ FOBJ1 = \
       list_local.o list_bp.o \
 	energy.o\
 	energy_bond.o energy_angl.o energy_bp.o\
-	read_sisinfo.o
+	read_sisinfo.o read_force_field.o
 
 OBJS = $(FMOD1) $(FMOD2) $(FMOD3) $(FOBJ1)
 

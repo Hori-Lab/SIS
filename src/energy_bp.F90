@@ -1,7 +1,7 @@
 subroutine energy_bp(Ebp)
 
    use const
-   !use var_top, only : ichain_mp
+   use const_phys, only : ZERO_JUDGE
    use var_state, only : xyz, kT
    use var_potential
    use var_io, only : flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP
@@ -77,6 +77,7 @@ subroutine energy_bp(Ebp)
 
          nhb = bp_mp(3, ibp)
 
+         !if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
          if (e_bp(ibp) < - nhb * kT) then
             imp = bp_mp(1, ibp)
             jmp = bp_mp(2, ibp)

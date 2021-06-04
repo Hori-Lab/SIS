@@ -16,6 +16,6 @@ module const
   integer, parameter :: L_INT = INT64 !< byte size of larger integer ("long long int" in C)
 
   integer, parameter :: CHAR_FILE_PATH = 1000
-  integer, parameter :: CHAR_SISINFO_LINE = 500
+  integer, parameter :: CHAR_FILE_LINE = 500
 
 end module const

@@ -12,4 +12,8 @@ module const_phys
   real(PREC), parameter :: JOUL2KCAL_MOL  = JOUL2KCAL * N_AVO  !< (J -> kcal/mol)
   real(PREC), parameter :: BOLTZ_KCAL_MOL = BOLTZ_J * JOUL2KCAL_MOL   !< Boltzmann constant [kcal/mol/K]
 
+  real(PREC), parameter :: INVALID_JUDGE = 1.0e30_PREC
+  real(PREC), parameter :: INVALID_VALUE = 1.0e31_PREC
+  real(PREC), parameter :: ZERO_JUDGE    = 1.0e-6_PREC
+
 endmodule const_phys

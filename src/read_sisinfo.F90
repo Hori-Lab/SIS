@@ -8,7 +8,7 @@ subroutine read_sisinfo(cfilepath)
 
    character(len=CHAR_FILE_PATH), intent(in) :: cfilepath
   
-   character(len=CHAR_SISINFO_LINE) :: cline
+   character(len=CHAR_FILE_LINE) :: cline
    integer :: istat
 
    integer :: hdl

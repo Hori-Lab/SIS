@@ -11,7 +11,7 @@ program sn
 
    implicit none
 
-   character(CHAR_FILE_PATH) cfile_dcd, cfile_prefix, cfile_out, cfile_bp
+   character(CHAR_FILE_PATH) cfile_ff, cfile_dcd, cfile_prefix, cfile_out, cfile_bp
 
    type(file_dcd) :: fdcd
 
@@ -23,20 +23,23 @@ program sn
 
    character(500) :: cline
 
-   if (command_argument_count() /= 4) then
+   if (command_argument_count() /= 5) then
       !write(6,*) 'Usage: PROGRAM [sisinfo file] [dcd file] [output prefix]'
-      write(6,*) 'Usage: PROGRAM [nrepeat] [nchain] [dcd file] [output prefix]'
+      write(6,*) 'Usage: PROGRAM [force field file] [nrepeat] [nchain] [dcd file] [output prefix]'
       stop (2) 
    end if
 
-   call get_command_argument(1, cline)
+   call get_command_argument(1, cfile_ff)  
+   call read_force_field(cfile_ff)
+
+   call get_command_argument(2, cline)
    read(cline, *) nrepeat
    write(*, '(a,i5)') '#Nrepeat: ', nrepeat
-   call get_command_argument(2, cline)
+   call get_command_argument(3, cline)
    read(cline, *) nchains
    write(*, '(a,i8)') '#Nchain: ', nchains
-   call get_command_argument(3, cfile_dcd)  
-   call get_command_argument(4, cfile_prefix)  
+   call get_command_argument(4, cfile_dcd)  
+   call get_command_argument(5, cfile_prefix)  
 
    cfile_out = trim(cfile_prefix) // '.out'
 
