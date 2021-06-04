@@ -1,4 +1,4 @@
-program sn
+program sis
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
@@ -22,6 +22,14 @@ program sn
    integer :: nmp_dcd
 
    character(500) :: cline
+
+#ifdef VERGIT
+   character(14), parameter :: VERSION_DATE = VERDATE
+   character(7),  parameter :: VERSION_BUILD = VERBUILD
+   character(30), parameter :: VERSION_BRANCH= VERBRANCH
+
+   write(*, '(13a,7a,9a,30a,14a,14a,6a)') '# Git commit ', VERSION_BUILD, ' (branch:', trim(VERSION_BRANCH), ') compiled on ', VERSION_DATE, ' (UTC)'
+#endif
 
    if (command_argument_count() /= 5) then
       !write(6,*) 'Usage: PROGRAM [sisinfo file] [dcd file] [output prefix]'
@@ -152,4 +160,4 @@ program sn
 
    stop
 
-end program sn
+end program sis

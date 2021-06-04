@@ -7,6 +7,14 @@ CPP = -cpp
 #OPT = -O3 -Wall -ffree-line-length-none -fbounds-check -fno-range-check -fallow-invalid-boz -frecursive
 OPT = -fopenmp -O3 -Wall -ffree-line-length-none -fbounds-check -fno-range-check -fallow-invalid-boz -frecursive
 
+# ------------------------------------------
+#  Git:
+GIT_VER = $(shell git log -1 --format="%h")
+GIT_BRA = $(shell git status | head -1| cut -c11-)
+DATESEQ = $(shell date -u +%Y%m%d%H%M)  # Date
+VERSION = -DVERGIT -DVERBUILD="\"$(GIT_VER)\"" -DVERBRANCH="\"$(GIT_BRA)\"" -DVERDATE="\"$(DATESEQ)\""
+
+# ------------------------------------------
 FLAG = $(CPP) $(OPT)
 
 # ------------------------------------------
@@ -36,6 +44,9 @@ $(TARGET): $(OBJS) main.o
 
 clean:
 	/bin/rm -f *.o *.mod $(TARGET)
+
+main.o:
+	$(FC) $(VERSION) $(FLAG) -c main.F90
 
 # suffix rule
 .F90.o:
