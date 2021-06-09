@@ -4,7 +4,7 @@ subroutine energy_bp(Ebp)
    use const_phys, only : ZERO_JUDGE
    use var_state, only : xyz, kT
    use var_potential
-   use var_io, only : flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP
+   use var_io, only : flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
   
@@ -64,11 +64,13 @@ subroutine energy_bp(Ebp)
          if (e_bp(ibp) < - nhb * kT) then
             imp = bp_mp(1, ibp)
             jmp = bp_mp(2, ibp)
-            write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP)
+            !write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP)
+            write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), real(e_bp(ibp), kind=KIND_OUT_BPE)
          endif
       enddo
 
-      write(hdl_bp) int(0,kind=KIND_OUT_BP)
+      !write(hdl_bp) int(0,kind=KIND_OUT_BP)
+      write(hdl_bp) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
    endif
 
    if (flg_out_bpe) then
@@ -77,8 +79,8 @@ subroutine energy_bp(Ebp)
 
          nhb = bp_mp(3, ibp)
 
-         !if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
-         if (e_bp(ibp) < - nhb * kT) then
+         if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
+         !if (e_bp(ibp) < - nhb * kT) then
             imp = bp_mp(1, ibp)
             jmp = bp_mp(2, ibp)
             write(hdl_bpe, '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, e_bp(ibp)

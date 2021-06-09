@@ -6,7 +6,7 @@ program sis
    use const_idx, only : ENE, SEQT
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp
    use var_state, only : xyz, energies, tempK, kT
-   use var_io, only : hdl_dcd, hdl_out, flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP
+   use var_io, only : hdl_dcd, hdl_out, flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
@@ -54,14 +54,19 @@ program sis
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Temporary hard-code the system setup
 
-   !flg_out_bp = .True.
-   !cfile_bp = trim(cfile_prefix) // '.bp'
-   !open(hdl_bp, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
-   !write(hdl_bp) int(KIND_OUT_BP,kind=4)
+   flg_out_bp = .True.
+   if (flg_out_bp) then
+      cfile_bp = trim(cfile_prefix) // '.bp'
+      open(hdl_bp, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
+      write(hdl_bp) int(KIND_OUT_BP,kind=4)
+      write(hdl_bp) int(KIND_OUT_BPE,kind=4)
+   endif
 
-   flg_out_bpe = .True.
-   cfile_bp = trim(cfile_prefix) // '.bpe'
-   open(hdl_bpe, file=cfile_bp, status='replace', action='write', form='formatted')
+   flg_out_bpe = .False.
+   if (flg_out_bpe) then
+      cfile_bp = trim(cfile_prefix) // '.bpe'
+      open(hdl_bpe, file=cfile_bp, status='replace', action='write', form='formatted')
+   endif
 
    !nrepeat = 47
    !nchains =  1
@@ -138,7 +143,7 @@ program sis
       write(hdl_out, *) nframe, (energies(i), i=0,ENE%MAX)
 
       !! Debug
-      !if (nframe == 1) then
+      !if (nframe == 10) then
       !   exit
       !endif
 
