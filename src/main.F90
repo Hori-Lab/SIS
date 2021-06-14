@@ -4,24 +4,25 @@ program sis
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp, nrepeat
    use var_state, only : xyz, energies, tempK, kT
-   use var_io, only : hdl_dcd, hdl_out, flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
+   use var_io, only : hdl_dcd, hdl_out, flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
+                      cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_bp
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   character(CHAR_FILE_PATH) cfile_ff, cfile_dcd, cfile_prefix, cfile_out, cfile_bp
+   character(CHAR_FILE_PATH) cfile_inp
 
    type(file_dcd) :: fdcd
 
    integer :: i, j, imp
    integer :: istat
    integer :: nframe
-   integer :: nrepeat
    integer :: nmp_dcd
 
    character(500) :: cline
+   logical :: stat
 
 #ifdef VERGIT
    character(14), parameter :: VERSION_DATE = VERDATE
@@ -31,24 +32,18 @@ program sis
    write(*, '(13a,7a,9a,30a,14a,14a,6a)') '# Git commit ', VERSION_BUILD, ' (branch:', trim(VERSION_BRANCH), ') compiled on ', VERSION_DATE, ' (UTC)'
 #endif
 
-   if (command_argument_count() /= 5) then
-      !write(6,*) 'Usage: PROGRAM [sisinfo file] [dcd file] [output prefix]'
-      write(6,*) 'Usage: PROGRAM [force field file] [nrepeat] [nchain] [dcd file] [output prefix]'
+   if (command_argument_count() == 1) then
+      
+      call get_command_argument(1, cfile_inp)  
+      call read_input(cfile_inp, stat)
+
+   else
+      write(6,*) 'Usage: PROGRAM input.toml'
       stop (2) 
    end if
 
-   call get_command_argument(1, cfile_ff)  
+   write(*,*) 'Read force-field file: '//cfile_ff
    call read_force_field(cfile_ff)
-
-   call get_command_argument(2, cline)
-   read(cline, *) nrepeat
-   write(*, '(a,i5)') '#Nrepeat: ', nrepeat
-   call get_command_argument(3, cline)
-   read(cline, *) nchains
-   write(*, '(a,i8)') '#Nchain: ', nchains
-   call get_command_argument(4, cfile_dcd)  
-   call get_command_argument(5, cfile_prefix)  
-
    cfile_out = trim(cfile_prefix) // '.out'
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -73,6 +68,8 @@ program sis
    allocate(nmp_chain(nchains))
    nmp_chain(:) = 3 * nrepeat
    nmp = sum(nmp_chain)
+   write(*, '(a,i8)') '#Nchain: ', nchains
+   write(*, '(a,i5)') '#Nrepeat: ', nrepeat
    write(*, '(a,i10)') '#Nnt: ', nmp
    allocate(seq(3*nrepeat, nchains))
    allocate(imp_chain(3*nrepeat, nchains))
@@ -106,7 +103,7 @@ program sis
    call list_bp()
    !call read_sisinfo(cfile_sis)
 
-   fdcd = file_dcd(hdl_dcd, cfile_dcd, DCD_OPEN_MODE%READ)
+   fdcd = file_dcd(hdl_dcd, cfile_dcd_in, DCD_OPEN_MODE%READ)
 
    call fdcd%read_header()
 

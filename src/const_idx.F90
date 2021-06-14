@@ -24,4 +24,13 @@ module const_idx
   endtype seq_types
   type(seq_types), parameter :: SEQT = seq_types(1,2,3,4,4)
 
+  type job_types
+     integer :: DEBUG       ! 0
+     integer :: CHECK_FORCE ! 1
+     integer :: MD          ! 2
+     integer :: DCD         ! 3
+     integer :: MAX
+  endtype job_types
+  type(job_types), parameter :: JOBT = job_types(0,1,2,3,3)
+
 end module const_idx

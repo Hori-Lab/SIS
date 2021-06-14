@@ -6,6 +6,8 @@ module var_top
    implicit none
   
    ! ----------------------------------------------------------------
+   integer, save :: nrepeat
+
    integer, save :: nunit
    integer, save :: nmp
    integer, save :: nchains

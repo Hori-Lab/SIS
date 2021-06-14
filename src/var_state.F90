@@ -6,10 +6,13 @@ module var_state
    implicit none
   
    ! ----------------------------------------------------------------
+   integer, save :: job
+
    real(PREC), save :: tempK
    real(PREC), save :: kT
 
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), save :: energies(0:ENE%MAX)
+   real(PREC), save :: forces(0:ENE%MAX)
 
 end module var_state

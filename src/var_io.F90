@@ -1,4 +1,6 @@
 module var_io
+   
+   use const
 
    logical, save :: flg_out_bp = .False.
    logical, save :: flg_out_bpe = .False.
@@ -11,5 +13,8 @@ module var_io
    integer, parameter :: hdl_bpe = 23
 
    integer, save :: iopen_hdl = 30
+
+   character(CHAR_FILE_PATH), save :: cfile_out, cfile_bp
+   character(len=:), allocatable, save :: cfile_ff, cfile_prefix, cfile_dcd_in
 
 end module var_io
