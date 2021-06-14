@@ -46,10 +46,6 @@ program sis
    call read_force_field(cfile_ff)
    cfile_out = trim(cfile_prefix) // '.out'
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! Temporary hard-code the system setup
-
-   flg_out_bp = .True.
    if (flg_out_bp) then
       cfile_bp = trim(cfile_prefix) // '.bp'
       open(hdl_bp, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
@@ -57,11 +53,13 @@ program sis
       write(hdl_bp) int(KIND_OUT_BPE,kind=4)
    endif
 
-   flg_out_bpe = .False.
    if (flg_out_bpe) then
       cfile_bp = trim(cfile_prefix) // '.bpe'
       open(hdl_bpe, file=cfile_bp, status='replace', action='write', form='formatted')
    endif
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! Temporary hard-code the system setup
 
    !nrepeat = 47
    !nchains =  1

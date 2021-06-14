@@ -5,7 +5,10 @@ subroutine read_input(cfilepath, stat)
    use const
    use const_phys
    use const_idx
-   use var_io, only : iopen_hdl, cfile_ff, cfile_prefix, cfile_dcd_in
+   use var_io, only : iopen_hdl, &
+                      flg_out_bp, flg_out_bpe, &
+                      cfile_ff, cfile_dcd_in, &
+                      cfile_prefix
    use var_state, only : job
    use var_top, only : nrepeat, nchains
   
@@ -17,11 +20,10 @@ subroutine read_input(cfilepath, stat)
    !======= TOML
     type(toml_table), allocatable :: table
     type(toml_table), pointer :: group, node
-    type(toml_key), allocatable :: list(:)
+    type(toml_array), pointer :: array
    !======= 
 
    integer :: i
-
    integer :: istat
    integer :: hdl
    !character(CHAR_FILE_LINE) :: cline
@@ -54,9 +56,11 @@ subroutine read_input(cfilepath, stat)
       job = JOBT%DCD
    else
       write(*,*) 'Unknown job type: '//trim(cline)
+      stat = .False.
+      return
    endif
 
-   !################# files #################
+   !################# input files #################
    call get_value(table, "files", group)
 
    if (.not. associated(group)) then
@@ -70,13 +74,6 @@ subroutine read_input(cfilepath, stat)
       call get_value(node, "ff", cfile_ff)
       write(*,*) 'cfile_ff', cfile_ff
 
-      !call node%get_keys(list)
-      !do i = 1, size(list)
-      !   !call get_value(node, list(i)%key, cline, stat=stat)
-      !   call get_value(node, list(i)%key, cline)
-      !   write(*,*) list(i)%key, cline
-      !enddo
-
       if (job == JOBT%DCD) then
          call get_value(node, "dcd", cfile_dcd_in)
       endif
@@ -86,6 +83,7 @@ subroutine read_input(cfilepath, stat)
       stop
    endif
 
+   !################# output files #################
    call get_value(group, "out", node)
    if (associated(node)) then
       call get_value(node, "prefix", cfile_prefix)
@@ -97,15 +95,31 @@ subroutine read_input(cfilepath, stat)
       !   write(*,*) list(i)%key, cline
       !enddo
 
+      call get_value(node, "types", array)
+
+      do i = 1, len(array)
+         call get_value(array, i, cline)
+
+         if (cline == "bp") then
+            flg_out_bp = .True.
+         else if (cline == "bpe") then
+            flg_out_bp = .True.
+         else
+            write(*,*) 'Unknown output type: '//trim(cline)
+            stat = .False.
+            return
+         endif
+      enddo
+
    else
       write(*,*) 'no files.out'
       stop
    endif
 
+   !################# Repeat sequence #################
    call get_value(table, "repeat", group)
    call get_value(group, "n_repeat", nrepeat)
    call get_value(group, "n_chain", nchains)
-
 
    call table%destroy
 
