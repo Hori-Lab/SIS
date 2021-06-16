@@ -17,7 +17,7 @@ subroutine energy_bp(Ebp)
 
    e_bp(:) = 0.0e0_PREC
 
-   !$omp parallel do private(imp,jmp,nhb,d,u)
+   !$omp parallel do private(imp,jmp,nhb,d,u,theta,phi)
    do ibp = 1, nbp
 
       imp = bp_mp(1, ibp)
