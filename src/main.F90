@@ -135,7 +135,7 @@ program sis
 
       call energy()
       
-      write(hdl_out, *) nframe, (energies(i), i=0,ENE%MAX)
+      write(hdl_out, '(i10, 5(1x,g15.8))') nframe, (energies(i), i=0,ENE%MAX)
 
       !! Debug
       !if (nframe == 10) then
