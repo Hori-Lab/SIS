@@ -103,7 +103,7 @@ subroutine read_input(cfilepath, stat)
          if (cline == "bp") then
             flg_out_bp = .True.
          else if (cline == "bpe") then
-            flg_out_bp = .True.
+            flg_out_bpe = .True.
          else
             write(*,*) 'Unknown output type: '//trim(cline)
             stat = .False.
