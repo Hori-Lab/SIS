@@ -3,9 +3,9 @@ program sis
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, SEQT
+   use const_idx, only : ENE, SEQT, JOBT
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp, nrepeat
-   use var_state, only : xyz, energies, tempK, kT
+   use var_state, only : xyz, energies, tempK, kT, job
    use var_io, only : hdl_dcd, hdl_out, flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_bp
    use dcd, only : file_dcd, DCD_OPEN_MODE
@@ -37,8 +37,26 @@ program sis
       call get_command_argument(1, cfile_inp)  
       call read_input(cfile_inp, stat)
 
+   else if (command_argument_count() == 5) then
+
+      job = JOBT%DCD
+      flg_out_bp = .False.
+      flg_out_bpe = .True.
+
+      call get_command_argument(1, cline)
+      cfile_ff = trim(cline)
+      call get_command_argument(2, cline)
+      cfile_dcd_in = trim(cline)
+      call get_command_argument(3, cline)
+      read(cline, *) nrepeat 
+      call get_command_argument(4, cline)
+      read(cline, *) nchains
+      call get_command_argument(5, cline)
+      cfile_prefix = trim(cline)
+
    else
       write(6,*) 'Usage: PROGRAM input.toml'
+      write(6,*) '  or : PROGRAM ff_file dcd_file nrepeat nchains out_prefix'
       stop (2) 
    end if
 
