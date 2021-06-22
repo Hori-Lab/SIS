@@ -7,6 +7,7 @@ add_executable(${SIS_EXE}
     list_local.F90 list_bp.F90
     energy.F90
     energy_bond.F90 energy_angl.F90 energy_bp.F90 read_sisinfo.F90
+    job_dcd.F90
     main.F90
 )
 
