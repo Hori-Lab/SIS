@@ -8,7 +8,7 @@ subroutine read_input(cfilepath, stat)
    use var_io, only : iopen_hdl, &
                       flg_out_bp, flg_out_bpe, &
                       cfile_ff, cfile_dcd_in, &
-                      cfile_prefix
+                      cfile_prefix, cfile_pdb_ini
    use var_state, only : job
    use var_top, only : nrepeat, nchains
   
@@ -16,6 +16,7 @@ subroutine read_input(cfilepath, stat)
 
    character(len=CHAR_FILE_PATH), intent(in) :: cfilepath
    logical, intent(out) :: stat
+
 
    !======= TOML
     type(toml_table), allocatable :: table
@@ -54,6 +55,10 @@ subroutine read_input(cfilepath, stat)
    !cline = trim(cline)
    if (cline == 'DCD') then
       job = JOBT%DCD
+
+   else if (cline == 'CHECK_FORCE') then
+      job = JOBT%CHECK_FORCE
+
    else
       write(*,*) 'Unknown job type: '//trim(cline)
       stat = .False.
@@ -77,6 +82,8 @@ subroutine read_input(cfilepath, stat)
       if (job == JOBT%DCD) then
          call get_value(node, "dcd", cfile_dcd_in)
       endif
+
+      call get_value(node, "pdb_ini", cfile_pdb_ini)
 
    else
       write(*,*) 'no files.in'

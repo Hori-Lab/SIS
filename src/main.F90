@@ -6,7 +6,7 @@ program sis
    use const_idx, only : ENE, SEQT, JOBT
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp, nrepeat
    use var_state, only : xyz, tempK, kT, job
-   use var_io, only : flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
+   use var_io, only : flg_out_bp, flg_out_bpe, hdl_out, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_bp
 
    implicit none
@@ -113,9 +113,11 @@ program sis
    if (job == JOBT%DCD) then
       call job_dcd()
 
-!   else if (job == JOBT%CHECK_FORCE) then
-!      call job_check_force()
-!
+   else if (job == JOBT%CHECK_FORCE) then
+
+      write(*,*) 'calling job_check_force'
+      call job_check_force()
+
 !   else if (job == JOBT%MD) then
 !      call job_md()
 

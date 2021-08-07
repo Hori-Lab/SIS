@@ -13,6 +13,6 @@ module var_state
 
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), save :: energies(0:ENE%MAX)
-   real(PREC), save :: forces(0:ENE%MAX)
+   real(PREC), allocatable, save :: forces(:,:)
 
 end module var_state
