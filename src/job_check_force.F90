@@ -19,18 +19,14 @@ subroutine job_check_force()
       stop
    endif
 
-   write(*,*) 'Allocating xyz and forces, nmp=', nmp
    allocate(xyz(3, nmp))
    allocate(forces(3, nmp))
 
-   write(*,*) 'calling PDB done'
    call read_pdb(cfile_pdb_ini, nmp, xyz)
 
-   write(*,*) 'Loading PDB done'
-
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
-   !write(hdl_out, '(a)') '#(1)nframe  (2)Etotal  (3)Ebond   (4)Eangl   (5)Ebp   (6)Eele'
 
+   ! Slightly shift the structure to make sure it's not at the energy minimum
    do imp = 1, nmp
       do ixyz = 1, 3
          call random_number(r)
@@ -55,11 +51,11 @@ subroutine job_check_force()
          xyz(ixyz, imp) = xyz_save
       enddo
 
-      write(hdl_out, "('imp=', i4, 2x, 'f_energy', 3(1x,g10.4), 2x, 'f_force=', 3(1x,g10.4))") &
+      write(hdl_out, "('imp=', i6, 2x, 'f_energy', 3(1x,g10.4), 2x, 'f_force=', 3(1x,g10.4))") &
              imp, (f_energy(i), i = 1, 3), (forces(i, imp), i = 1, 3)
 
       diff(1:3) = f_energy(1:3) - forces(1:3, imp)
-      write(hdl_out, "('f_energy - f_force', i4, 3f10.4)") imp, (diff(i), i = 1, 3)
+      write(hdl_out, "('f_energy - f_force', i6, 3f10.4)") imp, (diff(i), i = 1, 3)
 
       if(abs(diff(1)) > small .or. abs(diff(2)) > small .or. abs(diff(3)) > small) then
          write (*, "('f_energy - f_force', 1x, i6, 3(1x,f10.4))") imp, (diff(i), i = 1, 3)

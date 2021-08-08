@@ -8,12 +8,14 @@ program sis
    use var_state, only : xyz, tempK, kT, job
    use var_io, only : flg_out_bp, flg_out_bpe, hdl_out, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_bp
+!$ use omp_lib
 
    implicit none
 
    character(CHAR_FILE_PATH) cfile_inp
 
    integer :: i, j, imp
+   integer :: nthreads
 
    character(500) :: cline
    logical :: stat
@@ -25,6 +27,12 @@ program sis
 
    write(*, '(13a,7a,9a,30a,14a,14a,6a)') '# Git commit ', VERSION_BUILD, ' (branch:', trim(VERSION_BRANCH), ') compiled on ', VERSION_DATE, ' (UTC)'
 #endif
+
+   nthreads = 1
+!$  nthreads = omp_get_max_threads()
+   if (nthreads > 1) then
+      write(*, *) 'OpenMP nthreads = ', nthreads
+   endif
 
    if (command_argument_count() == 1) then
       

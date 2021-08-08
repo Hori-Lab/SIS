@@ -10,6 +10,6 @@ subroutine force()
 
    call force_bond()
    call force_angl()
-   !call force_bp()
+   call force_bp()
 
 end subroutine force
