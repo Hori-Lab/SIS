@@ -8,7 +8,7 @@ subroutine read_input(cfilepath, stat)
    use var_io, only : iopen_hdl, &
                       flg_out_bp, flg_out_bpe, &
                       cfile_ff, cfile_dcd_in, &
-                      cfile_prefix, cfile_pdb_ini
+                      cfile_prefix, cfile_pdb_ini, cfile_fasta_in
    use var_state, only : job
    use var_top, only : nrepeat, nchains
   
@@ -85,6 +85,8 @@ subroutine read_input(cfilepath, stat)
 
       call get_value(node, "pdb_ini", cfile_pdb_ini)
 
+      call get_value(node, "fasta", cfile_fasta_in)
+
    else
       write(*,*) 'no files.in'
       stop
@@ -123,10 +125,17 @@ subroutine read_input(cfilepath, stat)
       stop
    endif
 
+
    !################# Repeat sequence #################
-   call get_value(table, "repeat", group)
-   call get_value(group, "n_repeat", nrepeat)
-   call get_value(group, "n_chain", nchains)
+   if (.not. allocated(cfile_fasta_in)) then
+      call get_value(table, "repeat", group)
+      if (associated(group)) then
+         call get_value(group, "n_repeat", nrepeat)
+         call get_value(group, "n_chain", nchains)
+      endif
+   else
+      nrepeat = 0
+   endif
 
    call table%destroy
 

@@ -16,6 +16,6 @@ module var_io
 
    character(CHAR_FILE_PATH), save :: cfile_out
    character(CHAR_FILE_PATH), save :: cfile_bp
-   character(len=:), allocatable, save :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini
+   character(len=:), allocatable, save :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini, cfile_fasta_in
 
 end module var_io

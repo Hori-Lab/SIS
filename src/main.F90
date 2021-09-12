@@ -3,18 +3,18 @@ program sis
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, SEQT, JOBT
+   use const_idx, only : ENE, SEQT, JOBT, seqt2char
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp, nrepeat
    use var_state, only : xyz, tempK, kT, job
    use var_io, only : flg_out_bp, flg_out_bpe, hdl_out, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
-                      cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_bp
+                      cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_bp, cfile_fasta_in
 !$ use omp_lib
 
    implicit none
 
    character(CHAR_FILE_PATH) cfile_inp
 
-   integer :: i, j, imp
+   integer :: i, j, k, imp
    integer :: nthreads
 
    character(500) :: cline
@@ -80,31 +80,63 @@ program sis
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   allocate(nmp_chain(nchains))
-   nmp_chain(:) = 3 * nrepeat
-   nmp = sum(nmp_chain)
-   write(*, '(a,i8)') '#Nchain: ', nchains
-   write(*, '(a,i5)') '#Nrepeat: ', nrepeat
-   write(*, '(a,i10)') '#Nnt: ', nmp
-   allocate(seq(3*nrepeat, nchains))
-   allocate(imp_chain(3*nrepeat, nchains))
-   allocate(ichain_mp(nmp))
-   imp = 0
-   do i = 1, nchains
-      do j = 1, nrepeat
-         seq(3*(j-1)+1, i) = SEQT%C
-         seq(3*(j-1)+2, i) = SEQT%A
-         seq(3*(j-1)+3, i) = SEQT%G
-         imp_chain(3*(j-1)+1, i) = imp+1
-         imp_chain(3*(j-1)+2, i) = imp+2
-         imp_chain(3*(j-1)+3, i) = imp+3
-         ichain_mp(imp+1) = i
-         ichain_mp(imp+2) = i
-         ichain_mp(imp+3) = i
-         imp = imp + 3
+   if (allocated(cfile_fasta_in)) then
+
+      write(*,*) 'reading fasta'
+      call read_fasta()
+
+   else if (nrepeat > 0) then
+
+      allocate(nmp_chain(nchains))
+      nmp_chain(:) = 3 * nrepeat
+      nmp = sum(nmp_chain)
+      write(*, '(a,i5)') '#Nrepeat: ', nrepeat
+      allocate(seq(3*nrepeat, nchains))
+      allocate(imp_chain(3*nrepeat, nchains))
+      allocate(ichain_mp(nmp))
+      imp = 0
+      do i = 1, nchains
+         do j = 1, nrepeat
+            seq(3*(j-1)+1, i) = SEQT%C
+            seq(3*(j-1)+2, i) = SEQT%A
+            seq(3*(j-1)+3, i) = SEQT%G
+            imp_chain(3*(j-1)+1, i) = imp+1
+            imp_chain(3*(j-1)+2, i) = imp+2
+            imp_chain(3*(j-1)+3, i) = imp+3
+            ichain_mp(imp+1) = i
+            ichain_mp(imp+2) = i
+            ichain_mp(imp+3) = i
+            imp = imp + 3
+         enddo
+         !write(*,'(a,141(i1))') '# ', seq(:,i)
+         !write(*,*) '# ', imp_chain(1,i), imp_chain((nrepeat-1)*3+3, i)
       enddo
-      !write(*,'(a,141(i1))') '# ', seq(:,i)
-      !write(*,*) '# ', imp_chain(1,i), imp_chain((nrepeat-1)*3+3, i)
+
+   else
+      write(6,*) 'Error: either FASTA or [repeat] is required.'
+      stop (2)
+
+   endif
+
+   write(6, '(a)') '########### System'
+   write(6, '(a,i8)') '# Nchain: ', nchains
+   write(6, '(a)') '#'
+   do i = 1, nchains
+      write(6, '(a, i4)') '# Chain ', i
+      write(6, '(a, i10)') '# Nnt: ', nmp_chain(i)
+      k = 0
+      do j = 1, nmp_chain(i)
+         write(6, '(a)', advance='no') seqt2char(seq(j,i))
+         k = k + 1
+         if (mod(k,100) == 0) then
+            write(6, *) ''
+            k = 0
+         endif
+      enddo
+      if (k /= 0) then
+         write(6, *) ''
+      endif
+      write(6, '(a)') '#'
    enddo
 
    tempK = 273.15 + 22.0
