@@ -9,7 +9,7 @@ subroutine read_input(cfilepath, stat)
                       flg_out_bp, flg_out_bpe, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
-   use var_state, only : job
+   use var_state, only : job, tempK
    use var_top, only : nrepeat, nchains
   
    implicit none
@@ -77,7 +77,6 @@ subroutine read_input(cfilepath, stat)
    call get_value(group, "in", node)
    if (associated(node)) then
       call get_value(node, "ff", cfile_ff)
-      write(*,*) 'cfile_ff', cfile_ff
 
       if (job == JOBT%DCD) then
          call get_value(node, "dcd", cfile_dcd_in)
@@ -124,6 +123,10 @@ subroutine read_input(cfilepath, stat)
       write(*,*) 'no files.out'
       stop
    endif
+
+   !################# Condition #################
+   call get_value(table, "condition", group)
+   call get_value(group, "tempK", tempK)
 
 
    !################# Repeat sequence #################

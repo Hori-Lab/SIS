@@ -42,6 +42,7 @@ program sis
    else if (command_argument_count() == 5) then
 
       job = JOBT%DCD
+      tempK = 273.15 + 22.0
       flg_out_bp = .False.
       flg_out_bpe = .True.
 
@@ -139,7 +140,6 @@ program sis
       write(6, '(a)') '#'
    enddo
 
-   tempK = 273.15 + 22.0
    kT = BOLTZ_KCAL_MOL * tempK
    write(*, '(a,f7.3)') '#T/K: ', tempK
    write(*, '(a,f7.5)') '#kT/kcal/mol: ', kT

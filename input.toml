@@ -12,3 +12,6 @@ type = "DCD"
       [files.out]
       types = ["bp", "bpe"]
       prefix = "./test"
+
+[condition]
+      tempK = 310.15
