@@ -4,7 +4,7 @@ subroutine force_bp()
    use const_phys, only : ZERO_JUDGE
    use var_state, only : xyz, kT, forces
    use var_potential
-   use var_io, only : flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP
+   use var_io, only : flg_out_bp, flg_out_bpe, KIND_OUT_BP
 
    implicit none
   

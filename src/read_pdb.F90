@@ -89,4 +89,7 @@ subroutine read_pdb(cfilepath, nmp, xyz)
    !nmp   = imp
    !nres  = ires
 
+   close(hdl)
+   iopen_hdl = iopen_hdl - 1
+
 end subroutine read_pdb

@@ -138,5 +138,8 @@ subroutine read_fasta()
       endif
 
    enddo
+
+   close(hdl)
+   iopen_hdl = iopen_hdl - 1
    
 end subroutine read_fasta

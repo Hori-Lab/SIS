@@ -14,9 +14,6 @@ subroutine read_force_field(cfilepath)
 
    integer :: hdl
 
-   iopen_hdl = iopen_hdl + 1
-   hdl = iopen_hdl
-
    bond_k  = INVALID_VALUE
    bond_r0 = INVALID_VALUE
    angl_k  = INVALID_VALUE
@@ -33,6 +30,9 @@ subroutine read_force_field(cfilepath)
    Ubp_dihd_phi1 = INVALID_VALUE
    Ubp_dihd_phi2 = INVALID_VALUE
    Ubp_min_loop = -1
+
+   iopen_hdl = iopen_hdl + 1
+   hdl = iopen_hdl
 
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 

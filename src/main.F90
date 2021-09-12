@@ -6,13 +6,13 @@ program sis
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp, nrepeat
    use var_state, only : xyz, tempK, kT, job
-   use var_io, only : flg_out_bp, flg_out_bpe, hdl_out, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
-                      cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_bp, cfile_fasta_in
+   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
+                      cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in
 !$ use omp_lib
 
    implicit none
 
-   character(CHAR_FILE_PATH) cfile_inp
+   character(CHAR_FILE_PATH) :: cfile_inp, cfile_bp
 
    integer :: i, j, k, imp
    integer :: nthreads
@@ -63,8 +63,11 @@ program sis
       stop (2) 
    end if
 
-   write(*,*) 'Read force-field file: '//cfile_ff
-   call read_force_field(cfile_ff)
+   !! Load force field
+   write(*,*) 'Read force-field file: '//trim(cfile_ff)
+   call read_force_field(trim(cfile_ff))
+
+   !! Output files
    cfile_out = trim(cfile_prefix) // '.out'
 
    if (flg_out_bp) then
@@ -72,6 +75,13 @@ program sis
       open(hdl_bp, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
       write(hdl_bp) int(KIND_OUT_BP,kind=4)
       write(hdl_bp) int(KIND_OUT_BPE,kind=4)
+   endif
+
+   if (flg_out_bpall) then
+      cfile_bp = trim(cfile_prefix) // '.bpall'
+      open(hdl_bpall, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
+      write(hdl_bpall) int(KIND_OUT_BP,kind=4)
+      write(hdl_bpall) int(KIND_OUT_BPE,kind=4)
    endif
 
    if (flg_out_bpe) then

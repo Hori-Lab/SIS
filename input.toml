@@ -10,7 +10,7 @@ type = "DCD"
       fasta = "./beta-globin.fasta"
 
       [files.out]
-      types = ["bp", "bpe"]
+      types = ["bp", "bpe", "bpall"]
       prefix = "./test"
 
 [condition]

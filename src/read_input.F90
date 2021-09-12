@@ -6,7 +6,7 @@ subroutine read_input(cfilepath, stat)
    use const_phys
    use const_idx
    use var_io, only : iopen_hdl, &
-                      flg_out_bp, flg_out_bpe, &
+                      flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
    use var_state, only : job, tempK
@@ -59,6 +59,9 @@ subroutine read_input(cfilepath, stat)
    else if (cline == 'CHECK_FORCE') then
       job = JOBT%CHECK_FORCE
 
+   else if (cline == 'MD') then
+      job = JOBT%MD
+
    else
       write(*,*) 'Unknown job type: '//trim(cline)
       stat = .False.
@@ -110,6 +113,8 @@ subroutine read_input(cfilepath, stat)
 
          if (cline == "bp") then
             flg_out_bp = .True.
+         else if (cline == "bpall") then
+            flg_out_bpall = .True.
          else if (cline == "bpe") then
             flg_out_bpe = .True.
          else

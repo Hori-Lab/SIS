@@ -4,7 +4,7 @@ subroutine energy_bp(Ebp)
    use const_phys, only : ZERO_JUDGE
    use var_state, only : xyz, kT
    use var_potential
-   use var_io, only : flg_out_bp, flg_out_bpe, hdl_bp, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
+   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
   
@@ -64,14 +64,29 @@ subroutine energy_bp(Ebp)
          if (e_bp(ibp) < - nhb * kT) then
             imp = bp_mp(1, ibp)
             jmp = bp_mp(2, ibp)
-            !write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP)
             write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), real(e_bp(ibp), kind=KIND_OUT_BPE)
          endif
       enddo
 
-      !write(hdl_bp) int(0,kind=KIND_OUT_BP)
       write(hdl_bp) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
    endif
+
+   if (flg_out_bpall) then
+
+      do ibp = 1, nbp
+
+         nhb = bp_mp(3, ibp)
+
+         if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
+            imp = bp_mp(1, ibp)
+            jmp = bp_mp(2, ibp)
+            write(hdl_bpall) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), real(e_bp(ibp), kind=KIND_OUT_BPE)
+         endif
+      enddo
+
+      write(hdl_bpall) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
+   endif
+
 
    if (flg_out_bpe) then
 
