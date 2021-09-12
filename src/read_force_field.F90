@@ -32,6 +32,7 @@ subroutine read_force_field(cfilepath)
    Ubp_dihd_k = INVALID_VALUE
    Ubp_dihd_phi1 = INVALID_VALUE
    Ubp_dihd_phi2 = INVALID_VALUE
+   Ubp_min_loop = -1
 
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
@@ -62,6 +63,7 @@ subroutine read_force_field(cfilepath)
       if (cline(1:10) == 'Ubp_dihd_k') read(cline(11:), *) Ubp_dihd_k
       if (cline(1:13) == 'Ubp_dihd_phi1') read(cline(14:), *) Ubp_dihd_phi1
       if (cline(1:13) == 'Ubp_dihd_phi2') read(cline(14:), *) Ubp_dihd_phi2
+      if (cline(1:12) == 'Ubp_min_loop') read(cline(13:), *) Ubp_min_loop
 
    enddo
 
@@ -151,6 +153,12 @@ subroutine read_force_field(cfilepath)
       write(*,*) "INVALID Ubp_dihd_phi2 in the force field file"
    else
       write(*,*) "Ubp_dihd_phi2", Ubp_dihd_phi2
+   endif
+
+   if (Ubp_min_loop < 0) then
+      write(*,*) "INVALID Ubp_min_loop in the force field file"
+   else
+      write(*,*) "Ubp_min_loop", Ubp_dihd_phi2
    endif
 
 

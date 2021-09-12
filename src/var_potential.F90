@@ -26,6 +26,7 @@ module var_potential
    real(PREC), save :: Ubp_dihd_k  ! = 0.5
    real(PREC), save :: Ubp_dihd_phi1  ! = 1.8326
    real(PREC), save :: Ubp_dihd_phi2  ! = 1.1345
+   integer,    save :: Ubp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
 
    integer, save :: nbp
    integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
