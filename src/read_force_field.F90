@@ -158,7 +158,7 @@ subroutine read_force_field(cfilepath)
    if (Ubp_min_loop < 0) then
       write(*,*) "INVALID Ubp_min_loop in the force field file"
    else
-      write(*,*) "Ubp_min_loop", Ubp_dihd_phi2
+      write(*,*) "Ubp_min_loop", Ubp_min_loop
    endif
 
 
