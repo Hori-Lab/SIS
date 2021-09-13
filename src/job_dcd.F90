@@ -30,7 +30,7 @@ subroutine job_dcd()
    endif
 
    if (nmp_dcd /= nmp) then
-      write(*,*) "nmp = ", nmp, " is inconsistent with nmp_chain = ", nmp_chain, " and nchains = ", nchains
+      write(*,*) "Error: nmp_dcd /= nmp. nmp = ", nmp, ", nmp_dcd = ", nmp_dcd
       stop (2) 
    endif
 

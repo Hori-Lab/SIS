@@ -151,8 +151,8 @@ program sis
    enddo
 
    kT = BOLTZ_KCAL_MOL * tempK
-   write(*, '(a,f7.3)') '#T/K: ', tempK
-   write(*, '(a,f7.5)') '#kT/kcal/mol: ', kT
+   write(6, '(a,f7.3)') '#T/K: ', tempK
+   write(6, '(a,f7.5)') '#kT/kcal/mol: ', kT
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -161,15 +161,18 @@ program sis
    !call read_sisinfo(cfile_sis)
 
    if (job == JOBT%DCD) then
+      write(6,*) 'Starting job_dcd'
       call job_dcd()
 
    else if (job == JOBT%CHECK_FORCE) then
 
-      write(*,*) 'calling job_check_force'
+      write(6,*) 'Starting job_check_force'
       call job_check_force()
 
-!   else if (job == JOBT%MD) then
-!      call job_md()
+   else if (job == JOBT%MD) then
+      continue
+      !write(6,*) 'Starting job_md'
+      !call job_md()
 
    endif
 
