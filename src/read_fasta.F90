@@ -26,7 +26,7 @@ subroutine read_fasta()
    ! Count the number of chains
    nchains = 0
    do
-      read (hdl, *, iostat = istat) cline
+      read (hdl, '(A)', iostat = istat) cline
 
       if (istat < 0) then
          exit
@@ -50,7 +50,7 @@ subroutine read_fasta()
    ichain = 0
    flg_reading = .False.
    do
-      read (hdl, *, iostat = istat) cline
+      read (hdl, '(A)', iostat = istat) cline
 
       if (istat < 0) then
          exit
@@ -104,7 +104,7 @@ subroutine read_fasta()
    imp = 0
    flg_reading = .False.
    do
-      read (hdl, *, iostat = istat) cline
+      read (hdl, '(A)', iostat = istat) cline
 
       if (istat < 0) then
          exit
