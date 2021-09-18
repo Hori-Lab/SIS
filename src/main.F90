@@ -158,6 +158,7 @@ program sis
 
    call list_local()
    call list_bp()
+   call list_exv()
    !call read_sisinfo(cfile_sis)
 
    if (job == JOBT%DCD) then

@@ -31,4 +31,10 @@ module var_potential
    integer, save :: nbp
    integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
 
+   real(PREC), save :: wca_sigma  ! = 10.0
+   real(PREC), save :: wca_eps    ! = 2.0
+
+   integer, save :: nwca
+   integer, allocatable, save :: wca_mp(:,:)  ! 1: imp1, 2: imp2
+
 end module var_potential

@@ -37,7 +37,7 @@ subroutine job_dcd()
    allocate(xyz(3, nmp))
 
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
-   write(hdl_out, '(a)') '#(1)nframe  (2)Etotal  (3)Ebond   (4)Eangl   (5)Ebp   (6)Eele'
+   write(hdl_out, '(a)') '#(1)nframe  (2)Etotal  (3)Ebond   (4)Eangl   (5)Ebp   (6)Eexv'
 
    nframe = 0
    do
