@@ -19,9 +19,9 @@ subroutine read_input(cfilepath, stat)
 
 
    !======= TOML
-    type(toml_table), allocatable :: table
-    type(toml_table), pointer :: group, node
-    type(toml_array), pointer :: array
+   type(toml_table), allocatable :: table
+   type(toml_table), pointer :: group, node
+   type(toml_array), pointer :: array
    !======= 
 
    integer :: i

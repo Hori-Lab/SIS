@@ -26,29 +26,29 @@ subroutine energy_bp(Ebp)
       
       d = mp_distance(imp, jmp)
 
-      if (d >= Ubp_cutoff) cycle
+      if (d >= bp_cutoff) cycle
       
-      u = Ubp_bond_k * (d - Ubp_bond_r)**2
+      u = bp_bond_k * (d - bp_bond_r)**2
 
       theta = mp_angle(imp, jmp, jmp-1)
-      u = u + Ubp_angl_k * (theta - Ubp_angl_theta1)**2
+      u = u + bp_angl_k * (theta - bp_angl_theta1)**2
 
       theta = mp_angle(imp-1, imp, jmp)
-      u = u + Ubp_angl_k * (theta - Ubp_angl_theta1)**2
+      u = u + bp_angl_k * (theta - bp_angl_theta1)**2
 
       theta = mp_angle(imp, jmp, jmp+1)
-      u = u + Ubp_angl_k * (theta - Ubp_angl_theta2)**2
+      u = u + bp_angl_k * (theta - bp_angl_theta2)**2
 
       theta = mp_angle(imp+1, imp, jmp)
-      u = u + Ubp_angl_k * (theta - Ubp_angl_theta2)**2
+      u = u + bp_angl_k * (theta - bp_angl_theta2)**2
 
       phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
-      u = u + Ubp_dihd_k * (1.0 + cos(phi + Ubp_dihd_phi1))
+      u = u + bp_dihd_k * (1.0 + cos(phi + bp_dihd_phi1))
 
       phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
-      u = u + Ubp_dihd_k * (1.0 + cos(phi + Ubp_dihd_phi2))
+      u = u + bp_dihd_k * (1.0 + cos(phi + bp_dihd_phi2))
 
-      e_bp(ibp) = nhb * Ubp0 * exp(-u)
+      e_bp(ibp) = nhb * bp_U0 * exp(-u)
 
    enddo
    !$omp end parallel do

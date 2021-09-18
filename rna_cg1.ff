@@ -1,15 +1,28 @@
-bond_k  15.0
-bond_r0  5.9
-angl_k  10.0
-angl_t0  2.618
-Ubp_cutoff  18.0
-Ubp0  -1.66666666667
-Ubp_bond_k  3.0
-Ubp_bond_r  13.8
-Ubp_angl_k  1.5
-Ubp_angl_theta1  1.8326
-Ubp_angl_theta2  0.9425
-Ubp_dihd_k  0.5
-Ubp_dihd_phi1  1.8326
-Ubp_dihd_phi2  1.1345
-Ubp_min_loop 4
+[potential]
+    [potential.bond]
+        k = 15.0
+        r0 = 5.9
+
+    [potential.angle]
+        k = 10.0
+        a0 = 2.618
+
+    [potential.basepair]
+        min_loop = 4
+        cutoff = 18.0
+        U0 = -1.66666666667
+
+        bond_k = 3.0
+        bond_r = 13.8
+
+        angl_k = 1.5
+        angl_theta1 = 1.8326
+        angl_theta2 = 0.9425
+
+        dihd_k = 0.5
+        dihd_phi1 = 1.8326
+        dihd_phi2 = 1.1345
+
+    [potential.wca]
+        sigma = 10.0
+        epsilon = 2.0

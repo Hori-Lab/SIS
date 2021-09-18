@@ -3,7 +3,7 @@ subroutine list_bp()
    use const
    use const_idx, only : SEQT
    use var_top, only : nmp_chain, seq, imp_chain, nchains
-   use var_potential, only : nbp, bp_mp, Ubp_min_loop
+   use var_potential, only : nbp, bp_mp, bp_min_loop
 
    implicit none
   
@@ -24,7 +24,7 @@ subroutine list_bp()
                imp = imp_chain(i, ichain)
     
                if (ichain == jchain) then
-                  j_start = i + Ubp_min_loop + 1
+                  j_start = i + bp_min_loop + 1
                else
                   j_start = 2
                endif

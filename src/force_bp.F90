@@ -42,7 +42,7 @@ subroutine force_bp()
       d1212 = dot_product(v12,v12)
       a12 = sqrt(d1212)
 
-      if (a12 >= Ubp_cutoff) cycle
+      if (a12 >= bp_cutoff) cycle
 
       imp3 = imp1 - 1
       imp4 = imp2 - 1
@@ -50,10 +50,10 @@ subroutine force_bp()
       imp6 = imp2 + 1
 
       !===== Distance =====
-      d = a12 - Ubp_bond_r
+      d = a12 - bp_bond_r
 
-      u = Ubp_bond_k * d**2
-      f_i(:) = (2.0e0_PREC * Ubp_bond_k * d / a12) * v12(:)
+      u = bp_bond_k * d**2
+      f_i(:) = (2.0e0_PREC * bp_bond_k * d / a12) * v12(:)
       f_bp(:, 1, ibp) = + f_i(:)
       f_bp(:, 2, ibp) = - f_i(:)
 
@@ -77,9 +77,9 @@ subroutine force_bp()
 
       !===== Angle of 3-1=2 (imp-1 -- imp -- jmp) =====
       cosine = d1213 / (sqrt(d1313) * a12)
-      d = acos(cosine) - Ubp_angl_theta1
-      pre = 2.0e0_PREC * Ubp_angl_k * d / sqrt(d1313*d1212 - d1213**2)
-      u = u + Ubp_angl_k * d**2
+      d = acos(cosine) - bp_angl_theta1
+      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1313*d1212 - d1213**2)
+      u = u + bp_angl_k * d**2
 
       f_i(:) = pre * (v12(:) - (d1213 / d1313 * v13(:)))
       f_k(:) = pre * (v13(:) - (d1213over1212 * v12(:)))
@@ -90,9 +90,9 @@ subroutine force_bp()
 
       !===== Angle of 1=2-4 (imp -- jmp -- jmp-1) =====
       cosine = d1242 / (a12 * sqrt(d4242))
-      d = acos(cosine) - Ubp_angl_theta1
-      u = u + Ubp_angl_k * d**2
-      pre = 2.0e0_PREC * Ubp_angl_k * d / sqrt(d1212*d4242 - d1242**2)
+      d = acos(cosine) - bp_angl_theta1
+      u = u + bp_angl_k * d**2
+      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1212*d4242 - d1242**2)
 
       f_i(:) = - pre * (v42(:) - (d1242over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1242 / d4242 * v42(:)))
@@ -103,9 +103,9 @@ subroutine force_bp()
 
       !===== Angle of 5-1=2 (imp+1 -- imp -- jmp) =====
       cosine = d1215 / (sqrt(d1515) * a12)
-      d = acos(cosine) - Ubp_angl_theta2
-      u = u + Ubp_angl_k * d**2
-      pre = 2.0e0_PREC * Ubp_angl_k * d / sqrt(d1515*d1212 - d1215**2)
+      d = acos(cosine) - bp_angl_theta2
+      u = u + bp_angl_k * d**2
+      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1515*d1212 - d1215**2)
 
       f_i(:) = pre * (v12(:) - (d1215 / d1515 * v15(:)))
       f_k(:) = pre * (v15(:) - (d1215over1212 * v12(:)))
@@ -116,9 +116,9 @@ subroutine force_bp()
 
       !===== Angle of 1=2-6 (imp -- jmp -- jmp+1) =====
       cosine = d1262 / (a12 * sqrt(d6262))
-      d = acos(cosine) - Ubp_angl_theta2
-      u = u + Ubp_angl_k * d**2
-      pre = 2.0e0_PREC * Ubp_angl_k * d / sqrt(d1212*d6262 - d1262**2)
+      d = acos(cosine) - bp_angl_theta2
+      u = u + bp_angl_k * d**2
+      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1212*d6262 - d1262**2)
 
       f_i(:) = - pre * (v62(:) - (d1262over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1262 / d6262 * v62(:)))
@@ -136,10 +136,10 @@ subroutine force_bp()
       n(3) = v12(1)*v13(2) - v12(2)*v13(1)
 
       dih = atan2(dot_product(v42,n)*a12, dot_product(m,n))
-      d = dih + Ubp_dihd_phi1
-      u = u + Ubp_dihd_k * (1.0 + cos(d))
+      d = dih + bp_dihd_phi1
+      u = u + bp_dihd_k * (1.0 + cos(d))
 
-      pre = -Ubp_dihd_k * sin(d) * a12
+      pre = -bp_dihd_k * sin(d) * a12
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
@@ -159,10 +159,10 @@ subroutine force_bp()
       n(3) = v12(1)*v15(2) - v12(2)*v15(1)
 
       dih = atan2(dot_product(v62,n)*a12, dot_product(m,n))
-      d = dih + Ubp_dihd_phi2
-      u = u + Ubp_dihd_k * (1.0 + cos(d))
+      d = dih + bp_dihd_phi2
+      u = u + bp_dihd_k * (1.0 + cos(d))
 
-      pre = -Ubp_dihd_k * sin(d) * a12
+      pre = -bp_dihd_k * sin(d) * a12
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
@@ -174,7 +174,7 @@ subroutine force_bp()
       f_bp(:, 5, ibp) = f_bp(:, 5, ibp) + f_l(:)
 
       !===== Total =====
-      f_bp(:, :, ibp) = bp_mp(3, ibp) * Ubp0 * exp(-u) * f_bp(:, :, ibp)
+      f_bp(:, :, ibp) = bp_mp(3, ibp) * bp_U0 * exp(-u) * f_bp(:, :, ibp)
 
    enddo
    !$omp end parallel do

@@ -16,17 +16,17 @@ module var_potential
    real(PREC), save :: angl_k  ! = 10.0_PREC
    real(PREC), save :: angl_t0  ! = 2.618_PREC
 
-   real(PREC), save :: Ubp_cutoff  ! = 18.0
-   real(PREC), save :: Ubp0  ! = - 5.0 / 3.0
-   real(PREC), save :: Ubp_bond_k  ! = 3.0
-   real(PREC), save :: Ubp_bond_r  ! = 13.8
-   real(PREC), save :: Ubp_angl_k  ! = 1.5
-   real(PREC), save :: Ubp_angl_theta1  ! = 1.8326
-   real(PREC), save :: Ubp_angl_theta2  ! = 0.9425
-   real(PREC), save :: Ubp_dihd_k  ! = 0.5
-   real(PREC), save :: Ubp_dihd_phi1  ! = 1.8326
-   real(PREC), save :: Ubp_dihd_phi2  ! = 1.1345
-   integer,    save :: Ubp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
+   integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
+   real(PREC), save :: bp_cutoff  ! = 18.0
+   real(PREC), save :: bp_U0  ! = - 5.0 / 3.0
+   real(PREC), save :: bp_bond_k  ! = 3.0
+   real(PREC), save :: bp_bond_r  ! = 13.8
+   real(PREC), save :: bp_angl_k  ! = 1.5
+   real(PREC), save :: bp_angl_theta1  ! = 1.8326
+   real(PREC), save :: bp_angl_theta2  ! = 0.9425
+   real(PREC), save :: bp_dihd_k  ! = 0.5
+   real(PREC), save :: bp_dihd_phi1  ! = 1.8326
+   real(PREC), save :: bp_dihd_phi2  ! = 1.1345
 
    integer, save :: nbp
    integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
