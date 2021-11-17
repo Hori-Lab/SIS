@@ -14,7 +14,7 @@ subroutine read_input(cfilepath, stat)
   
    implicit none
 
-   character(len=CHAR_FILE_PATH), intent(in) :: cfilepath
+   character(len=*), intent(in) :: cfilepath
    logical, intent(out) :: stat
 
 

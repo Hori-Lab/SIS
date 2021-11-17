@@ -1,18 +1,19 @@
 subroutine force_bp()
 
-   use const
-   use const_phys, only : ZERO_JUDGE
+   use const, only : PREC
+   !use const_phys, only : ZERO_JUDGE
    use var_state, only : xyz, kT, forces
-   use var_potential
+   use var_potential, only : nbp, bp_cutoff, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
+                             bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2
+   use var_potential, only : nbp
    use var_io, only : flg_out_bp, flg_out_bpe, KIND_OUT_BP
 
    implicit none
   
-   integer :: ibp, imp, jmp
+   integer :: ibp
    integer :: imp1, imp2, imp3, imp4, imp5, imp6
    real(PREC) :: u, pre
    real(PREC) :: d, cosine, dih
-   real(PREC) :: f(3,6)
    real(PREC) :: f_i(3), f_j(3), f_k(3), f_l(3)
    real(PREC) :: v12(3), v13(3), v42(3), v15(3), v62(3)
    real(PREC) :: a12
@@ -37,7 +38,7 @@ subroutine force_bp()
 
       imp1 = bp_mp(1, ibp)
       imp2 = bp_mp(2, ibp)
-      
+
       v12(:) = pbc_vec(xyz(:,imp1) - xyz(:,imp2))
       d1212 = dot_product(v12,v12)
       a12 = sqrt(d1212)
@@ -199,6 +200,7 @@ contains
 
    function pbc_vec(v) result (new_vec)
       
+      use const, only : PREC
       use var_top, only : flg_pbc, pbc_box, pbc_box_half
 
       real(PREC) :: new_vec(3)

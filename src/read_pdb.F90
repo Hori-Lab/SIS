@@ -6,7 +6,7 @@ subroutine read_pdb(cfilepath, nmp, xyz)
 
    implicit none
 
-   character(len=CHAR_FILE_PATH), intent(in) :: cfilepath
+   character(len=*), intent(in) :: cfilepath
    integer, intent(in) :: nmp
    real(PREC), intent(out) :: xyz(3, nmp)
 

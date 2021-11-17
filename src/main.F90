@@ -12,7 +12,7 @@ program sis
 
    implicit none
 
-   character(CHAR_FILE_PATH) :: cfile_inp, cfile_bp
+   character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_bp
 
    integer :: i, j, k, imp
    integer :: nthreads
@@ -64,8 +64,7 @@ program sis
    end if
 
    !! Load force field
-   write(*,*) 'Read force-field file: '//trim(cfile_ff)
-   call read_force_field(trim(cfile_ff))
+   call read_force_field()
 
    !! Output files
    cfile_out = trim(cfile_prefix) // '.out'

@@ -6,7 +6,7 @@ subroutine read_sisinfo(cfilepath)
   
    implicit none
 
-   character(len=CHAR_FILE_PATH), intent(in) :: cfilepath
+   character(len=*), intent(in) :: cfilepath
   
    character(len=CHAR_FILE_LINE) :: cline
    integer :: istat

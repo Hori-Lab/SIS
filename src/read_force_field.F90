@@ -1,11 +1,10 @@
-subroutine read_force_field(cfilepath)
+subroutine read_force_field()
 
    use tomlf
       
-   use const, only : CHAR_FILE_PATH
    use const_phys, only : INVALID_VALUE, INVALID_JUDGE
    use var_potential
-   use var_io, only : iopen_hdl
+   use var_io, only : iopen_hdl, cfile_ff
   
    implicit none
   
@@ -13,7 +12,6 @@ subroutine read_force_field(cfilepath)
    integer :: hdl
    real(PREC) :: temp
 
-   character(len=CHAR_FILE_PATH), intent(in) :: cfilepath
    character(len=:), allocatable :: cline
 
    !======= TOML
@@ -22,12 +20,14 @@ subroutine read_force_field(cfilepath)
    !type(toml_array), pointer :: array
    !======= 
 
+   write(*,*) 'Read force-field file: '//cfile_ff
+
    call set_invalid()
 
    iopen_hdl = iopen_hdl + 1
    hdl = iopen_hdl
 
-   open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
+   open(hdl, file=cfile_ff, status='old', action='read', iostat=istat)
 
    call toml_parse(table, hdl)
 
@@ -93,6 +93,8 @@ subroutine read_force_field(cfilepath)
    endif
 
    call check()
+
+   write(*,*) 'Done: read force-field file'
 
 contains
 
