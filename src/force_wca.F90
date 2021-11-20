@@ -1,41 +1,44 @@
-subroutine energy_wca(Ewca)
+subroutine force_wca()
 
-   use const
-   use var_state, only : xyz
+   use const, only : PREC
+   use var_state, only : xyz, forces
    use var_potential, only : wca_sigma, wca_eps, wca_mp, nwca
 
    implicit none
   
-   real(PREC), intent(inout) :: Ewca
-
    integer :: iwca, imp1, imp2
-   real(PREC) :: d
-   real(PREC) :: e_wca
+   real(PREC) :: v12(3), d2, for(3)
+   real(PREC) :: wca_sigma_2, coef
 
-   e_wca = 0.0e0_PREC
+   wca_sigma_2 = wca_sigma**2
+   coef = 12.0e0_PREC * wca_eps / wca_sigma_2
 
-   !$omp parallel do private(imp1,imp2,d) reduction(+:e_wca)
+   !$omp parallel do private(imp1,imp2,v12,d2,for)
    do iwca = 1, nwca
 
       imp1 = wca_mp(1, iwca)
       imp2 = wca_mp(2, iwca)
+
+      v12(:) = pbc_vec(xyz(:,imp1) - xyz(:,imp2))
       
-      d = mp_distance(imp1, imp2)
+      d2 = dot_product(v12, v12)
 
-      if (d >= wca_sigma) cycle
+      if (d2 >= wca_sigma_2) cycle
 
-      d = wca_sigma / d
-      e_wca = e_wca + wca_eps * (d**12 - 2 * d**6 + 1.0)
+      d2 = wca_sigma_2 / d2
 
+      for(:) = coef * (d2**7 - d2**4) * v12(:)
+
+      forces(:, imp1) = forces(:, imp1) + for(:)
+      forces(:, imp2) = forces(:, imp2) - for(:)
    enddo
    !$omp end parallel do
-
-   Ewca = e_wca
 
 contains
 
    function pbc_vec(v) result (new_vec)
       
+      use const, only : PREC
       use var_top, only : flg_pbc, pbc_box, pbc_box_half
 
       real(PREC) :: new_vec(3)
@@ -63,13 +66,4 @@ contains
 
    end function pbc_vec
 
-   function mp_distance(imp1, imp2) result(d)
-
-      real(PREC) :: d
-      integer, intent(in) :: imp1, imp2
-
-      d = norm2( pbc_vec(xyz(:,imp1) - xyz(:, imp2)) )
-
-   endfunction mp_distance
-
-end subroutine energy_wca
+end subroutine force_wca

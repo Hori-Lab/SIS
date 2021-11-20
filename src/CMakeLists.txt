@@ -10,6 +10,7 @@ add_executable(${SIS_EXE}
     energy_wca.F90
     force.F90
     force_bond.F90 force_angl.F90 force_bp.F90
+    force_wca.F90
     job_dcd.F90 job_check_force.F90
     main.F90
 )

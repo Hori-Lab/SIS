@@ -1,4 +1,4 @@
-subroutine force_bond(Ebd)
+subroutine force_bond()
       
    use const
    use var_state, only : xyz, forces
@@ -6,8 +6,6 @@ subroutine force_bond(Ebd)
   
    implicit none
   
-   real(PREC), intent(inout) :: Ebd
-
    integer :: ibd, imp1, imp2
    real(PREC) :: v(3), d, delta, f(3)
 
