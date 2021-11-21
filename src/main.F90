@@ -63,8 +63,18 @@ program sis
       stop (2) 
    end if
 
+   if (.not. stat) then
+      write(6,*) 'Error in reading input file'
+      stop (2)
+   endif
+
    !! Load force field
-   call read_force_field()
+   call read_force_field(stat)
+   if (.not. stat) then
+      write(6,*) 'Error in reading input file'
+      stop (2)
+   endif
+
 
    !! Output files
    cfile_out = trim(cfile_prefix) // '.out'
@@ -171,8 +181,8 @@ program sis
 
    else if (job == JOBT%MD) then
       continue
-      !write(6,*) 'Starting job_md'
-      !call job_md()
+      write(6,*) 'Starting job_md'
+      call job_md()
 
    endif
 

@@ -31,6 +31,7 @@ module dcd
       procedure :: read_header => read_header
       procedure :: skip_header => skip_header
       procedure :: copy_header => copy_header
+      procedure :: write_header => write_header
       procedure :: read_nmp => read_nmp
       procedure :: read_onestep => read_onestep
       procedure :: write_onestep => write_onestep
@@ -111,7 +112,7 @@ module dcd
       self%hdl = handle
       self%filepath = filepath
 
-      open(self%hdl, file = self%filepath, status = 'new', action = 'write', iostat=iopen_status, &
+      open(self%hdl, file = self%filepath, status = 'replace', action = 'write', iostat=iopen_status, &
            form = 'unformatted', access = 'stream')
       if(iopen_status > 0) then 
          write(*,*) 'Error: cannot open the file: ' // trim(filepath)
@@ -282,7 +283,51 @@ module dcd
       flush(other%hdl)
     
    end subroutine copy_header
-   
+
+   subroutine write_header(self, natom)
+      implicit none
+
+      class(file_dcd), intent(inout) :: self
+      integer, intent(in) :: natom
+
+      integer :: i
+      integer :: ntitle, nblock_size
+      integer, parameter :: idummy = 0
+      character(4), parameter :: ctype = 'CORD'
+      character(80) :: title
+
+      ! ---------------------------------------------------------------------
+      rewind(self%hdl)
+
+      ! copy
+      nblock_size = 84
+      write(self%hdl) nblock_size
+      write(self%hdl) ctype
+      do i = 1, 20
+         write(self%hdl) idummy
+      enddo
+      write(self%hdl) nblock_size
+
+      ntitle = 1
+      nblock_size = 4 + 80 * ntitle
+      write(self%hdl) nblock_size
+      write(self%hdl) ntitle
+      title(1:80) = ' '
+      do i = 1, ntitle
+        write(self%hdl) title
+      enddo
+      write(self%hdl) nblock_size
+
+      nblock_size = 4
+      write(self%hdl) nblock_size
+      write(self%hdl) natom
+      write(self%hdl) nblock_size
+
+      self%flg_header_read = .True.
+      flush(self%hdl)
+
+   end subroutine write_header
+
    subroutine read_nmp(self, nmp, istat)
     
       implicit none

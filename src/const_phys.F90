@@ -2,6 +2,7 @@ module const_phys
 
   use const
 
+  real(PREC), parameter :: PI = 3.141592653589793238462643383279
   real(PREC), parameter :: EPS0 = 8.8541878128             ! Electric constant [F/m]
   real(PREC), parameter :: ELE  = 1.602176634e-19_PREC     ! Elementary charge [C]
   real(PREC), parameter :: BOLTZ_J = 1.380649e-23_PREC     ! Boltzmann constant [J/K]

@@ -4,13 +4,14 @@ subroutine read_input(cfilepath, stat)
 
    use const
    use const_phys
-   use const_idx
+   use const_idx, only : JOBT, INTGRT
    use var_io, only : iopen_hdl, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
-   use var_state, only : job, tempK
-   use var_top, only : nrepeat, nchains
+   use var_state, only : job, tempK, viscosity_Pas, &
+                         nstep, dt, nstep_save
+   use var_top, only : nrepeat, nchains, pbc_box, pbc_box_half, flg_pbc
   
    implicit none
 
@@ -27,12 +28,14 @@ subroutine read_input(cfilepath, stat)
    integer :: i
    integer :: istat
    integer :: hdl
-   !character(CHAR_FILE_LINE) :: cline
    character(len=:), allocatable :: cline
+
+   stat = .False.
 
    iopen_hdl = iopen_hdl + 1
    hdl = iopen_hdl
 
+   write(*,*) "Reading input file: ", trim(cfilePath)
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
    call toml_parse(table, hdl)
@@ -41,12 +44,11 @@ subroutine read_input(cfilepath, stat)
    iopen_hdl = iopen_hdl - 1
 
    if (.not. allocated(table)) then
-      stat = .False.
       return
    endif
 
    call get_value(table, "title", cline)
-   write(*,*) cline
+   write(*,*) '# title: ', trim(cline)
 
    !################# job #################
    call get_value(table, "job", group)
@@ -63,17 +65,16 @@ subroutine read_input(cfilepath, stat)
       job = JOBT%MD
 
    else
-      write(*,*) 'Unknown job type: '//trim(cline)
-      stat = .False.
+      write(*,*) 'Error: Unknown job type, '//trim(cline)
       return
    endif
+   write(*,*) '# job type: ', trim(cline)
 
    !################# input files #################
    call get_value(table, "files", group)
 
    if (.not. associated(group)) then
-      write(*,*) 'no files gorup in input'
-      stat = .False.
+      write(*,*) 'Error in input file: no files gorup in input.'
       return
    endif
 
@@ -90,8 +91,8 @@ subroutine read_input(cfilepath, stat)
       call get_value(node, "fasta", cfile_fasta_in)
 
    else
-      write(*,*) 'no files.in'
-      stop
+      write(*,*) 'Error in input file: no files.in.'
+      return
    endif
 
    !################# output files #################
@@ -118,21 +119,20 @@ subroutine read_input(cfilepath, stat)
          else if (cline == "bpe") then
             flg_out_bpe = .True.
          else
-            write(*,*) 'Unknown output type: '//trim(cline)
-            stat = .False.
+            write(*,*) 'Error in input file: Unknown output type, '//trim(cline)
             return
          endif
       enddo
 
    else
-      write(*,*) 'no files.out'
-      stop
+      write(*,*) 'Error in input file: no files.out.'
+      return
    endif
 
    !################# Condition #################
    call get_value(table, "condition", group)
    call get_value(group, "tempK", tempK)
-
+   write(*,*) '# tempK: ', tempK
 
    !################# Repeat sequence #################
    if (.not. allocated(cfile_fasta_in)) then
@@ -140,13 +140,60 @@ subroutine read_input(cfilepath, stat)
       if (associated(group)) then
          call get_value(group, "n_repeat", nrepeat)
          call get_value(group, "n_chain", nchains)
+         write(*,*) '# repeat n_repeat: ', nrepeat
+         write(*,*) '# repeat n_chains: ', nchains
       endif
    else
       nrepeat = 0
    endif
 
+   !################# MD #################
+   if (job == JOBT%MD) then
+      call get_value(table, "MD", group)
+
+      if (associated(group)) then 
+         call get_value(group, "integrator", cline)
+         if (cline == 'GJF-2GJ') then
+            job = INTGRT%LD_GJF2GJ
+         else
+            write(*,*) 'Error: Unknown integrator type, '//trim(cline)
+            return
+         endif
+         write(*,*) '# MD integrator: ', trim(cline)
+
+         call get_value(group, "viscosity_Pas", viscosity_Pas)
+         call get_value(group, "dt", dt)
+         call get_value(group, "nstep", nstep)
+         call get_value(group, "nstep_save", nstep_save)
+         write(*,*) '# MD viscosity_Pas: ', viscosity_Pas
+         write(*,*) '# MD dt: ', dt
+         write(*,*) '# MD nstep: ', nstep
+         write(*,*) '# MD nstep_save: ', nstep_save
+
+      else
+         write(*,*) 'Error: [MD] field required.'
+         return
+      endif
+   endif
+
+   !################# box #################
+   call get_value(table, "PBC_box", group)
+   if (associated(group)) then 
+      flg_pbc = .True.
+      call get_value(group, "x", pbc_box(1))
+      call get_value(group, "y", pbc_box(2))
+      call get_value(group, "z", pbc_box(3))
+      pbc_box_half(:) = 0.5 * pbc_box(:)
+      write(*,*) '# pbc_box x: ', pbc_box(1)
+      write(*,*) '# pbc_box y: ', pbc_box(2)
+      write(*,*) '# pbc_box z: ', pbc_box(3)
+   endif
+
    call table%destroy
 
+   write(6,*) 'Done: reading input file'
+   write(6,*) ''
+   flush(6)
    stat = .True.
 
 end subroutine read_input

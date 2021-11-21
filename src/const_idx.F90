@@ -34,6 +34,13 @@ module const_idx
    endtype job_types
    type(job_types), parameter :: JOBT = job_types(0,1,2,3,3)
 
+   type integrator_types
+      integer :: UNDEF       ! 0
+      integer :: LD_GJF2GJ   ! 1
+      integer :: MAX
+   endtype integrator_types
+   type(integrator_types), parameter :: INTGRT = integrator_types(0,1,1)
+
 contains
    function seqt2char(i) result(c)
       integer, intent(in) :: i
