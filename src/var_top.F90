@@ -16,6 +16,7 @@ module var_top
    integer, allocatable, save :: ichain_mp(:)
 
    integer, allocatable, save :: seq(:,:)
+   real(PREC), allocatable, save :: mass(:)
 
    logical, save :: flg_pbc
    real(PREC), save :: pbc_box(3)

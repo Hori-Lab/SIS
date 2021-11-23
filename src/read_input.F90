@@ -10,7 +10,7 @@ subroutine read_input(cfilepath, stat)
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
    use var_state, only : job, tempK, viscosity_Pas, &
-                         nstep, dt, nstep_save
+                         nstep, dt, nstep_save, integrator
    use var_top, only : nrepeat, nchains, pbc_box, pbc_box_half, flg_pbc
   
    implicit none
@@ -69,6 +69,7 @@ subroutine read_input(cfilepath, stat)
       return
    endif
    write(*,*) '# job type: ', trim(cline)
+   write(*,*) 'job=',job
 
    !################# input files #################
    call get_value(table, "files", group)
@@ -154,7 +155,7 @@ subroutine read_input(cfilepath, stat)
       if (associated(group)) then 
          call get_value(group, "integrator", cline)
          if (cline == 'GJF-2GJ') then
-            job = INTGRT%LD_GJF2GJ
+            integrator = INTGRT%LD_GJF2GJ
          else
             write(*,*) 'Error: Unknown integrator type, '//trim(cline)
             return

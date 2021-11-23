@@ -4,10 +4,10 @@ enable_language(Fortran)
 project(sis Fortran)
 
 
-#find_package(OpenMP)
-#if (OPENMP_FOUND)
-#    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-#endif()
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+endif()
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 

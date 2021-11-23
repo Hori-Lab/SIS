@@ -4,13 +4,13 @@ title = "sis input"
 type = "MD"
 
 [files]
-      [files.in]
-      ff = "../rna_cg1.ff"
-      pdb_ini = "./cag47_4.pdb"
+    [files.in]
+    ff = "../rna_cg1.ff"
+    pdb_ini = "./cag47_4.pdb"
 
-      [files.out]
-      types = ["bp",]
-      prefix = "./test_md"
+    [files.out]
+    types = ["bp",]
+    prefix = "./test_md"
 
 [repeat]
 n_repeat = 47
@@ -29,4 +29,4 @@ integrator = "GJF-2GJ"
 viscosity_Pas = 0.00001
 dt = 0.5
 nstep = 100
-nstep_save = 1
+nstep_save = 10
