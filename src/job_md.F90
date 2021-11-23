@@ -132,6 +132,7 @@ subroutine job_md()
 
       if (mod(istep, nstep_save) == 0) then
           call energy()
+          call energy_kinetic()
           write(hdl_out, '(i10, 6(1x,g13.6))') istep, Ekinetic, (energies(i), i=0,ENE%MAX)
           call fdcd%write_onestep(nmp, xyz)
       endif
