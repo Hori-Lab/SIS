@@ -1,5 +1,6 @@
 module var_state
 
+   use,intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const
    use const_idx, only : ENE
 
@@ -24,7 +25,7 @@ module var_state
    integer, save :: integrator
    real(PREC), save :: viscosity_Pas
    real(PREC), save :: dt
-   integer, save :: nstep
+   integer(INT64), save :: nstep
    integer, save :: nstep_save
    real(PREC), save :: nl_margin
 

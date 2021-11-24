@@ -5,6 +5,8 @@ module var_io
    logical, save :: flg_out_bp = .False.
    logical, save :: flg_out_bpall = .False.
    logical, save :: flg_out_bpe = .False.
+   logical, save :: flg_out_T = .False.
+
    integer, parameter :: KIND_OUT_BP  = 2  ! Defines the format of bp output file.
    integer, parameter :: KIND_OUT_BPE = 4  ! Defines the format of bp output file.
 
@@ -15,6 +17,9 @@ module var_io
    integer, parameter :: hdl_bpe = 24
 
    integer, save :: iopen_hdl = 30
+
+   logical, save :: flg_progress
+   integer, save :: step_progress
 
    character(CHAR_FILE_PATH), save :: cfile_out
    character(len=:), allocatable, save :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini, cfile_fasta_in

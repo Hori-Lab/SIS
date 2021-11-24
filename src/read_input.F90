@@ -7,6 +7,7 @@ subroutine read_input(cfilepath, stat)
    use const_idx, only : JOBT, INTGRT
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
    use var_io, only : iopen_hdl, &
+                      flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
@@ -183,7 +184,7 @@ subroutine read_input(cfilepath, stat)
 
    !################# box #################
    flg_pbc = .False.
-   call get_value(table, "PBC_box", group)
+   call get_value(table, "PBC_box", group, requested=.False.)
    if (associated(group)) then 
       flg_pbc = .True.
       call get_value(group, "x", pbc_box(1))
@@ -193,6 +194,15 @@ subroutine read_input(cfilepath, stat)
       write(*,*) '# pbc_box x: ', pbc_box(1)
       write(*,*) '# pbc_box y: ', pbc_box(2)
       write(*,*) '# pbc_box z: ', pbc_box(3)
+   endif
+
+   !################# Progress #################
+   flg_progress = .False.
+   call get_value(table, "Progress", group, requested=.False.)
+   if (associated(group)) then
+      flg_progress = .True.
+      call get_value(group, "step", step_progress)
+      write(*,*) '# Progress step: ', step_progress
    endif
 
    call table%destroy

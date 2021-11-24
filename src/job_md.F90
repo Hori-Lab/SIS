@@ -1,21 +1,22 @@
 subroutine job_md()
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end
+   use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE
+   use progress, only : progress_init, progress_update
    use pbc, only : pbc_box
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, mass
    use var_state, only : viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, nstep, nstep_save, &
                          nl_margin, Ekinetic
    use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff, nwca, wca_mp, nbp, bp_mp, bp_nl_cut2
-   use var_io, only : hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini
+   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   integer :: i, istat
-   integer :: istep, imp
+   integer(INT64) :: istep
+   integer :: i, istat, imp
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
@@ -109,6 +110,10 @@ subroutine job_md()
    call energy_kinetic()
    write(hdl_out, '(i10, 6(1x,g13.6))') 0, Ekinetic, (energies(i), i=0,ENE%MAX)
 
+   if (flg_progress) then
+      call progress_init(0_INT64)
+   endif
+
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Time integration
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -139,8 +144,8 @@ subroutine job_md()
          enddo
       enddo
 
+      !$omp parallel do private(accels_pre, dxyz)
       do imp = 1, nmp
-
          !if(fix_mp(imp)) cycle
 
          !! a = (1 - gamma h / 2m) / (1 + gamma h / 2m)
@@ -166,12 +171,19 @@ subroutine job_md()
          xyz(1:3, imp) = xyz(1:3, imp) + dxyz(1:3)
          xyz_move(1:3,imp) = xyz_move(1:3,imp) + dxyz(1:3)
       end do
+      !$omp end parallel do
 
       if (mod(istep, nstep_save) == 0) then
           call energy()
           call energy_kinetic()
           write(hdl_out, '(i10, 6(1x,g13.6))') istep, Ekinetic, (energies(i), i=0,ENE%MAX)
           call fdcd%write_onestep(nmp, xyz)
+      endif
+
+      if (flg_progress) then
+         if (mod(istep, step_progress) == 0) then
+            call progress_update(istep, nstep)
+         endif
       endif
 
    enddo
