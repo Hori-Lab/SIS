@@ -1,6 +1,7 @@
 subroutine force_bp()
 
    use const, only : PREC
+   use pbc, only : pbc_vec
    !use const_phys, only : ZERO_JUDGE
    use var_state, only : xyz, kT, forces
    use var_potential, only : nbp, bp_cutoff, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
@@ -195,37 +196,5 @@ subroutine force_bp()
       forces(:, imp5) = forces(:, imp5) + f_bp(:, 5, ibp)
       forces(:, imp6) = forces(:, imp6) + f_bp(:, 6, ibp)
    enddo
-
-contains
-
-   function pbc_vec(v) result (new_vec)
-      
-      use const, only : PREC
-      use var_top, only : flg_pbc, pbc_box, pbc_box_half
-
-      real(PREC) :: new_vec(3)
-      real(PREC), intent(in) :: v(3)
-
-      integer :: i
-
-      if (.not. flg_pbc) then
-         new_vec(:) = v(:)
-         return
-      endif
-
-      do i = 1, 3
-         if(v(i) > pbc_box_half(i)) then
-            new_vec(i) = v(i) - pbc_box(i)
-   
-         else if(v(i) < -pbc_box_half(i)) then
-            new_vec(i) = v(i) + pbc_box(i)
-   
-         else
-            new_vec(i) = v(i)
-   
-         end if
-      end do
-
-   end function pbc_vec
 
 end subroutine force_bp

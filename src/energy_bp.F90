@@ -2,6 +2,7 @@ subroutine energy_bp(Ebp)
 
    use const
    use const_phys, only : ZERO_JUDGE
+   use pbc, only : pbc_vec
    use var_state, only : xyz, kT
    use var_potential
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
@@ -10,8 +11,8 @@ subroutine energy_bp(Ebp)
   
    real(PREC), intent(inout) :: Ebp
 
-   integer :: ibp, imp, jmp
-   real(PREC) :: nhb, u
+   integer :: ibp, imp, jmp, nhb
+   real(PREC) :: u
    real(PREC) :: d, theta, phi
    real(PREC) :: e_bp(nbp)
 
@@ -106,35 +107,6 @@ subroutine energy_bp(Ebp)
    endif
 
 contains
-
-   function pbc_vec(v) result (new_vec)
-      
-      use var_top, only : flg_pbc, pbc_box, pbc_box_half
-
-      real(PREC) :: new_vec(3)
-      real(PREC), intent(in) :: v(3)
-
-      integer :: i
-
-      if (.not. flg_pbc) then
-         new_vec(:) = v(:)
-         return
-      endif
-
-      do i = 1, 3
-         if(v(i) > pbc_box_half(i)) then
-            new_vec(i) = v(i) - pbc_box(i)
-   
-         else if(v(i) < -pbc_box_half(i)) then
-            new_vec(i) = v(i) + pbc_box(i)
-   
-         else
-            new_vec(i) = v(i)
-   
-         end if
-      end do
-
-   end function pbc_vec
 
    function mp_distance(imp1, imp2) result(d)
 

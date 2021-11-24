@@ -3,7 +3,8 @@ subroutine job_check_force()
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
    use const_idx, only : ENE
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc
+   use pbc, only : flg_pbc, pbc_wrap
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain
    use var_state, only : xyz, energies, forces
    use var_io, only : hdl_out, cfile_out, cfile_pdb_ini
 
@@ -12,7 +13,9 @@ subroutine job_check_force()
    integer :: i, imp, ixyz
    real(PREC) :: r, xyz_save, e_save
    real(PREC) :: f_energy(3), diff(3)
-   real(PREC), parameter :: small = 0.0001
+   real(PREC), parameter :: small = 0.001
+
+   write(6,*) 'Starting job_check_force'
 
    if (len(cfile_pdb_ini) < 1) then
       write(*,*) 'PDB for the initial structure is not specified'
@@ -23,6 +26,10 @@ subroutine job_check_force()
    allocate(forces(3, nmp))
 
    call read_pdb(cfile_pdb_ini, nmp, xyz)
+
+   if (flg_pbc) then
+      call pbc_wrap()
+   endif
 
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
 
@@ -64,5 +71,7 @@ subroutine job_check_force()
    enddo
 
    close(hdl_out)
+
+   write(6,*) 'Done job_check_force'
 
 endsubroutine job_check_force

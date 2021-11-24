@@ -1,6 +1,7 @@
 subroutine force_wca()
 
    use const, only : PREC
+   use pbc, only : pbc_vec
    use var_state, only : xyz, forces
    use var_potential, only : wca_sigma, wca_eps, wca_mp, nwca
 
@@ -33,37 +34,5 @@ subroutine force_wca()
       forces(:, imp2) = forces(:, imp2) - for(:)
    enddo
    !$omp end parallel do
-
-contains
-
-   function pbc_vec(v) result (new_vec)
-      
-      use const, only : PREC
-      use var_top, only : flg_pbc, pbc_box, pbc_box_half
-
-      real(PREC) :: new_vec(3)
-      real(PREC), intent(in) :: v(3)
-
-      integer :: i
-
-      if (.not. flg_pbc) then
-         new_vec(:) = v(:)
-         return
-      endif
-
-      do i = 1, 3
-         if(v(i) > pbc_box_half(i)) then
-            new_vec(i) = v(i) - pbc_box(i)
-   
-         else if(v(i) < -pbc_box_half(i)) then
-            new_vec(i) = v(i) + pbc_box(i)
-   
-         else
-            new_vec(i) = v(i)
-   
-         end if
-      end do
-
-   end function pbc_vec
 
 end subroutine force_wca

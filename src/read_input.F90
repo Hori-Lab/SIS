@@ -5,13 +5,14 @@ subroutine read_input(cfilepath, stat)
    use const
    use const_phys
    use const_idx, only : JOBT, INTGRT
+   use pbc, only : flg_pbc, pbc_box, pbc_box_half
    use var_io, only : iopen_hdl, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
-   use var_state, only : job, tempK, viscosity_Pas, &
-                         nstep, dt, nstep_save, integrator
-   use var_top, only : nrepeat, nchains, pbc_box, pbc_box_half, flg_pbc
+   use var_state, only : job, tempK, kT, viscosity_Pas, &
+                         nstep, dt, nstep_save, integrator, nl_margin
+   use var_top, only : nrepeat, nchains
   
    implicit none
 
@@ -133,6 +134,7 @@ subroutine read_input(cfilepath, stat)
    !################# Condition #################
    call get_value(table, "condition", group)
    call get_value(group, "tempK", tempK)
+   kT = BOLTZ_KCAL_MOL * tempK
    write(*,*) '# tempK: ', tempK
 
    !################# Repeat sequence #################
@@ -166,10 +168,12 @@ subroutine read_input(cfilepath, stat)
          call get_value(group, "dt", dt)
          call get_value(group, "nstep", nstep)
          call get_value(group, "nstep_save", nstep_save)
+         call get_value(group, "neighbor_list_margin", nl_margin)
          write(*,*) '# MD viscosity_Pas: ', viscosity_Pas
          write(*,*) '# MD dt: ', dt
          write(*,*) '# MD nstep: ', nstep
          write(*,*) '# MD nstep_save: ', nstep_save
+         write(*,*) '# MD neighbor_list_margin: ', nl_margin
 
       else
          write(*,*) 'Error: [MD] field required.'
@@ -178,6 +182,7 @@ subroutine read_input(cfilepath, stat)
    endif
 
    !################# box #################
+   flg_pbc = .False.
    call get_value(table, "PBC_box", group)
    if (associated(group)) then 
       flg_pbc = .True.

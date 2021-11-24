@@ -4,7 +4,7 @@ program sis
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, ichain_mp, nrepeat
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat
    use var_state, only : xyz, tempK, kT, job
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in
@@ -43,6 +43,7 @@ program sis
 
       job = JOBT%DCD
       tempK = 273.15 + 22.0
+      kT = BOLTZ_KCAL_MOL * tempK
       flg_out_bp = .False.
       flg_out_bpe = .True.
 
@@ -159,15 +160,23 @@ program sis
       write(6, '(a)') '#'
    enddo
 
-   kT = BOLTZ_KCAL_MOL * tempK
    write(6, '(a,f7.3)') '#T/K: ', tempK
    write(6, '(a,f7.5)') '#kT/kcal/mol: ', kT
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    call list_local()
-   call list_bp()
-   call list_exv()
+
+   if (job == JOBT%MD) then
+      ! Will use neighbor list
+      continue
+
+   else
+      ! No neighbor list
+      call list_bp()
+      call list_exv()
+
+   endif
    !call read_sisinfo(cfile_sis)
 
    if (job == JOBT%DCD) then
@@ -176,7 +185,6 @@ program sis
 
    else if (job == JOBT%CHECK_FORCE) then
 
-      write(6,*) 'Starting job_check_force'
       call job_check_force()
 
    else if (job == JOBT%MD) then

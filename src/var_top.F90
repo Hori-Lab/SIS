@@ -18,8 +18,4 @@ module var_top
    integer, allocatable, save :: seq(:,:)
    real(PREC), allocatable, save :: mass(:)
 
-   logical, save :: flg_pbc
-   real(PREC), save :: pbc_box(3)
-   real(PREC), save :: pbc_box_half(3)
-
 end module var_top

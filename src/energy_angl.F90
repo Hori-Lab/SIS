@@ -1,6 +1,7 @@
 subroutine energy_angl(Eangl)
 
    use const
+   use pbc, only : pbc_vec
    use var_state, only : xyz
    use var_potential, only : nangl, angl_mp, angl_k, angl_t0 !angl_para
 
@@ -34,8 +35,8 @@ contains
       real(PREC) :: v12(3), v32(3)
       real(PREC) :: co
 
-      v12(:) = x1(:) - x2(:)
-      v32(:) = x3(:) - x2(:)
+      v12(:) = pbc_vec(x1(:) - x2(:))
+      v32(:) = pbc_vec(x3(:) - x2(:))
 
       co = dot_product(v32, v12) / sqrt(dot_product(v12,v12) * dot_product(v32,v32))
 

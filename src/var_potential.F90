@@ -29,12 +29,16 @@ module var_potential
    real(PREC), save :: bp_dihd_phi2  ! = 1.1345
 
    integer, save :: nbp
+   integer, save :: nbp_max  ! This defines the size of neighbor list
    integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
+   real(PREC), save :: bp_nl_cut2
 
    real(PREC), save :: wca_sigma  ! = 10.0
    real(PREC), save :: wca_eps    ! = 2.0
+   real(PREC), save :: wca_nl_cut2 ! = (wca_sigma + nl_margin) ** 2
 
    integer, save :: nwca
-   integer, allocatable, save :: wca_mp(:,:)  ! 1: imp1, 2: imp2
+   integer, save :: nwca_max  ! This defines the size of neighbor list
+   integer, allocatable, save :: wca_mp(:,:)  ! (2, nwca) or (2, nwca_max), 1:imp1, 2:imp2
 
 end module var_potential

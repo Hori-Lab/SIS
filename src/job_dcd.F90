@@ -3,7 +3,8 @@ subroutine job_dcd()
    use, intrinsic :: iso_fortran_env, Only : iostat_end
    use const
    use const_idx, only : ENE
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc
+   use pbc, only : flg_pbc, pbc_box, pbc_box_half
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain
    use var_state, only : xyz, energies
    use var_io, only : hdl_dcd, hdl_out, cfile_dcd_in, cfile_out
    use dcd, only : file_dcd, DCD_OPEN_MODE

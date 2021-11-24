@@ -4,8 +4,11 @@ subroutine job_md()
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, pbc_box, pbc_box_half, flg_pbc, mass
-   use var_state, only : viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, nstep, nstep_save, Ekinetic
+   use pbc, only : pbc_box
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, mass
+   use var_state, only : viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, nstep, nstep_save, &
+                         nl_margin, Ekinetic
+   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff, nwca, wca_mp, nbp, bp_mp, bp_nl_cut2
    use var_io, only : hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -14,13 +17,14 @@ subroutine job_md()
    integer :: i, istat
    integer :: istep, imp
    real(PREC) :: dxyz(3)
-   !real(PREC) :: xyz_move(3, nmp)
+   real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
    type(file_dcd) :: fdcd
    real(PREC) :: fric, radius
    real(PREC) :: v, c1, c2, md_coef(4, nmp)
    real(PREC) :: rnd_bm(3, nmp)
    real(PREC) :: accels_pre(3)
+   real(PREC) :: d2, d2max, d2max_2nd
    character(CHAR_FILE_PATH), save :: cfile_dcd_out
 
    ! Function
@@ -46,10 +50,7 @@ subroutine job_md()
    call fdcd%write_header(nmp)
 
    ! set PBC box
-   flg_pbc = .True.
    fdcd%box(:) = pbc_box(:)
-
-   call fdcd%write_onestep(nmp, xyz)
 
    !! Set up variables for dynamics
    radius = 10.0
@@ -76,6 +77,13 @@ subroutine job_md()
 
    allocate(accels(3, nmp))
    allocate(velos(3, nmp))
+
+   do imp = 1, nmp
+      c1 = sqrt(tempK * BOLTZ_KCAL_MOL / mass(imp))
+      do i = 1, 3
+         velos(i, imp) = c1 * rnd_boxmuller()
+      enddo
+   enddo
         
    !! Initial accel
    !if (flg_rst) then
@@ -86,20 +94,50 @@ subroutine job_md()
       end do
    !endif
 
+   wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
+   bp_nl_cut2 = (bp_cutoff + nl_margin) ** 2
+   call neighbor_list()
+   xyz_move(:,:) = 0.0e0_PREC
 
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
    write(hdl_out, '(a)') '#(1)nframe (2)Ekin       (3)Epot       (4)Ebond      (5)Eangl      (6)Ebp        (7)Eexv'
                          !1234567890 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123
 
+   ! Write the initial coordinates
+   !call fdcd%write_onestep(nmp, xyz)     ! No initial frame for DCD
+   call energy()
+   call energy_kinetic()
+   write(hdl_out, '(i10, 6(1x,g13.6))') 0, Ekinetic, (energies(i), i=0,ENE%MAX)
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!! Time integration
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    do istep = 1, nstep
-      
+
+      d2max = 0.0e0_PREC
+      d2max_2nd = 0.0e0_PREC
+      do imp = 1, nmp
+         d2 = dot_product(xyz_move(1:3,imp), xyz_move(1:3,imp))
+         if (d2 > d2max) then
+            d2max_2nd = d2max
+            d2max = d2
+         else if (d2 > d2max_2nd) then
+            d2max_2nd = d2
+         endif
+      enddo
+
+      if (sqrt(d2max) + sqrt(d2max_2nd) > nl_margin) then
+         call neighbor_list()
+         xyz_move(:,:) = 0.0e0_PREC
+      endif
+
+      call force()
+
       do imp= 1, nmp
          do i = 1, 3
             rnd_bm(i, imp) = rnd_boxmuller()
          enddo
       enddo
-
-      call force()
 
       do imp = 1, nmp
 
@@ -126,8 +164,7 @@ subroutine job_md()
          ! md_coef(4) = sqrt(b) h
 
          xyz(1:3, imp) = xyz(1:3, imp) + dxyz(1:3)
-         !pxyz_mp_rep(1:3, imp, irep) = pxyz_mp_rep(1:3, imp, irep) + dxyz(1:3)
-         !xyz_move(1:3,imp) = xyz_move(1:3,imp) + dxyz(1:3)
+         xyz_move(1:3,imp) = xyz_move(1:3,imp) + dxyz(1:3)
       end do
 
       if (mod(istep, nstep_save) == 0) then

@@ -1,6 +1,7 @@
 subroutine force_angl()
 
    use const
+   use pbc, only : pbc_vec
    use var_state, only : xyz, forces
    use var_potential, only : nangl, angl_mp, angl_k, angl_t0
 
@@ -16,8 +17,8 @@ subroutine force_angl()
       imp2 = angl_mp(2, ibd)
       imp3 = angl_mp(3, ibd)
 
-      v21(:) = xyz(:, imp2) - xyz(:, imp1)
-      v32(:) = xyz(:, imp3) - xyz(:, imp2)
+      v21(:) = pbc_vec(xyz(:, imp2) - xyz(:, imp1))
+      v32(:) = pbc_vec(xyz(:, imp3) - xyz(:, imp2))
      
       d21 = dot_product(v21, v21)
       d32 = dot_product(v32, v32)
@@ -46,5 +47,5 @@ subroutine force_angl()
       
       !Eangl = Eangl + 0.5 * angl_k * (t - angl_t0) ** 2
    enddo
-  
+
 end subroutine force_angl
