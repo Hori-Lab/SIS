@@ -2,7 +2,7 @@ subroutine energy_bp(Ebp)
 
    use const
    use const_phys, only : ZERO_JUDGE
-   use pbc, only : pbc_vec
+   use pbc, only : pbc_vec_d
    use var_state, only : xyz, kT
    use var_potential
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
@@ -25,7 +25,7 @@ subroutine energy_bp(Ebp)
       jmp = bp_mp(2, ibp)
       nhb = bp_mp(3, ibp)
       
-      d = mp_distance(imp, jmp)
+      d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp)))
 
       if (d >= bp_cutoff) cycle
       
@@ -108,15 +108,6 @@ subroutine energy_bp(Ebp)
 
 contains
 
-   function mp_distance(imp1, imp2) result(d)
-
-      real(PREC) :: d
-      integer, intent(in) :: imp1, imp2
-
-      d = norm2( pbc_vec(xyz(:,imp1) - xyz(:, imp2)) )
-
-   endfunction mp_distance
-
    function mp_angle(imp1, imp2, imp3) result(theta)
 
       real(PREC) :: theta
@@ -124,8 +115,8 @@ contains
       real(PREC) :: v12(3), v32(3)
       real(PREC) :: co
 
-      v12(:) = pbc_vec(xyz(:, imp1) - xyz(:, imp2))
-      v32(:) = pbc_vec(xyz(:, imp3) - xyz(:, imp2))
+      v12(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
+      v32(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
 
       co = dot_product(v32, v12) / sqrt(dot_product(v12,v12) * dot_product(v32,v32))
 
@@ -145,9 +136,9 @@ contains
       integer, intent(in) :: imp1, imp2, imp3, imp4
       real(PREC) :: v12(3), v32(3), v34(3), m(3), n(3)
 
-      v12(:) =  pbc_vec(xyz(:, imp1) - xyz(:, imp2))
-      v32(:) =  pbc_vec(xyz(:, imp3) - xyz(:, imp2))
-      v34(:) =  pbc_vec(xyz(:, imp3) - xyz(:, imp4))
+      v12(:) =  pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
+      v32(:) =  pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
+      v34(:) =  pbc_vec_d(xyz(:, imp3), xyz(:, imp4))
 
       m(1) = v12(2)*v32(3) - v12(3)*v32(2)
       m(2) = v12(3)*v32(1) - v12(1)*v32(3)

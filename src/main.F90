@@ -5,7 +5,7 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat
-   use var_state, only : xyz, tempK, kT, job
+   use var_state, only : xyz, tempK, kT, job, nthreads
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in
 !$ use omp_lib
@@ -15,7 +15,6 @@ program sis
    character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_bp
 
    integer :: i, j, k, imp
-   integer :: nthreads
 
    character(500) :: cline
    logical :: stat

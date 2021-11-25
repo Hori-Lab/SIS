@@ -1,7 +1,7 @@
 subroutine energy_wca(Ewca)
 
    use const
-   use pbc, only : pbc_vec
+   use pbc, only : pbc_vec_d
    use var_state, only : xyz
    use var_potential, only : wca_sigma, wca_eps, wca_mp, nwca
 
@@ -21,7 +21,7 @@ subroutine energy_wca(Ewca)
       imp1 = wca_mp(1, iwca)
       imp2 = wca_mp(2, iwca)
       
-      d = norm2( pbc_vec(xyz(:,imp1) - xyz(:, imp2)) )
+      d = norm2( pbc_vec_d(xyz(:,imp1), xyz(:, imp2)) )
 
       if (d >= wca_sigma) cycle
 

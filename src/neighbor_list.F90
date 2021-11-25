@@ -2,7 +2,7 @@ subroutine neighbor_list()
   
    use const, only : PREC
    use const_idx, only : SEQT
-   use pbc, only : flg_pbc, pbc_vec, pbc_wrap
+   use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
    use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp
    use var_state, only : xyz
    use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
@@ -56,13 +56,14 @@ subroutine neighbor_list()
                
                jmp = imp_chain(j, jchain)
    
-               v(:) = pbc_vec(xyz(:,imp) - xyz(:,jmp))
+               v(:) = pbc_vec_d(xyz(:,imp), xyz(:,jmp))
                d2 = dot_product(v,v)
 
                if (d2 <= wca_nl_cut2) then
                   if (ichain /= jchain .or. i+2 < j) then
                      iwca = iwca + 1
                      if (iwca > nwca_max) then
+                        !write(*,*) 'Error: iwca > nwca_max. iwca =', iwca, 'nwca_max = ', nwca_max
                         call reallocate_wca_mp()
                      endif
 
@@ -88,6 +89,7 @@ subroutine neighbor_list()
                      if (nhb > 0) then
                         ibp = ibp + 1
                         if (ibp > nbp_max) then
+                           !write(*,*) 'Error: ibp > nbp_max. ibp =', ibp, 'nbp_max = ', nbp_max
                            call reallocate_bp_mp()
                         endif
                         bp_mp(1,ibp) = imp

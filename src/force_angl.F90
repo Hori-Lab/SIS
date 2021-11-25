@@ -1,24 +1,28 @@
-subroutine force_angl()
+subroutine force_angl(forces)
 
    use const
-   use pbc, only : pbc_vec
-   use var_state, only : xyz, forces
+   use pbc, only : pbc_vec_d
+   use var_state, only : xyz
+   use var_top, only : nmp
    use var_potential, only : nangl, angl_mp, angl_k, angl_t0
 
    implicit none
+
+   real(PREC), intent(inout) :: forces(3, nmp)
   
    integer :: ibd, imp1, imp2, imp3
    real(PREC) :: t, f, delta, cosine
    real(PREC) :: d21, d32, d2132
    real(PREC) :: v21(3), v32(3), f21(3), f32(3)
 
+!$omp do private(imp1,imp2,imp3,v21,v32,d21,d32,d2132,cosine,delta,t,f,f21,f32)
    do ibd = 1, nangl
       imp1 = angl_mp(1, ibd)
       imp2 = angl_mp(2, ibd)
       imp3 = angl_mp(3, ibd)
 
-      v21(:) = pbc_vec(xyz(:, imp2) - xyz(:, imp1))
-      v32(:) = pbc_vec(xyz(:, imp3) - xyz(:, imp2))
+      v21(:) = pbc_vec_d(xyz(:, imp2), xyz(:, imp1))
+      v32(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
      
       d21 = dot_product(v21, v21)
       d32 = dot_product(v32, v32)
@@ -47,5 +51,6 @@ subroutine force_angl()
       
       !Eangl = Eangl + 0.5 * angl_k * (t - angl_t0) ** 2
    enddo
+!$omp end do nowait
 
 end subroutine force_angl

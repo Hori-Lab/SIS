@@ -8,6 +8,33 @@ module pbc
 
 contains
 
+   function pbc_vec_d(v1, v2) result (new_vec)
+
+      use const, only : PREC
+
+      real(PREC) :: new_vec(3)
+      real(PREC), intent(in) :: v1(3), v2(3)
+
+      integer :: i
+
+      new_vec(:) = v1(:) - v2(:)
+
+      if (.not. flg_pbc) then
+         return
+      endif
+
+      do i = 1, 3
+         if(new_vec(i) > pbc_box_half(i)) then
+            new_vec(i) = new_vec(i) - pbc_box(i)
+
+         else if(new_vec(i) < -pbc_box_half(i)) then
+            new_vec(i) = new_vec(i) + pbc_box(i)
+
+         end if
+      end do
+
+   end function pbc_vec_d
+
    function pbc_vec(v) result (new_vec)
       
       use const, only : PREC
@@ -18,7 +45,7 @@ contains
       integer :: i
 
       if (.not. flg_pbc) then
-         new_vec(:) = v(:)
+         new_vec(1:3) = v(1:3)
          return
       endif
 

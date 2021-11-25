@@ -7,6 +7,8 @@ module var_state
    implicit none
   
    ! ----------------------------------------------------------------
+   integer, save :: nthreads
+
    integer, save :: job
 
    ! Condition

@@ -1,7 +1,7 @@
 subroutine energy_bond(Ebd)
       
    use const
-   use pbc, only : pbc_vec
+   use pbc, only : pbc_vec_d
    use var_state, only : xyz
    use var_potential, only : nbond, bond_mp, bond_k, bond_r0 !bond_para
   
@@ -19,7 +19,7 @@ subroutine energy_bond(Ebd)
       !k = bond_para(1, ibd)
       !r0 = bond_para(2, ibd)
 
-      d = norm2(pbc_vec(xyz(:, imp1) - xyz(:, imp2)))
+      d = norm2(pbc_vec_d(xyz(:, imp1), xyz(:, imp2)))
 
       !Ebd = Ebd + 0.5 * k * (d - r0) ** 2
       Ebd = Ebd + 0.5 * bond_k * (d - bond_r0) ** 2

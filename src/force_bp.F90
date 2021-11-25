@@ -1,16 +1,17 @@
-subroutine force_bp()
+subroutine force_bp(forces)
 
    use const, only : PREC
-   use pbc, only : pbc_vec
-   !use const_phys, only : ZERO_JUDGE
-   use var_state, only : xyz, kT, forces
+   use pbc, only : pbc_vec_d
+   use var_state, only : xyz
+   use var_top, only : nmp
    use var_potential, only : nbp, bp_cutoff, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
                              bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2
    use var_potential, only : nbp
-   use var_io, only : flg_out_bp, flg_out_bpe, KIND_OUT_BP
 
    implicit none
-  
+
+   real(PREC), intent(inout) :: forces(3, nmp)
+
    integer :: ibp
    integer :: imp1, imp2, imp3, imp4, imp5, imp6
    real(PREC) :: u, pre
@@ -21,7 +22,7 @@ subroutine force_bp()
    real(PREC) :: d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262
    real(PREC) :: d1213over1212, d1242over1212, d1215over1212, d1262over1212
    real(PREC) :: m(3), n(3)
-   real(PREC) :: f_bp(3, 6, nbp)
+   real(PREC) :: f_bp(3, 6)
 
    !#######################################
    ! imp-1 (3) --- imp (1) --- imp+1 (5)
@@ -29,18 +30,16 @@ subroutine force_bp()
    ! jmp+1 (6) --- jmp (2) --- jmp-1 (4)
    !#######################################
 
-   f_bp(:, :, :) = 0.0e0_PREC
-
-   !$omp parallel do private(imp1, imp2, imp3, imp4, imp5, imp6, d, u, pre, cosine, dih, &
-   !$omp&                    f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
-   !$omp&                    d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
-   !$omp&                    d1213over1212, d1242over1212, d1215over1212, d1262over1212)
+   !$omp do private(imp1, imp2, imp3, imp4, imp5, imp6, d, u, pre, cosine, dih, &
+   !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
+   !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
+   !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212, f_bp)
    do ibp = 1, nbp
 
       imp1 = bp_mp(1, ibp)
       imp2 = bp_mp(2, ibp)
 
-      v12(:) = pbc_vec(xyz(:,imp1) - xyz(:,imp2))
+      v12(:) = pbc_vec_d(xyz(:,imp1), xyz(:,imp2))
       d1212 = dot_product(v12,v12)
       a12 = sqrt(d1212)
 
@@ -56,13 +55,13 @@ subroutine force_bp()
 
       u = bp_bond_k * d**2
       f_i(:) = (2.0e0_PREC * bp_bond_k * d / a12) * v12(:)
-      f_bp(:, 1, ibp) = + f_i(:)
-      f_bp(:, 2, ibp) = - f_i(:)
+      f_bp(:, 1) = + f_i(:)
+      f_bp(:, 2) = - f_i(:)
 
-      v13(:) = pbc_vec(xyz(:, imp1) - xyz(:, imp3))
-      v15(:) = pbc_vec(xyz(:, imp1) - xyz(:, imp5))
-      v42(:) = pbc_vec(xyz(:, imp4) - xyz(:, imp2))
-      v62(:) = pbc_vec(xyz(:, imp6) - xyz(:, imp2))
+      v13(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp3))
+      v15(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp5))
+      v42(:) = pbc_vec_d(xyz(:, imp4), xyz(:, imp2))
+      v62(:) = pbc_vec_d(xyz(:, imp6), xyz(:, imp2))
  
       d1313 = dot_product(v13, v13)
       d4242 = dot_product(v42, v42)
@@ -86,9 +85,9 @@ subroutine force_bp()
       f_i(:) = pre * (v12(:) - (d1213 / d1313 * v13(:)))
       f_k(:) = pre * (v13(:) - (d1213over1212 * v12(:)))
 
-      f_bp(:, 1, ibp) = f_bp(:, 1, ibp) - f_i(:) - f_k(:)
-      f_bp(:, 2, ibp) = f_bp(:, 2, ibp) + f_k(:)
-      f_bp(:, 3, ibp) = f_i(:)
+      f_bp(:, 1) = f_bp(:, 1) - f_i(:) - f_k(:)
+      f_bp(:, 2) = f_bp(:, 2) + f_k(:)
+      f_bp(:, 3) = f_i(:)
 
       !===== Angle of 1=2-4 (imp -- jmp -- jmp-1) =====
       cosine = d1242 / (a12 * sqrt(d4242))
@@ -99,9 +98,9 @@ subroutine force_bp()
       f_i(:) = - pre * (v42(:) - (d1242over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1242 / d4242 * v42(:)))
 
-      f_bp(:, 1, ibp) = f_bp(:, 1, ibp) + f_i(:)
-      f_bp(:, 2, ibp) = f_bp(:, 2, ibp) - f_i(:) - f_k(:)
-      f_bp(:, 4, ibp) = f_k(:)
+      f_bp(:, 1) = f_bp(:, 1) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) - f_i(:) - f_k(:)
+      f_bp(:, 4) = f_k(:)
 
       !===== Angle of 5-1=2 (imp+1 -- imp -- jmp) =====
       cosine = d1215 / (sqrt(d1515) * a12)
@@ -112,9 +111,9 @@ subroutine force_bp()
       f_i(:) = pre * (v12(:) - (d1215 / d1515 * v15(:)))
       f_k(:) = pre * (v15(:) - (d1215over1212 * v12(:)))
 
-      f_bp(:, 1, ibp) = f_bp(:, 1, ibp) - f_i(:) - f_k(:)
-      f_bp(:, 2, ibp) = f_bp(:, 2, ibp) + f_k(:)
-      f_bp(:, 5, ibp) = f_i(:)
+      f_bp(:, 1) = f_bp(:, 1) - f_i(:) - f_k(:)
+      f_bp(:, 2) = f_bp(:, 2) + f_k(:)
+      f_bp(:, 5) = f_i(:)
 
       !===== Angle of 1=2-6 (imp -- jmp -- jmp+1) =====
       cosine = d1262 / (a12 * sqrt(d6262))
@@ -125,9 +124,9 @@ subroutine force_bp()
       f_i(:) = - pre * (v62(:) - (d1262over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1262 / d6262 * v62(:)))
 
-      f_bp(:, 1, ibp) = f_bp(:, 1, ibp) + f_i(:)
-      f_bp(:, 2, ibp) = f_bp(:, 2, ibp) - f_i(:) - f_k(:)
-      f_bp(:, 6, ibp) = f_k(:)
+      f_bp(:, 1) = f_bp(:, 1) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) - f_i(:) - f_k(:)
+      f_bp(:, 6) = f_k(:)
  
       !===== Dihedral angle among 4-2=1=3 (jmp-1 -- jmp -- imp -- imp-1) =====
       m(1) = v42(2)*v12(3) - v42(3)*v12(2)
@@ -145,12 +144,12 @@ subroutine force_bp()
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
-      f_bp(:, 4, ibp) = f_bp(:, 4, ibp) + f_i(:)
-      f_bp(:, 2, ibp) = f_bp(:, 2, ibp) + (-1.0e0_PREC + d1242over1212) * f_i(:) &
-                                        - (              d1213over1212) * f_l(:)
-      f_bp(:, 1, ibp) = f_bp(:, 1, ibp) + (-1.0e0_PREC + d1213over1212) * f_l(:) &
-                                        - (              d1242over1212) * f_i(:)
-      f_bp(:, 3, ibp) = f_bp(:, 3, ibp) + f_l(:)
+      f_bp(:, 4) = f_bp(:, 4) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) + (-1.0e0_PREC + d1242over1212) * f_i(:) &
+                              - (              d1213over1212) * f_l(:)
+      f_bp(:, 1) = f_bp(:, 1) + (-1.0e0_PREC + d1213over1212) * f_l(:) &
+                              - (              d1242over1212) * f_i(:)
+      f_bp(:, 3) = f_bp(:, 3) + f_l(:)
  
       !===== Dihedral angle among 6-2=1=5 (jmp+1 -- jmp -- imp -- imp+1) =====
       m(1) = v62(2)*v12(3) - v62(3)*v12(2)
@@ -168,33 +167,23 @@ subroutine force_bp()
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
-      f_bp(:, 6, ibp) = f_bp(:, 6, ibp) + f_i(:)
-      f_bp(:, 2, ibp) = f_bp(:, 2, ibp) + (-1.0e0_PREC + d1262over1212) * f_i(:) &
-                                        - (              d1215over1212) * f_l(:)
-      f_bp(:, 1, ibp) = f_bp(:, 1, ibp) + (-1.0e0_PREC + d1215over1212) * f_l(:) &
-                                        - (              d1262over1212) * f_i(:)
-      f_bp(:, 5, ibp) = f_bp(:, 5, ibp) + f_l(:)
+      f_bp(:, 6) = f_bp(:, 6) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) + (-1.0e0_PREC + d1262over1212) * f_i(:) &
+                              - (              d1215over1212) * f_l(:)
+      f_bp(:, 1) = f_bp(:, 1) + (-1.0e0_PREC + d1215over1212) * f_l(:) &
+                              - (              d1262over1212) * f_i(:)
+      f_bp(:, 5) = f_bp(:, 5) + f_l(:)
 
       !===== Total =====
-      f_bp(:, :, ibp) = bp_mp(3, ibp) * bp_U0 * exp(-u) * f_bp(:, :, ibp)
+      f_bp(:, :) = bp_mp(3, ibp) * bp_U0 * exp(-u) * f_bp(:, :)
 
+      forces(:, imp1) = forces(:, imp1) + f_bp(:, 1)
+      forces(:, imp2) = forces(:, imp2) + f_bp(:, 2)
+      forces(:, imp3) = forces(:, imp3) + f_bp(:, 3)
+      forces(:, imp4) = forces(:, imp4) + f_bp(:, 4)
+      forces(:, imp5) = forces(:, imp5) + f_bp(:, 5)
+      forces(:, imp6) = forces(:, imp6) + f_bp(:, 6)
    enddo
-   !$omp end parallel do
-
-   do ibp = 1, nbp
-      imp1 = bp_mp(1, ibp)
-      imp2 = bp_mp(2, ibp)
-      imp3 = imp1 - 1
-      imp4 = imp2 - 1
-      imp5 = imp1 + 1
-      imp6 = imp2 + 1
-
-      forces(:, imp1) = forces(:, imp1) + f_bp(:, 1, ibp)
-      forces(:, imp2) = forces(:, imp2) + f_bp(:, 2, ibp)
-      forces(:, imp3) = forces(:, imp3) + f_bp(:, 3, ibp)
-      forces(:, imp4) = forces(:, imp4) + f_bp(:, 4, ibp)
-      forces(:, imp5) = forces(:, imp5) + f_bp(:, 5, ibp)
-      forces(:, imp6) = forces(:, imp6) + f_bp(:, 6, ibp)
-   enddo
+   !$omp end do nowait
 
 end subroutine force_bp
