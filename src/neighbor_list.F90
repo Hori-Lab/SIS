@@ -73,7 +73,12 @@ subroutine neighbor_list()
                endif
 
                if (d2 <= bp_nl_cut2) then
-                  if (ichain /= jchain .or. i+bp_min_loop < j) then
+
+                  if (i == 1 .or. j == 1 .or. i == nmp_chain(ichain) .or. j == nmp_chain(ichain)) then
+                     ! Terminal nucleotides do not form base pairs.
+                     continue
+
+                  else if (ichain /= jchain .or. i+bp_min_loop < j) then
                      nhb = 0
                      if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
                          (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
