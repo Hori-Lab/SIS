@@ -58,14 +58,14 @@ subroutine job_check_force()
          xyz(ixyz, imp) = xyz_save
       enddo
 
-      write(hdl_out, "('imp=', i6, 2x, 'f_energy', 3(1x,g10.4), 2x, 'f_force=', 3(1x,g10.4))") &
+      write(hdl_out, "('imp=', i6, 2x, 'f_energy', 3(1x,g11.4), 2x, 'f_force=', 3(1x,g11.4))") &
              imp, (f_energy(i), i = 1, 3), (forces(i, imp), i = 1, 3)
 
       diff(1:3) = f_energy(1:3) - forces(1:3, imp)
-      write(hdl_out, "('f_energy - f_force', i6, 3f10.4)") imp, (diff(i), i = 1, 3)
+      write(hdl_out, "('f_energy - f_force', i6, 3f11.4)") imp, (diff(i), i = 1, 3)
 
       if(abs(diff(1)) > small .or. abs(diff(2)) > small .or. abs(diff(3)) > small) then
-         write (*, "('f_energy - f_force', 1x, i6, 3(1x,f10.4))") imp, (diff(i), i = 1, 3)
+         write (*, "('f_energy - f_force', 1x, i6, 3(1x,f11.4))") imp, (diff(i), i = 1, 3)
       end if
 
    enddo
