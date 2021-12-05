@@ -190,6 +190,8 @@ subroutine job_md()
 
             call neighbor_list()
             xyz_move(:,:) = 0.0e0_PREC
+
+            write(*,*) 'Box size updated at step = ',istep, ', box size = ', pbc_box(1)
          endif
       endif
 
