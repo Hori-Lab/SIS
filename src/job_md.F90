@@ -5,10 +5,11 @@ subroutine job_md()
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE
    use progress, only : progress_init, progress_update
-   use pbc, only : pbc_box
+   use pbc, only : pbc_box, set_pbc_size
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, mass
    use var_state, only : viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, nstep, nstep_save, &
-                         nl_margin, Ekinetic
+                         nl_margin, Ekinetic, &
+                         flg_variable_box, variable_box_step, variable_box_change
    use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff, nwca, wca_mp, nbp, bp_mp, bp_nl_cut2
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
@@ -176,10 +177,20 @@ subroutine job_md()
       !$omp end parallel do
 
       if (mod(istep, nstep_save) == 0) then
-          call energy()
-          call energy_kinetic()
-          write(hdl_out, '(i10, 6(1x,g13.6))') istep, Ekinetic, (energies(i), i=0,ENE%MAX)
-          call fdcd%write_onestep(nmp, xyz)
+         call energy()
+         call energy_kinetic()
+         write(hdl_out, '(i10, 6(1x,g13.6))') istep, Ekinetic, (energies(i), i=0,ENE%MAX)
+         call fdcd%write_onestep(nmp, xyz)
+      endif
+
+      if (flg_variable_box) then
+         if (mod(istep, variable_box_step) == 0) then
+            call set_pbc_size(pbc_box(:) + variable_box_change(:))
+            fdcd%box(:) = pbc_box(:)
+
+            call neighbor_list()
+            xyz_move(:,:) = 0.0e0_PREC
+         endif
       endif
 
       if (flg_progress) then

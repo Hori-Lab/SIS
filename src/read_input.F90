@@ -5,14 +5,15 @@ subroutine read_input(cfilepath, stat)
    use const
    use const_phys
    use const_idx, only : JOBT, INTGRT
-   use pbc, only : flg_pbc, pbc_box, pbc_box_half
+   use pbc, only : flg_pbc, pbc_box, set_pbc_size
    use var_io, only : iopen_hdl, &
                       flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
    use var_state, only : job, tempK, kT, viscosity_Pas, &
-                         nstep, dt, nstep_save, integrator, nl_margin
+                         nstep, dt, nstep_save, integrator, nl_margin, &
+                         flg_variable_box, variable_box_step, variable_box_change
    use var_top, only : nrepeat, nchains
   
    implicit none
@@ -30,6 +31,7 @@ subroutine read_input(cfilepath, stat)
    integer :: i
    integer :: istat
    integer :: hdl
+   real(PREC) :: v(3)
    character(len=:), allocatable :: cline
 
    stat = .False.
@@ -192,13 +194,27 @@ subroutine read_input(cfilepath, stat)
    call get_value(table, "PBC_box", group, requested=.False.)
    if (associated(group)) then 
       flg_pbc = .True.
-      call get_value(group, "x", pbc_box(1))
-      call get_value(group, "y", pbc_box(2))
-      call get_value(group, "z", pbc_box(3))
-      pbc_box_half(:) = 0.5 * pbc_box(:)
+      call get_value(group, "x", v(1))
+      call get_value(group, "y", v(2))
+      call get_value(group, "z", v(3))
+      call set_pbc_size(v)
       write(*,*) '# pbc_box x: ', pbc_box(1)
       write(*,*) '# pbc_box y: ', pbc_box(2)
       write(*,*) '# pbc_box z: ', pbc_box(3)
+   endif
+
+   !################# variable box #################
+   flg_variable_box = .False.
+   call get_value(table, "variable_box", group, requested=.False.)
+   if (associated(group)) then 
+      flg_variable_box = .True.
+      call get_value(group, "step", variable_box_step)
+      call get_value(group, "change_x", variable_box_change(1))
+      call get_value(group, "change_y", variable_box_change(2))
+      call get_value(group, "change_z", variable_box_change(3))
+      write(*,*) '# variable_box change_x: ', variable_box_change(1)
+      write(*,*) '# variable_box change_y: ', variable_box_change(2)
+      write(*,*) '# variable_box change_z: ', variable_box_change(3)
    endif
 
    !################# Progress #################

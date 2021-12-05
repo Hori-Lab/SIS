@@ -8,6 +8,15 @@ module pbc
 
 contains
 
+   subroutine set_pbc_size(boxsize)
+
+      real(PREC), intent(in) :: boxsize(3)
+
+      pbc_box(:) = boxsize(:)
+      pbc_box_half(:) = 0.5_PREC * boxsize(:)
+
+   endsubroutine set_pbc_size
+
    function pbc_vec_d(v1, v2) result (new_vec)
 
       use const, only : PREC

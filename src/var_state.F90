@@ -31,4 +31,9 @@ module var_state
    integer, save :: nstep_save
    real(PREC), save :: nl_margin
 
+   ! variable box
+   logical, save :: flg_variable_box
+   integer(INT64), save :: variable_box_step
+   real(PREC), save :: variable_box_change(3)
+
 end module var_state
