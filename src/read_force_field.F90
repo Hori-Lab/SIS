@@ -29,6 +29,11 @@ subroutine read_force_field()
 
    open(hdl, file=cfile_ff, status='old', action='read', iostat=istat)
 
+   if (istat /= 0) then
+      write(*,*) 'Error: failed to open the force-field file. '//trim(cfile_ff)
+      stop (2)
+   endif
+
    call toml_parse(table, hdl)
 
    close(hdl)

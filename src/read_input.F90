@@ -40,6 +40,11 @@ subroutine read_input(cfilepath, stat)
    write(*,*) "Reading input file: ", trim(cfilePath)
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
+   if (istat /= 0) then
+      write(*,*) 'Error: failed to open the input file. '//trim(cfilepath)
+      stop (2)
+   endif
+
    call toml_parse(table, hdl)
 
    close(hdl)

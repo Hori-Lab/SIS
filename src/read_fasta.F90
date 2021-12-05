@@ -23,6 +23,11 @@ subroutine read_fasta()
 
    open(hdl, file=cfile_fasta_in, status='old', action='read', iostat=istat)
 
+   if (istat /= 0) then
+      write(*,*) 'Error: failed to open the FASTA file. '//trim(cfile_fasta_in)
+      stop (2)
+   endif
+
    ! Count the number of chains
    nchains = 0
    do

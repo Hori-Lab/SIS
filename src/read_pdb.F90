@@ -34,6 +34,11 @@ subroutine read_pdb(cfilepath, nmp, xyz)
 
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
+   if (istat /= 0) then
+      write(*,*) 'Error: failed to open the PDB file. '//trim(cfilepath)
+      stop (2)
+   endif
+
    !flg_reading = .False.
 
    do
