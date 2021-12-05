@@ -91,7 +91,9 @@ subroutine job_md()
    !   call read_rst(RSTBLK%ACCEL)
    !else if (istep_sim == 1 .OR. inmisc%i_reset_struct == 1) then
       do imp = 1, nmp
-         accels(1:3, imp) = md_coef(1, imp) * rnd_boxmuller()
+         do i = 1, 3
+            accels(i, imp) = md_coef(1, imp) * rnd_boxmuller()
+         enddo
       end do
    !endif
 
