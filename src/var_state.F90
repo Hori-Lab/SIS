@@ -14,6 +14,7 @@ module var_state
    ! Condition
    real(PREC), save :: tempK
    real(PREC), save :: kT
+   integer(INT64), save :: rng_seed
 
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), allocatable, save :: velos(:,:)

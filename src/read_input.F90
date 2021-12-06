@@ -13,7 +13,8 @@ subroutine read_input(cfilepath, stat)
                       cfile_prefix, cfile_pdb_ini, cfile_fasta_in
    use var_state, only : job, tempK, kT, viscosity_Pas, &
                          nstep, dt, nstep_save, integrator, nl_margin, &
-                         flg_variable_box, variable_box_step, variable_box_change
+                         flg_variable_box, variable_box_step, variable_box_change, &
+                         rng_seed
    use var_top, only : nrepeat, nchains
   
    implicit none
@@ -77,8 +78,7 @@ subroutine read_input(cfilepath, stat)
       write(*,*) 'Error: Unknown job type, '//trim(cline)
       return
    endif
-   write(*,*) '# job type: ', trim(cline)
-   write(*,*) 'job=',job
+   write(*,*) '# job type: ', trim(cline), ' (job=', job,')'
 
    !################# input files #################
    call get_value(table, "files", group)
@@ -142,8 +142,10 @@ subroutine read_input(cfilepath, stat)
    !################# Condition #################
    call get_value(table, "condition", group)
    call get_value(group, "tempK", tempK)
+   call get_value(group, "rng_seed", rng_seed)
    kT = BOLTZ_KCAL_MOL * tempK
    write(*,*) '# tempK: ', tempK
+   write(*,*) '# rng_seed: ', rng_seed
 
    !################# Repeat sequence #################
    if (.not. allocated(cfile_fasta_in)) then

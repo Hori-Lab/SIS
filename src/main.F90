@@ -5,9 +5,10 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat
-   use var_state, only : xyz, tempK, kT, job, nthreads
+   use var_state, only : xyz, tempK, kT, job, nthreads, rng_seed
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in
+   use mt19937_64, only : init_genrand64
 !$ use omp_lib
 
    implicit none
@@ -67,6 +68,9 @@ program sis
       write(6,*) 'Error in reading input file'
       stop (2)
    endif
+
+   !! Set RNG
+   call init_genrand64(rng_seed)
 
    !! Load force field
    call read_force_field(stat)

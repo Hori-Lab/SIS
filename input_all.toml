@@ -18,6 +18,7 @@ type = "MD"
 
 [condition]
 tempK = 310.15
+rng_seed = 123
 
 [repeat]
 n_repeat = 47
