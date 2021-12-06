@@ -3,10 +3,10 @@ subroutine job_md()
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
-   use const_idx, only : ENE
+   use const_idx, only : ENE, SEQT
    use progress, only : progress_init, progress_update
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, mass
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, mass, seq, lmp_mp, ichain_mp
    use var_state, only : viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, nstep, nstep_save, &
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change
@@ -59,13 +59,27 @@ subroutine job_md()
 
    !! Set up variables for dynamics
    radius = 10.0
-   mass(:) = 300.0
    v = viscosity_Pas * sqrt(1.0e3_PREC / KCAL2JOUL) * N_AVO * 1.0e-20_PREC
    write(*,*) 'v =', v
    fric = 6.0e0_PREC * PI * v * radius
    write(*,*) 'fric =', fric
            
    do imp = 1, nmp
+      ! Mass hard coded
+      select case (seq(lmp_mp(imp), ichain_mp(imp)))
+         case (SEQT%A)
+            mass(imp) = 328.212
+         case (SEQT%G)
+            mass(imp) = 344.212
+         case (SEQT%C)
+            mass(imp) = 304.182
+         case (SEQT%U)
+            mass(imp) = 305.164
+         case default
+            write(*,*) 'Error: Unknown seq type, ', seq(lmp_mp(imp), ichain_mp(imp)), ' imp=',imp
+            stop (2)
+      endselect
+
       !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
       c1 = 0.5 * dt * fric / mass(imp)
       c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))

@@ -4,7 +4,7 @@ subroutine read_fasta()
 
    use const
    use const_idx, only : SEQT, char2seqt
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, lmp_mp
    use var_io, only : cfile_fasta_in, iopen_hdl
 
    implicit none
@@ -98,10 +98,12 @@ subroutine read_fasta()
    allocate(seq(maxval(nmp_chain), nchains))
    allocate(imp_chain(maxval(nmp_chain), nchains))
    allocate(ichain_mp(nmp))
+   allocate(lmp_mp(nmp))
 
    seq(:,:) = SEQT%UNDEF
    imp_chain(:,:) = 0
    ichain_mp(:) = 0
+   lmp_mp(:) = 0
 
    ! Read sequences
    rewind(hdl)
@@ -137,6 +139,7 @@ subroutine read_fasta()
                 seq(n, ichain) = iseq
                 imp_chain(n, ichain) = imp
                 ichain_mp(imp) = ichain
+                lmp_mp(imp) = n
              endif
          enddo
 

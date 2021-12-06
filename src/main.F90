@@ -4,7 +4,7 @@ program sis
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat
+   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat, lmp_mp
    use var_state, only : xyz, tempK, kT, job, nthreads, rng_seed
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in
@@ -118,6 +118,7 @@ program sis
       allocate(seq(3*nrepeat, nchains))
       allocate(imp_chain(3*nrepeat, nchains))
       allocate(ichain_mp(nmp))
+      allocate(lmp_mp(nmp))
       imp = 0
       do i = 1, nchains
          do j = 1, nrepeat
@@ -130,6 +131,9 @@ program sis
             ichain_mp(imp+1) = i
             ichain_mp(imp+2) = i
             ichain_mp(imp+3) = i
+            lmp_mp(imp+1) = 3*(j-1)+1
+            lmp_mp(imp+2) = 3*(j-1)+2
+            lmp_mp(imp+3) = 3*(j-1)+3
             imp = imp + 3
          enddo
          !write(*,'(a,141(i1))') '# ', seq(:,i)
