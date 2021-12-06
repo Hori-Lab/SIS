@@ -545,7 +545,9 @@ module dcd
 
       integer :: imp
       integer(4) :: num, nblock_size
-      real(PREC), parameter :: rdummy = 0.0
+      real(PREC), parameter :: rdummy = 0.0   
+      ! DCD format uses cosine values to store angles.
+      ! Therefore, the value 0 corresponds to a rectangle (cos(0.0) => angle = 90 degree).
       ! ---------------------------------------------------------------------
 
       if (self%flg_unitcell) then
