@@ -293,8 +293,34 @@ module dcd
       integer :: i
       integer :: ntitle, nblock_size
       integer, parameter :: idummy = 0
+      integer(4) :: control(20)
+
       character(4), parameter :: ctype = 'CORD'
       character(80) :: title
+
+      ! Control array
+      ! https://www.charmm.org/ubbthreads/ubbthreads.php?ubb=showflat&Number=29987
+      control(1) = 0     ! Number of frames in this file
+      control(2) = 0     ! Number of previous integration steps
+      control(3) = 0     ! Frequency (integration steps) for saving of frames
+      control(4) = 0     ! Number of integration steps in the run that created this file
+      control(5) = 0     ! Frequency of coordinate saving (if this is a velocity trajectory??)
+      control(6) = 0     ! not used
+      control(7) = 0     ! not used
+      control(8) = 0     ! Number of degrees of freedom during the run
+      control(9) = 0     ! Number of fixed atoms
+      control(10) = 0    ! Timestep in AKMA-units. Bit-copy from the 32-bit real number
+                         ! 1 if crystal lattice information is present in the frames
+      if (self%flg_unitcell) then
+         control(11) = 1
+      else
+         control(11) = 0
+      endif
+      control(12) = 0    ! 1 if this is a 4D trajectory
+      control(13) = 0    ! 1 if fluctuating charges are present
+      control(14) = 0    ! 1 if trajectory is the result of merge without consistency checks
+      control(15:19) = 0 ! not used
+      control(20) = 24   ! CHARMM version number (VMD will treat the file as X-PLOR format if this is zero)
 
       ! ---------------------------------------------------------------------
       rewind(self%hdl)
@@ -304,7 +330,7 @@ module dcd
       write(self%hdl) nblock_size
       write(self%hdl) ctype
       do i = 1, 20
-         write(self%hdl) idummy
+         write(self%hdl) control(i)
       enddo
       write(self%hdl) nblock_size
 
@@ -518,7 +544,8 @@ module dcd
       real(PREC), intent(in) :: xyz(3,nmp)
 
       integer :: imp
-      integer :: num, nblock_size
+      integer(4) :: num, nblock_size
+      real(PREC), parameter :: rdummy = 0.0
       ! ---------------------------------------------------------------------
 
       if (self%flg_unitcell) then
@@ -528,15 +555,15 @@ module dcd
             stop
          endif
 
-         nblock_size = 48 
+         nblock_size = 48
          write(self%hdl) nblock_size
    
-         write(self%hdl) self%box(1)
-         write(self%hdl) real(0.0, kind=PREC)
-         write(self%hdl) self%box(2)
-         write(self%hdl) real(0.0, kind=PREC)
-         write(self%hdl) real(0.0, kind=PREC)
-         write(self%hdl) self%box(3)
+         write(self%hdl) real(self%box(1), kind=8)
+         write(self%hdl) real(rdummy, kind=8)
+         write(self%hdl) real(self%box(2), kind=8)
+         write(self%hdl) real(rdummy, kind=8)
+         write(self%hdl) real(rdummy, kind=8)
+         write(self%hdl) real(self%box(3), kind=8)
 
          write(self%hdl) nblock_size
 

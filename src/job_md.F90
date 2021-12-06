@@ -5,7 +5,7 @@ subroutine job_md()
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE
    use progress, only : progress_init, progress_update
-   use pbc, only : pbc_box, set_pbc_size
+   use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, mass
    use var_state, only : viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, nstep, nstep_save, &
                          nl_margin, Ekinetic, &
@@ -49,10 +49,13 @@ subroutine job_md()
    write(*,*) 'Opening dcd file to write: ', trim(cfile_dcd_out)
    fdcd = file_dcd(hdl_dcd, cfile_dcd_out, DCD_OPEN_MODE%WRITE)
 
-   call fdcd%write_header(nmp)
-
    ! set PBC box
-   fdcd%box(:) = pbc_box(:)
+   if (flg_pbc) then
+      fdcd%flg_unitcell = .True.
+      fdcd%box(:) = pbc_box(:)
+   endif
+
+   call fdcd%write_header(nmp)
 
    !! Set up variables for dynamics
    radius = 10.0
