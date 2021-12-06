@@ -63,6 +63,10 @@ subroutine job_md()
    write(*,*) 'v =', v
    fric = 6.0e0_PREC * PI * v * radius
    write(*,*) 'fric =', fric
+   write(*,*) 'mass(A) = 328.212'
+   write(*,*) 'mass(G) = 344.212'
+   write(*,*) 'mass(C) = 304.182'
+   write(*,*) 'mass(U) = 305.164'
            
    do imp = 1, nmp
       ! Mass hard coded
