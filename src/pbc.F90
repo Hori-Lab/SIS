@@ -85,8 +85,10 @@ contains
       real(PREC) :: box_max(3), box_min(3)
       real(PREC) :: x
      
-      box_max(1:3) = 0.5*pbc_box(1:3)
-      box_min(1:3) = -0.5*pbc_box(1:3)
+      !box_max(1:3) =  0.5*pbc_box(1:3)
+      !box_min(1:3) = -0.5*pbc_box(1:3)
+      box_max(1:3) = pbc_box(1:3)
+      box_min(1:3) = 0.0_PREC
   
       do imp = 1, nmp
          do i = 1, 3
