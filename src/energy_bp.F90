@@ -103,7 +103,7 @@ subroutine energy_bp(Ebp)
          endif
       enddo
 
-      write(hdl_bpe, *) ''
+      write(hdl_bpe, '(a)') ''
    endif
 
 contains

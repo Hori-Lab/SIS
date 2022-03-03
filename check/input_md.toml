@@ -9,7 +9,7 @@ type = "MD"
     pdb_ini = "./cag47_4.pdb"
 
     [files.out]
-    types = ["bp",]
+    types = ["bp","bpe"]
     prefix = "./test_md"
 
 [repeat]
@@ -30,3 +30,6 @@ viscosity_Pas = 0.00001
 dt = 0.5
 nstep = 100
 nstep_save = 10
+
+[Progress]
+step = 10
