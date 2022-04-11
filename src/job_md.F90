@@ -9,7 +9,8 @@ subroutine job_md()
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, mass, seq, lmp_mp, ichain_mp
    use var_state, only : viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, nstep, nstep_save, &
                          nl_margin, Ekinetic, &
-                         flg_variable_box, variable_box_step, variable_box_change
+                         flg_variable_box, variable_box_step, variable_box_change, &
+                         opt_anneal, nanneal, anneal_tempK, anneal_step
    use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff, nwca, wca_mp, nbp, bp_mp, bp_nl_cut2
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
@@ -18,6 +19,8 @@ subroutine job_md()
 
    integer(INT64) :: istep
    integer :: i, istat, imp
+   integer :: ianneal
+   integer :: istep_anneal_next
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
@@ -133,15 +136,22 @@ subroutine job_md()
    call neighbor_list()
    xyz_move(:,:) = 0.0e0_PREC
 
+   ! Setting up Simulated Annealing
+   if (opt_anneal > 0) then
+      tempK = anneal_tempK(1)
+      ianneal = 1
+      istep_anneal_next = anneal_step(2)
+   endif
+
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
-   write(hdl_out, '(a)') '#(1)nframe (2)Ekin       (3)Epot       (4)Ebond      (5)Eangl      (6)Ebp        (7)Eexv'
-                         !1234567890 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123
+   write(hdl_out, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv'
+                         !1234567890 123456 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123
 
    ! Write the initial coordinates
    !call fdcd%write_onestep(nmp, xyz)     ! No initial frame for DCD
    call energy()
    call energy_kinetic()
-   write(hdl_out, '(i10, 6(1x,g13.6))') 0, Ekinetic, (energies(i), i=0,ENE%MAX)
+   write(hdl_out, '(i10, 1x, f6.2, 6(1x,g13.6))') 0, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
 
    if (flg_progress) then
       call progress_init(0_INT64)
@@ -209,7 +219,7 @@ subroutine job_md()
       if (mod(istep, nstep_save) == 0) then
          call energy()
          call energy_kinetic()
-         write(hdl_out, '(i10, 6(1x,g13.6))') istep, Ekinetic, (energies(i), i=0,ENE%MAX)
+         write(hdl_out, '(i10, 1x, f6.2, 6(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
          call fdcd%write_onestep(nmp, xyz)
       endif
 
@@ -231,6 +241,16 @@ subroutine job_md()
          endif
       endif
 
+      if (opt_anneal > 0 .and. istep + 1 == istep_anneal_next) then
+         ianneal = ianneal + 1
+         tempK = anneal_tempK(ianneal)
+
+         if (ianneal < nanneal) then
+            istep_anneal_next = anneal_step(ianneal+1)
+         else
+            opt_anneal = 0
+         endif
+      endif
    enddo
 
    call fdcd%close()
