@@ -175,7 +175,7 @@ subroutine force_bp(forces)
       f_bp(:, 5) = f_bp(:, 5) + f_l(:)
 
       !===== Total =====
-      f_bp(:, :) = bp_mp(3, ibp) * bp_U0 * exp(-u) * f_bp(:, :)
+      f_bp(:, :) = bp_U0(ibp) * exp(-u) * f_bp(:, :)
 
       forces(:, imp1) = forces(:, imp1) + f_bp(:, 1)
       forces(:, imp2) = forces(:, imp2) + f_bp(:, 2)

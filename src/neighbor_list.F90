@@ -1,19 +1,20 @@
 subroutine neighbor_list()
   
    use const, only : PREC
-   use const_idx, only : SEQT
+   use const_idx, only : SEQT, BPT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
    use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp
    use var_state, only : xyz
    use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
-                             bp_nl_cut2, bp_mp, nbp, nbp_max, bp_min_loop
+                             bp_nl_cut2, bp_mp, nbp, nbp_max, bp_min_loop, &
+                             bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU
 
    implicit none
 
    integer :: ichain, jchain, i, imp, j, jmp, j_start
    integer :: iwca, ibp
-   integer :: nhb
-   real(PREC) :: d2, v(3)
+   integer :: bptype
+   real(PREC) :: d2, v(3), coef
 
    if (flg_pbc) then
       call pbc_wrap()
@@ -33,6 +34,14 @@ subroutine neighbor_list()
       nbp_max = 5 * nmp
       allocate(bp_mp(3, nbp_max))
       bp_mp(:,:) = 0
+   endif
+
+   if (allocated(bp_U0)) then
+      bp_U0(:) = 0.0_PREC
+   else
+      nbp_max = 5 * nmp
+      allocate(bp_U0(nbp_max))
+      bp_U0(:) = 0.0_PREC
    endif
 
    iwca = 0
@@ -79,19 +88,27 @@ subroutine neighbor_list()
                      continue
 
                   else if (ichain /= jchain .or. i+bp_min_loop < j) then
-                     nhb = 0
+
+                     bptype = BPT%UNDEF
+                     coef = 0.0_PREC
+
                      if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
                          (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
-                        nhb = 3
+                        bptype = BPT%GC_WCF
+                        coef = bp_U0_GC
+
                      else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
                               (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
-                        nhb = 2
+                        bptype = BPT%AU_WCF
+                        coef = bp_U0_AU
+
                      else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
                               (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
-                        nhb = 2
+                        bptype = BPT%GU_WBL
+                        coef = bp_U0_GU
                      endif
-                    
-                     if (nhb > 0) then
+
+                     if (bptype /= BPT%UNDEF) then
                         ibp = ibp + 1
                         if (ibp > nbp_max) then
                            !write(*,*) 'Error: ibp > nbp_max. ibp =', ibp, 'nbp_max = ', nbp_max
@@ -99,7 +116,8 @@ subroutine neighbor_list()
                         endif
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = nhb
+                        bp_mp(3,ibp) = bptype
+                        bp_U0(ibp) = coef
                      endif
                   endif
                endif

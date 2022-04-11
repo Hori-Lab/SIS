@@ -23,7 +23,6 @@ subroutine energy_bp(Ebp)
 
       imp = bp_mp(1, ibp)
       jmp = bp_mp(2, ibp)
-      nhb = bp_mp(3, ibp)
       
       d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp)))
 
@@ -49,7 +48,7 @@ subroutine energy_bp(Ebp)
       phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
       u = u + bp_dihd_k * (1.0 + cos(phi + bp_dihd_phi2))
 
-      e_bp(ibp) = nhb * bp_U0 * exp(-u)
+      e_bp(ibp) = bp_U0(ibp) * exp(-u)
 
    enddo
    !$omp end parallel do
@@ -60,7 +59,7 @@ subroutine energy_bp(Ebp)
 
       do ibp = 1, nbp
 
-         nhb = bp_mp(3, ibp)
+         nhb = bp_type2nhb(bp_mp(3, ibp))
 
          if (e_bp(ibp) < - nhb * kT) then
             imp = bp_mp(1, ibp)
@@ -75,8 +74,6 @@ subroutine energy_bp(Ebp)
    if (flg_out_bpall) then
 
       do ibp = 1, nbp
-
-         nhb = bp_mp(3, ibp)
 
          if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
             imp = bp_mp(1, ibp)
@@ -93,7 +90,7 @@ subroutine energy_bp(Ebp)
 
       do ibp = 1, nbp
 
-         nhb = bp_mp(3, ibp)
+         !nhb = bp_type2nhb(bp_mp(3, ibp))
 
          if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
          !if (e_bp(ibp) < - nhb * kT) then

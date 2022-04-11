@@ -72,7 +72,6 @@ subroutine read_force_field()
    if (associated(node)) then
       call get_value(node, "min_loop", bp_min_loop)
       call get_value(node, "cutoff", bp_cutoff)
-      call get_value(node, "U0", bp_U0)
       call get_value(node, "bond_k", bp_bond_k)
       call get_value(node, "bond_r", bp_bond_r)
       call get_value(node, "angl_k", bp_angl_k)
@@ -81,6 +80,17 @@ subroutine read_force_field()
       call get_value(node, "dihd_k", bp_dihd_k)
       call get_value(node, "dihd_phi1", bp_dihd_phi1)
       call get_value(node, "dihd_phi2", bp_dihd_phi2)
+
+      bp_seqdep = 0
+      ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.
+      ! = 1: Sequence dependent parameters. All possible combinations of trinucleotide-dimer are required.
+      call get_value(node, "seqdep", bp_seqdep)
+
+      if (bp_seqdep == 0) then
+         call get_value(node, "U0_GC", bp_U0_GC)
+         call get_value(node, "U0_AU", bp_U0_AU)
+         call get_value(node, "U0_GU", bp_U0_GU)
+      endif
 
    else
       write(*,*) 'Error: [basepair] parameters required in FF file'
@@ -113,7 +123,9 @@ contains
    
       bp_min_loop = -1
       bp_cutoff = INVALID_VALUE
-      bp_U0 = INVALID_VALUE
+      bp_U0_GC = INVALID_VALUE
+      bp_U0_AU = INVALID_VALUE
+      bp_U0_GU = INVALID_VALUE
       bp_bond_k = INVALID_VALUE
       bp_bond_r = INVALID_VALUE
       bp_angl_k = INVALID_VALUE
@@ -164,11 +176,34 @@ contains
          write(*,*) "# bp_cutoff: ", bp_cutoff
       endif
 
-      if (bp_U0 > INVALID_JUDGE) then
-         write(*,*) "INVALID bp_U0 in the force field file"
-         stop (2)
+      if (bp_seqdep == 0) then
+         if (bp_U0_GC > INVALID_JUDGE) then
+            write(*,*) "INVALID bp_U0_GC in the force field file"
+            stop (2)
+         else
+            write(*,*) "# bp_U0_GC: ", bp_U0_GC
+         endif
+
+         if (bp_U0_AU > INVALID_JUDGE) then
+            write(*,*) "INVALID bp_U0_AU in the force field file"
+            stop (2)
+         else
+            write(*,*) "# bp_U0_AU: ", bp_U0_AU
+         endif
+
+         if (bp_U0_GU > INVALID_JUDGE) then
+            write(*,*) "INVALID bp_U0_GU in the force field file"
+            stop (2)
+         else
+            write(*,*) "# bp_U0_GU: ", bp_U0_GU
+         endif
+
+      else if (bp_seqdep == 1) then
+         continue
+
       else
-         write(*,*) "# bp_U0: ", bp_U0
+         write(*,*) "INVALID bp_seqdep in the force field file"
+         stop (2)
       endif
 
       if (bp_bond_k > INVALID_JUDGE) then

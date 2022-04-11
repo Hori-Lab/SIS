@@ -18,7 +18,13 @@ module var_potential
 
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
    real(PREC), save :: bp_cutoff  ! = 18.0
-   real(PREC), save :: bp_U0  ! = - 5.0 / 3.0
+   !real(PREC), save :: bp_U0  ! = - 5.0 / 3.0
+   integer,    save :: bp_seqdep
+      ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.
+      ! = 1: Sequence dependent parameters. All possible combinations of trinucleotide-dimer are required.
+   real(PREC), save :: bp_U0_GC
+   real(PREC), save :: bp_U0_AU
+   real(PREC), save :: bp_U0_GU
    real(PREC), save :: bp_bond_k  ! = 3.0
    real(PREC), save :: bp_bond_r  ! = 13.8
    real(PREC), save :: bp_angl_k  ! = 1.5
@@ -31,6 +37,7 @@ module var_potential
    integer, save :: nbp
    integer, save :: nbp_max  ! This defines the size of neighbor list
    integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
+   real(PREC), allocatable, save :: bp_U0(:)
    real(PREC), save :: bp_nl_cut2
 
    real(PREC), save :: wca_sigma  ! = 10.0
@@ -40,5 +47,7 @@ module var_potential
    integer, save :: nwca
    integer, save :: nwca_max  ! This defines the size of neighbor list
    integer, allocatable, save :: wca_mp(:,:)  ! (2, nwca) or (2, nwca_max), 1:imp1, 2:imp2
+
+   integer, save :: bp_type2nhb(1:3) = (/ 3, 2, 2/)
 
 end module var_potential

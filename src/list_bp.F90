@@ -1,9 +1,9 @@
 subroutine list_bp()
 
    use const
-   use const_idx, only : SEQT
+   use const_idx, only : SEQT, BPT
    use var_top, only : nmp_chain, seq, imp_chain, nchains
-   use var_potential, only : nbp, bp_mp, bp_min_loop
+   use var_potential, only : nbp, bp_mp, bp_min_loop, bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU
 
    implicit none
   
@@ -41,7 +41,8 @@ subroutine list_bp()
                      if (n == 2) then
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = 3
+                        bp_mp(3,ibp) = BPT%GC_WCF
+                        bp_U0(ibp) = bp_U0_GC
                      endif
     
                   else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
@@ -52,7 +53,8 @@ subroutine list_bp()
                      if (n == 2) then
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = 2
+                        bp_mp(3,ibp) = BPT%AU_WCF
+                        bp_U0(ibp) = bp_U0_AU
                      endif
     
                   else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
@@ -63,7 +65,8 @@ subroutine list_bp()
                      if (n == 2) then
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = 2
+                        bp_mp(3,ibp) = BPT%GU_WBL
+                        bp_U0(ibp) = bp_U0_GU
                      endif
 
                   endif
@@ -77,6 +80,7 @@ subroutine list_bp()
       if (n == 1) then
          nbp = ibp
          allocate(bp_mp(3, nbp))
+         allocate(bp_U0(nbp))
       endif
    enddo
 

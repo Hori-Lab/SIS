@@ -41,6 +41,15 @@ module const_idx
    endtype integrator_types
    type(integrator_types), parameter :: INTGRT = integrator_types(0,1,1)
 
+   type bp_types
+      integer :: UNDEF    ! 0
+      integer :: GC_WCF   ! 1
+      integer :: AU_WCF   ! 2
+      integer :: GU_WBL   ! 3
+      integer :: MAX
+   endtype bp_types
+   type(bp_types), parameter :: BPT = bp_types(0,1,2,3,3)
+
 contains
    function seqt2char(i) result(c)
       integer, intent(in) :: i
