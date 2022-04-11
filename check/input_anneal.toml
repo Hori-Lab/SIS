@@ -1,0 +1,38 @@
+title = "sis input for annealing"
+
+[job]
+type = "MD"
+
+[files]
+      [files.in]
+      ff = "../rna_cg1_para2.ff"
+      pdb_ini = "./cag47_4.pdb"
+      anneal = "./annealing_schedule.txt"
+
+      [files.out]
+      types = ["bp", "bpe", "bpall"]
+      prefix = "./test_anneal"
+
+[repeat]
+n_repeat = 47
+n_chain = 4
+
+[MD]
+integrator = "GJF-2GJ"
+viscosity_Pas = 0.00001
+dt = 0.5
+nstep = 200000
+nstep_save = 500
+neighbor_list_margin = 10.0
+
+[condition]
+tempK = 310.15
+rng_seed = 123
+
+opt_anneal = 1
+   # (optional) flag for simulated annealing.
+   # 0: No annealing (default)
+   # 1: Annealing (anneal is required in [files.in])
+
+[Progress]
+step = 1000

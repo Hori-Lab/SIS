@@ -69,6 +69,8 @@ program sis
       stop (2)
    endif
 
+   call read_anneal()
+
    !! Set RNG
    call init_genrand64(rng_seed)
 

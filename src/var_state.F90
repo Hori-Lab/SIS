@@ -16,6 +16,11 @@ module var_state
    real(PREC), save :: kT
    integer(INT64), save :: rng_seed
 
+   integer, save :: opt_anneal
+   integer, save :: nanneal
+   integer,    allocatable, save :: anneal_tempK(:)
+   real(PREC), allocatable, save :: anneal_step(:)
+
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), allocatable, save :: velos(:,:)
    real(PREC), allocatable, save :: accels(:,:)

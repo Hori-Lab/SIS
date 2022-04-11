@@ -10,8 +10,8 @@ subroutine read_input(cfilepath, stat)
                       flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
-                      cfile_prefix, cfile_pdb_ini, cfile_fasta_in
-   use var_state, only : job, tempK, kT, viscosity_Pas, &
+                      cfile_prefix, cfile_pdb_ini, cfile_fasta_in, cfile_anneal_in
+   use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
                          nstep, dt, nstep_save, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed
@@ -97,8 +97,8 @@ subroutine read_input(cfilepath, stat)
       endif
 
       call get_value(node, "pdb_ini", cfile_pdb_ini)
-
       call get_value(node, "fasta", cfile_fasta_in)
+      call get_value(node, "anneal", cfile_anneal_in)
 
    else
       write(*,*) 'Error in input file: no files.in.'
@@ -141,8 +141,25 @@ subroutine read_input(cfilepath, stat)
 
    !################# Condition #################
    call get_value(table, "condition", group)
-   call get_value(group, "tempK", tempK)
+
    call get_value(group, "rng_seed", rng_seed)
+
+   opt_anneal = 0
+   call get_value(group, "opt_anneal", opt_anneal)
+
+   if (opt_anneal > 0 .and. .not. allocated(cfile_anneal_in)) then
+      write(*,*) 'Error: opt_anneal requires anneal in [files.in].'
+      stop
+   endif
+
+   tempK = -1.0
+   call get_value(group, "tempK", tempK)
+
+   if (opt_anneal == 0 .and. tempK < 0.0) then
+      write(*,*) 'Error: tempK is invalid or undefined in [condition].'
+      stop
+   endif
+
    kT = BOLTZ_KCAL_MOL * tempK
    write(*,*) '# tempK: ', tempK
    write(*,*) '# rng_seed: ', rng_seed

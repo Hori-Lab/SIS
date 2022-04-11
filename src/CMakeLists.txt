@@ -7,6 +7,7 @@ add_executable(${SIS_EXE}
     pbc.F90 progress.F90
     var_top.F90 var_state.F90 var_potential.F90 var_io.F90
     read_force_field.F90 read_input.F90 read_pdb.F90 read_fasta.F90
+    read_anneal.F90
     list_local.F90 list_bp.F90 list_exv.F90
     energy.F90
     energy_kinetic.F90

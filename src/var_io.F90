@@ -22,6 +22,7 @@ module var_io
    integer, save :: step_progress
 
    character(CHAR_FILE_PATH), save :: cfile_out
-   character(len=:), allocatable, save :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini, cfile_fasta_in
+   character(len=:), allocatable, save :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini, cfile_fasta_in, &
+                                          cfile_anneal_in
 
 end module var_io
