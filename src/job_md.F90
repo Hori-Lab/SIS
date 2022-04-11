@@ -22,7 +22,7 @@ subroutine job_md()
    real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
    type(file_dcd) :: fdcd
-   real(PREC) :: fric, radius
+   real(PREC) :: fric(nmp), radius
    real(PREC) :: v, c1, c2, md_coef(4, nmp)
    real(PREC) :: rnd_bm(3, nmp)
    real(PREC) :: accels_pre(3)
@@ -61,8 +61,12 @@ subroutine job_md()
    radius = 10.0
    v = viscosity_Pas * sqrt(1.0e3_PREC / KCAL2JOUL) * N_AVO * 1.0e-20_PREC
    write(*,*) 'v =', v
-   fric = 6.0e0_PREC * PI * v * radius
-   write(*,*) 'fric =', fric
+   fric(:) = 6.0e0_PREC * PI * v * radius
+   write(*,*) 'fric =', fric(1)
+
+   !v = 0.5 ! ps^(-1)
+   !write(*,*) 'v =', v
+
    write(*,*) 'mass(A) = 328.212'
    write(*,*) 'mass(G) = 344.212'
    write(*,*) 'mass(C) = 304.182'
@@ -84,12 +88,17 @@ subroutine job_md()
             stop (2)
       endselect
 
+      !fric(imp) = v * mass(imp)
+      !if (imp == 1) then
+      !   write(*,*) 'fric = ', fric(imp)
+      !endif
+
       !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
-      c1 = 0.5 * dt * fric / mass(imp)
+      c1 = 0.5 * dt * fric(imp) / mass(imp)
       c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
 
       ! md_coef(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
-      md_coef(1, imp) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric * BOLTZ_KCAL_MOL * tempK * dt)
+      md_coef(1, imp) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric(imp) * BOLTZ_KCAL_MOL * tempK * dt)
       ! md_coef(2) = a
       md_coef(2, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
       ! md_coef(3) = sqrt(b) h / m
