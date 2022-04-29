@@ -80,6 +80,13 @@ function(CheckGitSetup)
     CheckGitVersion()
 endfunction()
 
+function(NoGitSetup)
+    set(GIT_HASH "?")
+    configure_file(${pre_configure_file} ${post_configure_file})
+    add_library(githash ${CMAKE_BINARY_DIR}/generated/githash.F90)
+    target_include_directories(githash PUBLIC ${CMAKE_BINARY_DIR}/generated)
+endfunction()
+
 # This is used to run this function from an external cmake process.
 if (RUN_CHECK_GIT_VERSION)
     CheckGitVersion()

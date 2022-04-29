@@ -25,7 +25,7 @@ program sis
    write(6, '(a)') 'SIS model simulation code by Naoto Hori'
    write(6, '(a)') 'Source: https://github.com/naotohori/sis'
    git = githash()
-   if (git(1:1) == '@') then
+   if (git(1:1) == '?') then
       write(6, '(a)') 'Version: 0.1'
    else
       write(6, '(a)') 'Git commit: ' // git

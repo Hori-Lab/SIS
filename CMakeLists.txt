@@ -11,6 +11,9 @@ endif()
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# To output Git commit hash. Either CheckGitSetup or NoGitSetup will be called.
+include(./CheckGit.cmake)
+
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 
@@ -26,9 +29,14 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
         endif()
     endif()
 
-    # To output Git commit hash
-    include(./CheckGit.cmake)
+    # Output Git hash
     CheckGitSetup()
+
+else()
+
+    # Set githash = "?" and output version number (in main.F90)
+    NoGitSetup()
+
 endif()
 
 if(NOT EXISTS "${PROJECT_SOURCE_DIR}/subprojects/toml-f/CMakeLists.txt")
