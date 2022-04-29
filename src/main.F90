@@ -5,7 +5,7 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat, lmp_mp
-   use var_state, only : xyz, tempK, kT, job, nthreads, rng_seed
+   use var_state, only : xyz, tempK, kT, job, nthreads, rng_seed, opt_anneal
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in
    use mt19937_64, only : init_genrand64
@@ -69,8 +69,6 @@ program sis
       stop (2)
    endif
 
-   call read_anneal()
-
    !! Set RNG
    call init_genrand64(rng_seed)
 
@@ -81,6 +79,9 @@ program sis
       stop (2)
    endif
 
+   if (opt_anneal > 0) then
+      call read_anneal()
+   endif
 
    !! Output files
    cfile_out = trim(cfile_prefix) // '.out'
@@ -197,7 +198,7 @@ program sis
       call job_check_force()
 
    else if (job == JOBT%MD) then
-      continue
+
       write(6,*) 'Starting job_md'
       call job_md()
 
