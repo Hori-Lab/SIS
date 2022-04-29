@@ -109,7 +109,6 @@ program sis
 
    if (allocated(cfile_fasta_in)) then
 
-      write(*,*) 'reading fasta'
       call read_fasta()
 
    else if (nrepeat > 0) then
