@@ -179,33 +179,81 @@ subroutine read_input(cfilepath, stat)
 
    !################# MD #################
    if (job == JOBT%MD) then
-      call get_value(table, "MD", group)
 
-      if (associated(group)) then 
-         call get_value(group, "integrator", cline)
-         if (cline == 'GJF-2GJ') then
-            integrator = INTGRT%LD_GJF2GJ
-         else
-            write(*,*) 'Error: Unknown integrator type, '//trim(cline)
-            return
-         endif
-         write(*,*) '# MD integrator: ', trim(cline)
+      call get_value(table, "MD", group, requested=.false.)
 
-         call get_value(group, "viscosity_Pas", viscosity_Pas)
-         call get_value(group, "dt", dt)
-         call get_value(group, "nstep", nstep)
-         call get_value(group, "nstep_save", nstep_save)
-         call get_value(group, "neighbor_list_margin", nl_margin)
-         write(*,*) '# MD viscosity_Pas: ', viscosity_Pas
-         write(*,*) '# MD dt: ', dt
-         write(*,*) '# MD nstep: ', nstep
-         write(*,*) '# MD nstep_save: ', nstep_save
-         write(*,*) '# MD neighbor_list_margin: ', nl_margin
-
-      else
+      if (.not. associated(group)) then 
          write(*,*) 'Error: [MD] field required.'
          return
       endif
+
+      !###### integrator #######
+      call get_value(group, "integrator", cline)
+
+      if (.not. allocated(cline)) then
+         write(*,*) 'Error: integrator is required in [MD].'
+         return
+
+      else if (cline == 'GJF-2GJ') then
+         integrator = INTGRT%LD_GJF2GJ
+
+      else
+         write(*,*) 'Error: Unknown integrator type, '//trim(cline)
+         return
+      endif
+      write(*,*) '# MD integrator: ', trim(cline)
+
+      !###### dt #######
+      dt = -1.0
+      call get_value(group, "dt", dt, stat=istat)
+      if (istat /= 0 .or. dt < 0.0) then
+         write(*,*) 'Error: invalid value for dt in [MD].'
+         return
+      endif
+      write(*,*) '# MD dt: ', dt
+
+      !###### nstep #######
+      nstep = -1
+      call get_value(group, "nstep", nstep, stat=istat)
+      if (istat /= 0 .or. nstep < 0) then
+         write(*,*) 'Error: invalid value for nstep in [MD].'
+         return
+      endif
+      write(*,*) '# MD nstep: ', nstep
+
+      !###### nstep_save #######
+      nstep_save = -1
+      call get_value(group, "nstep_save", nstep_save, stat=istat)
+      if (istat /= 0 .or. nstep_save < 0) then
+         write(*,*) 'Error: invalid value for nstep_save in [MD].'
+         return
+      endif
+      write(*,*) '# MD nstep_save: ', nstep_save
+
+      !###### neighbor_list_margin ######
+      nl_margin = -1.0
+      call get_value(group, "neighbor_list_margin", nl_margin)
+      if (istat /= 0) then
+         write(*,*) 'Error: invalid value for neighbor_list_margin in [MD].'
+         return
+      else if (nl_margin < 0.0) then
+         nl_margin = 10.0_PREC
+         write(*,*) 'Warning: neighbor_list_margin is not specified in [MD] field. The default value will be used.'
+      endif
+      write(*,*) '# MD neighbor_list_margin: ', nl_margin
+
+      !###### viscosity_Pas ######
+      viscosity_Pas = -1.0
+      call get_value(group, "viscosity_Pas", viscosity_Pas)
+      if (istat /= 0) then
+         write(*,*) 'Error: invalid value for viscosity_Pas in [MD].'
+         return
+      else if (viscosity_Pas < 0.0) then
+         viscosity_Pas = 0.00001_PREC
+         write(*,*) 'Warning: viscosity_Pas is not specified in [MD] field. The default value will be used.'
+      endif
+      write(*,*) '# MD viscosity_Pas: ', viscosity_Pas
+
    endif
 
    !################# box #################
