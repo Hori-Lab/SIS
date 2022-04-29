@@ -149,7 +149,7 @@ subroutine read_input(cfilepath, stat)
 
    if (opt_anneal > 0 .and. .not. allocated(cfile_anneal_in)) then
       write(*,*) 'Error: opt_anneal requires anneal in [files.in].'
-      stop
+      return
    endif
 
    tempK = -1.0
@@ -157,7 +157,7 @@ subroutine read_input(cfilepath, stat)
 
    if (opt_anneal == 0 .and. tempK < 0.0) then
       write(*,*) 'Error: tempK is invalid or undefined in [condition].'
-      stop
+      return
    endif
 
    kT = BOLTZ_KCAL_MOL * tempK

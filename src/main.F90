@@ -39,6 +39,11 @@ program sis
       call get_command_argument(1, cfile_inp)  
       call read_input(cfile_inp, stat)
 
+      if (.not. stat) then
+         write(6,*) 'Error in reading input file'
+         stop (2)
+      endif
+
    else if (command_argument_count() == 5) then
 
       job = JOBT%DCD
@@ -64,23 +69,22 @@ program sis
       stop (2) 
    end if
 
-   if (.not. stat) then
-      write(6,*) 'Error in reading input file'
-      stop (2)
-   endif
-
    !! Set RNG
    call init_genrand64(rng_seed)
 
    !! Load force field
    call read_force_field(stat)
    if (.not. stat) then
-      write(6,*) 'Error in reading input file'
+      write(6,*) 'Error in reading force field file'
       stop (2)
    endif
 
    if (opt_anneal > 0) then
-      call read_anneal()
+      call read_anneal(stat)
+      if (.not. stat) then
+         write(6,*) 'Error in reading annealing-schedule file'
+         stop (2)
+      endif
    endif
 
    !! Output files
@@ -148,12 +152,12 @@ program sis
 
    endif
 
-   write(6, '(a)') '########### System'
-   write(6, '(a,i8)') '# Nchain: ', nchains
-   write(6, '(a)') '#'
+   write(6, '(a)') '############ System ############'
+   write(6, '(a,i8)') 'Nchain: ', nchains
+   write(6, *) ''
    do i = 1, nchains
-      write(6, '(a, i4)') '# Chain ', i
-      write(6, '(a, i10)') '# Nnt: ', nmp_chain(i)
+      write(6, '(a, i4)') 'Chain ', i
+      write(6, '(a, i10)') 'Nnt: ', nmp_chain(i)
       k = 0
       do j = 1, nmp_chain(i)
          write(6, '(a)', advance='no') seqt2char(seq(j,i))
@@ -166,8 +170,9 @@ program sis
       if (k /= 0) then
          write(6, *) ''
       endif
-      write(6, '(a)') '#'
    enddo
+   write(6, '(a)') '################################'
+   write(6, *) ''
 
    write(6, '(a,f7.3)') '#T/K: ', tempK
    write(6, '(a,f7.5)') '#kT/kcal/mol: ', kT

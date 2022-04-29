@@ -1,4 +1,4 @@
-subroutine read_anneal()
+subroutine read_anneal(stat)
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end
 
@@ -8,6 +8,8 @@ subroutine read_anneal()
 
    implicit none
 
+   logical, intent(out) :: stat
+
    ! ---------------------------------------------------------------------
    integer :: istep
    integer :: istat, hdl
@@ -15,6 +17,10 @@ subroutine read_anneal()
    real(PREC) :: t
 
    character(len=CHAR_FILE_LINE) :: cline
+
+   stat = .False.
+
+   write(*,*) 'Reading annealing-schedule file: '//trim(cfile_anneal_in)
 
    iopen_hdl = iopen_hdl + 1
    hdl = iopen_hdl
@@ -36,7 +42,7 @@ subroutine read_anneal()
 
       else if (istat > 0) then
          write(*,*) 'Error: cannot read the annealing-schedule file'
-         stop (2)
+         return
 
       end if
 
@@ -45,7 +51,7 @@ subroutine read_anneal()
 
       else
          write(*,*) 'Error: cannot read the annealing-schedule file'
-         stop (2)
+         return
 
       endif
 
@@ -65,7 +71,7 @@ subroutine read_anneal()
 
       else if (istat > 0) then
          write(*,*) 'Error: cannot read the annealing-schedule file'
-         stop (2)
+         return
 
       end if
 
