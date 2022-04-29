@@ -5,17 +5,14 @@ type = "MD"
 
 [files]
       [files.in]
-      ff = "../rna_cg1_para2.ff"
-      pdb_ini = "./cag47_4.pdb"
+      ff = "./rna_cg1_para3.ff"
+      pdb_ini = "./T2S2HP_random.pdb"
+      fasta = "./T2S2HP.fasta"
       anneal = "./annealing_schedule.txt"
 
       [files.out]
       types = ["bp", "bpe", "bpall"]
       prefix = "./test_anneal"
-
-[repeat]
-n_repeat = 47
-n_chain = 4
 
 [MD]
 integrator = "GJF-2GJ"
