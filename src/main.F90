@@ -1,6 +1,6 @@
 program sis
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end
+   use, intrinsic :: iso_fortran_env, Only : iostat_end, compiler_version, compiler_options
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
@@ -19,14 +19,21 @@ program sis
 
    character(500) :: cline
    logical :: stat
+   character(40) :: githash, git
 
-#ifdef VERGIT
-   character(14), parameter :: VERSION_DATE = VERDATE
-   character(7),  parameter :: VERSION_BUILD = VERBUILD
-   character(30), parameter :: VERSION_BRANCH= VERBRANCH
-
-   write(*, '(13a,7a,9a,30a,14a,14a,6a)') '# Git commit ', VERSION_BUILD, ' (branch:', trim(VERSION_BRANCH), ') compiled on ', VERSION_DATE, ' (UTC)'
-#endif
+   write(6, '(a)') '############ Program information ############'
+   write(6, '(a)') 'SIS model simulation code by Naoto Hori'
+   write(6, '(a)') 'Source: https://github.com/naotohori/sis'
+   git = githash()
+   if (git(1:1) == '@') then
+      write(6, '(a)') 'Version: 0.1'
+   else
+      write(6, '(a)') 'Git commit: ' // git
+   endif
+   write(6, '(a)') 'Compiler version: ' // compiler_version()
+   write(6, '(a)') 'Compiler options: ' // compiler_options()
+   write(6, '(a)') '#############################################'
+   write(6, *) ''
 
    nthreads = 1
 !$  nthreads = omp_get_max_threads()

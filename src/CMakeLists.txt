@@ -23,3 +23,4 @@ add_executable(${SIS_EXE}
 
 add_dependencies(${SIS_EXE} toml-f-lib)
 target_link_libraries(${SIS_EXE} toml-f-lib) 
+target_link_libraries(${SIS_EXE} githash)
