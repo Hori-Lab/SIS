@@ -20,7 +20,7 @@ subroutine read_pdb(cfilepath, nmp, xyz)
    character(4) :: nameofatom
    character(6) :: nameid
    character(3) :: nameofmp
-   character(2) :: chainid, chainid_save
+   character(2) :: chainid !, chainid_save
 
    integer :: istat, hdl
    character(72) :: char72

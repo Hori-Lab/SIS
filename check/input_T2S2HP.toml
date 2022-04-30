@@ -20,7 +20,8 @@ type = "MD"
 [MD]
 integrator = "GJF-2GJ"
 dt = 0.05
-nstep = 500000
+nstep = 50000
+#nstep = 1000000000
 nstep_save = 10000
 neighbor_list_margin = 10.0
 viscosity_Pas = 0.00001

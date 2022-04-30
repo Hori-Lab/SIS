@@ -4,7 +4,7 @@ subroutine job_check_force()
    use const
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_wrap
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain
+   use var_top, only : nmp
    use var_state, only : xyz, energies, forces
    use var_io, only : hdl_out, cfile_out, cfile_pdb_ini
 

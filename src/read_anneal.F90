@@ -16,8 +16,6 @@ subroutine read_anneal(stat)
    integer :: s
    real(PREC) :: t
 
-   character(len=CHAR_FILE_LINE) :: cline
-
    stat = .False.
 
    write(*,*) 'Reading annealing-schedule file: '//trim(cfile_anneal_in)

@@ -12,7 +12,6 @@ subroutine read_force_field(stat)
   
    integer :: istat
    integer :: hdl
-   real(PREC) :: temp
 
    character(len=:), allocatable :: cline
 

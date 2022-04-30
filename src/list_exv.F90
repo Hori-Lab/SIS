@@ -2,7 +2,7 @@ subroutine list_exv()
 
    use const
    use const_idx, only : SEQT
-   use var_top, only : nmp_chain, seq, imp_chain, nchains
+   use var_top, only : nmp_chain, imp_chain, nchains
    use var_potential, only : nwca, wca_mp
 
    implicit none

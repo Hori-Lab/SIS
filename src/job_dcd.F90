@@ -4,7 +4,7 @@ subroutine job_dcd()
    use const
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain
+   use var_top, only : nmp
    use var_state, only : xyz, energies
    use var_io, only : hdl_dcd, hdl_out, cfile_dcd_in, cfile_out
    use dcd, only : file_dcd, DCD_OPEN_MODE
