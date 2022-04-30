@@ -17,7 +17,7 @@ contains
 
    endsubroutine set_pbc_size
 
-   function pbc_vec_d(v1, v2) result (new_vec)
+   pure function pbc_vec_d(v1, v2) result (new_vec)
 
       use const, only : PREC
 
@@ -44,7 +44,7 @@ contains
 
    end function pbc_vec_d
 
-   function pbc_vec(v) result (new_vec)
+   pure function pbc_vec(v) result (new_vec)
       
       use const, only : PREC
 

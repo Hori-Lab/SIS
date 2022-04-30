@@ -18,7 +18,7 @@ subroutine energy_bp(Ebp)
 
    e_bp(:) = 0.0e0_PREC
 
-   !$omp parallel do private(imp,jmp,nhb,d,u,theta,phi)
+   !$omp parallel do private(imp,jmp,d,u,theta,phi)
    do ibp = 1, nbp
 
       imp = bp_mp(1, ibp)
@@ -105,7 +105,7 @@ subroutine energy_bp(Ebp)
 
 contains
 
-   function mp_angle(imp1, imp2, imp3) result(theta)
+   pure function mp_angle(imp1, imp2, imp3) result(theta)
 
       real(PREC) :: theta
       integer, intent(in) :: imp1, imp2, imp3
@@ -127,7 +127,7 @@ contains
 
    endfunction mp_angle
 
-   function mp_dihedral(imp1, imp2, imp3, imp4) result(phi)
+   pure function mp_dihedral(imp1, imp2, imp3, imp4) result(phi)
 
       real(PREC) :: phi
       integer, intent(in) :: imp1, imp2, imp3, imp4
