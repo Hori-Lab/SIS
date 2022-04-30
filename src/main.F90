@@ -17,28 +17,15 @@ program sis
 
    integer :: i, j, k, imp
 
-   character(500) :: cline
+   character(len=500) :: cline
    logical :: stat
-   character(40) :: githash, git
 
-   write(6, '(a)') '############ Program information ############'
-   write(6, '(a)') 'SIS model simulation code by Naoto Hori'
-   write(6, '(a)') 'Source: https://github.com/naotohori/sis'
-   git = githash()
-   if (git(1:1) == '?') then
-      write(6, '(a)') 'Version: 0.1'
-   else
-      write(6, '(a)') 'Git commit: ' // git
-   endif
-   write(6, '(a)') 'Compiler version: ' // compiler_version()
-   write(6, '(a)') 'Compiler options: ' // compiler_options()
-   write(6, '(a)') '#############################################'
-   write(6, *) ''
+   call write_program_info()
 
    nthreads = 1
 !$  nthreads = omp_get_max_threads()
    if (nthreads > 1) then
-      write(*, *) 'OpenMP nthreads = ', nthreads
+      write(6, *) 'OpenMP nthreads = ', nthreads
    endif
 
    if (command_argument_count() == 1) then
@@ -225,5 +212,34 @@ program sis
    deallocate(xyz)
 
    stop
+
+contains
+
+   subroutine write_program_info()
+
+      character(len=40) :: githash, git
+      character(len=8) :: date
+      character(len=10) :: time
+      character(len=5) :: zone
+
+      call date_and_time(date, time, zone)
+      git = githash()
+
+      write(6, '(a)') '############ Program information ############'
+      write(6, '(a)') 'SIS model simulation code by Naoto Hori'
+      write(6, '(a)') 'Source: https://github.com/naotohori/sis'
+      if (git(1:1) == '?') then
+         write(6, '(a)') 'Version: 0.1'
+      else
+         write(6, '(a)') 'Git commit: ' // git
+      endif
+      write(6, '(a)') 'Compiler version: ' // compiler_version()
+      write(6, '(a)') 'Compiler options: ' // compiler_options()
+      write(6, '(a)') 'Executed at ' // date(1:4) // '-' // date(5:6) // '-' // date(7:8) // 'T' &
+                      // time(1:2) // ':' // time(3:4) // ':' // time(5:6) // zone(1:3) // ':' // zone(4:5)  ! ISO 8601
+      write(6, '(a)') '#############################################'
+      write(6, *) ''
+
+   end subroutine write_program_info
 
 end program sis
