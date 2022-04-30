@@ -1,7 +1,7 @@
 # This is to use Git hash in the code.
 # Adopted from
 # https://gitlab.com/jhamberg/cmake-examples/-/blob/386b8d36848d76c4ca451d3b0af338017ac844ad/cmake/CheckGit.cmake
-# by Jonathan Hamberg
+# by Jonathan Hamberg under MIT license
 
 set(CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_DIR})
 if (NOT DEFINED pre_configure_dir)
