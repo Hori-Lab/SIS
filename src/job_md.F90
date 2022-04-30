@@ -20,7 +20,7 @@ subroutine job_md()
    integer(INT64) :: istep
    integer :: i, istat, imp
    integer :: ianneal
-   integer :: istep_anneal_next
+   integer(INT64) :: istep_anneal_next
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)

@@ -18,8 +18,8 @@ module var_state
 
    integer, save :: opt_anneal
    integer, save :: nanneal
-   integer,    allocatable, save :: anneal_tempK(:)
-   real(PREC), allocatable, save :: anneal_step(:)
+   integer(INT64), allocatable, save :: anneal_step(:)
+   real(PREC), allocatable, save :: anneal_tempK(:)
 
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), allocatable, save :: velos(:,:)
