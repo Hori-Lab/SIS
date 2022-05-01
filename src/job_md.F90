@@ -12,7 +12,7 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step
    use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff
-   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini
+   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
@@ -39,13 +39,16 @@ subroutine job_md()
    allocate(xyz(3, nmp))
    allocate(forces(3, nmp))
 
-   !! Initial structure from PDB
-   if (len(cfile_pdb_ini) < 1) then
-      write(*,*) 'PDB for the initial structure is not specified'
-      stop
-   endif
+   !! Initial structure from PDB or XYZ
+   if (len(cfile_pdb_ini) > 0) then
+      call read_pdb(cfile_pdb_ini, nmp, xyz)
 
-   call read_pdb(cfile_pdb_ini, nmp, xyz)
+   else if (len(cfile_xyz_ini) > 0) then
+      call read_xyz(cfile_xyz_ini, nmp, xyz)
+
+   else
+      error stop 'Initial structure not found in job_md'
+   endif
 
    !! Open DCD file
    cfile_dcd_out = trim(cfile_prefix) // '.dcd'

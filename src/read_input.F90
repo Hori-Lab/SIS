@@ -10,7 +10,7 @@ subroutine read_input(cfilepath, stat)
                       flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
-                      cfile_prefix, cfile_pdb_ini, cfile_fasta_in, cfile_anneal_in
+                      cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
                          nstep, dt, nstep_save, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
@@ -44,8 +44,9 @@ subroutine read_input(cfilepath, stat)
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
-      write(*,*) 'Error: failed to open the input file. '//trim(cfilepath)
-      stop (2)
+      !write(*,*) 'Error: failed to open the input file. '//trim(cfilepath)
+      !stop (2)
+      error stop ('Error: failed to open the input file. '//trim(cfilepath))
    endif
 
    call toml_parse(table, hdl)
@@ -97,6 +98,7 @@ subroutine read_input(cfilepath, stat)
       endif
 
       call get_value(node, "pdb_ini", cfile_pdb_ini)
+      call get_value(node, "xyz_ini", cfile_xyz_ini)
       call get_value(node, "fasta", cfile_fasta_in)
       call get_value(node, "anneal", cfile_anneal_in)
 
@@ -104,6 +106,17 @@ subroutine read_input(cfilepath, stat)
       write(*,*) 'Error in input file: no files.in.'
       return
    endif
+
+   if (job == JOBT%MD .or. job == JOBT%DCD) then
+      if (len(cfile_pdb_ini) < 1 .and. len(cfile_xyz_ini) < 1) then
+         error stop 'Initial structure is not specified. Either XYZ or PDB is required.'
+
+      else if (len(cfile_pdb_ini) > 0 .and. len(cfile_xyz_ini) > 0) then
+         error stop 'Both XYZ and PDB are specified for the initial structure. Please use only one of them.'
+
+      endif
+   endif
+
 
    !################# output files #################
    call get_value(group, "out", node)

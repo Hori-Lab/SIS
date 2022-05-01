@@ -8,6 +8,7 @@ type = "MD"
       ff = "./rna_cg1_para3.ff"
       fasta = "T2S2HP.fasta"
       pdb_ini = "T2S2HP_random.pdb"
+      #xyz_ini = "T2S2HP_random.xyz"
 
       [files.out]
       types = ["bp", "bpe", "bpall"]

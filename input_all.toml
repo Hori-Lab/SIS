@@ -2,16 +2,30 @@ title = "sis input"
 
 [job]
 type = "MD"
-# type = "DCD"
-# type = "CHECK_FORCE"
+   # Aveilable options:
+   #    "MD"
+   #    "DCD"
+   #    "CHECK_FORCE"
 
 [files]
       [files.in]
       ff = "./rna_cg1_para2.ff"
-      dcd = "./HBB2.dcd"
-      pdb_ini = "after_minimize.pdb"
+         # Force-field file. Required.
+
       fasta = "./beta-globin.fasta"
+         # FASTA sequence file. Required unless [repeat] section is specified.
+
+      pdb_ini = "initial.pdb"
+      xyz_ini = "initial.xyz"
+         # File for initial structure. Only one of them is required.
+         # Only coordinates will be read, and any sequence information written these files will be ignored.
+
+      dcd = "./trajectory.dcd"
+         # DCD file to read. Required if type = "DCD" in [job].
+
       anneal = "./annealing_schedule.txt"
+         # Annealing-schedule file.
+         # Required only when opt_anneal > 1 in [condition].
 
       [files.out]
       types = ["bp", "bpe", "bpall"]
@@ -20,6 +34,7 @@ type = "MD"
 [condition]
 tempK = 310.15
 rng_seed = 123
+
 opt_anneal = 1
    # (optional) flag for simulated annealing.
    # 0: No annealing (default)
