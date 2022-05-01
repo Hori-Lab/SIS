@@ -12,7 +12,7 @@ if (NOT DEFINED post_configure_dir)
     set(post_configure_dir ${CMAKE_BINARY_DIR}/generated)
 endif ()
 
-set(pre_configure_file ${pre_configure_dir}/src/githash.F90.in)
+set(pre_configure_file ${pre_configure_dir}/src/githash.in.F90)
 set(post_configure_file ${post_configure_dir}/githash.F90)
 
 function(CheckGitWrite git_hash)
