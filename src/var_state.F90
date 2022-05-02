@@ -9,6 +9,8 @@ module var_state
    ! ----------------------------------------------------------------
    integer, save :: nthreads
 
+   logical, save :: restarted
+
    integer, save :: job
 
    ! Condition
@@ -35,7 +37,12 @@ module var_state
    real(PREC), save :: dt
    integer(INT64), save :: nstep
    integer, save :: nstep_save
+   integer, save :: nstep_save_rst
    real(PREC), save :: nl_margin
+
+   integer(INT64) :: istep
+   integer :: ianneal
+   integer(INT64) :: istep_anneal_next
 
    ! variable box
    logical, save :: flg_variable_box

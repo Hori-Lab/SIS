@@ -12,7 +12,7 @@ subroutine read_input(cfilepath, stat)
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
-                         nstep, dt, nstep_save, integrator, nl_margin, &
+                         nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed
    use var_top, only : nrepeat, nchains
@@ -44,8 +44,6 @@ subroutine read_input(cfilepath, stat)
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
-      !write(*,*) 'Error: failed to open the input file. '//trim(cfilepath)
-      !stop (2)
       error stop ('Error: failed to open the input file. '//trim(cfilepath))
    endif
 
@@ -242,6 +240,15 @@ subroutine read_input(cfilepath, stat)
          return
       endif
       write(*,*) '# MD nstep_save: ', nstep_save
+
+      !###### nstep_save_rst #######
+      nstep_save_rst = nstep_save
+      call get_value(group, "nstep_save_rst", nstep_save_rst, stat=istat)
+      if (istat /= 0) then
+         write(*,*) 'Error: invalid value for nstep_save_rst in [MD].'
+         return
+      endif
+      write(*,*) '# MD nstep_save_rst: ', nstep_save_rst
 
       !###### neighbor_list_margin ######
       nl_margin = -1.0

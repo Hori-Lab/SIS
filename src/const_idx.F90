@@ -50,6 +50,15 @@ module const_idx
    endtype bp_types
    type(bp_types), parameter :: BPT = bp_types(0,1,2,3,3)
 
+   type rst_block
+      integer :: STEP
+      integer :: ANNEAL
+      integer :: XYZ
+      integer :: VELO
+      integer :: ACCEL
+   endtype rst_block
+   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5)
+
 contains
    function seqt2char(i) result(c)
       integer, intent(in) :: i

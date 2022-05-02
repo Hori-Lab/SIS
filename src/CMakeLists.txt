@@ -8,6 +8,7 @@ add_executable(${SIS_EXE}
     var_top.F90 var_state.F90 var_potential.F90 var_io.F90
     read_force_field.F90 read_input.F90 read_pdb.F90 read_xyz.F90 read_fasta.F90
     read_anneal.F90
+    write_rst.F90 read_rst.F90
     list_local.F90 list_bp.F90 list_exv.F90
     energy.F90
     energy_kinetic.F90
@@ -24,3 +25,8 @@ add_executable(${SIS_EXE}
 add_dependencies(${SIS_EXE} toml-f-lib)
 target_link_libraries(${SIS_EXE} toml-f-lib) 
 target_link_libraries(${SIS_EXE} githash)
+
+add_executable(show_rst
+    const.F90 const_idx.F90
+    show_rst.F90
+)

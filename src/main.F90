@@ -5,22 +5,26 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat, lmp_mp
-   use var_state, only : xyz, tempK, kT, job, nthreads, rng_seed, opt_anneal
+   use var_state, only : restarted, xyz, tempK, kT, job, nthreads, rng_seed, opt_anneal
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
-                      cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in
+                      cfile_ff, cfile_dcd_in, cfile_prefix, cfile_out, cfile_fasta_in, hdl_rst
    use mt19937_64, only : init_genrand64
 !$ use omp_lib
 
    implicit none
 
-   character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_bp
+   character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_bp, cfile_rst
 
+   integer :: nargs
    integer :: i, j, k, imp
+   integer :: istat
 
    character(len=500) :: cline
    logical :: stat
 
    call write_program_info()
+
+   call init_const()
 
    nthreads = 1
 !$  nthreads = omp_get_max_threads()
@@ -28,18 +32,42 @@ program sis
       write(6, *) 'OpenMP nthreads = ', nthreads
    endif
 
-   if (command_argument_count() == 1) then
-      
-      call get_command_argument(1, cfile_inp)  
+   nargs = command_argument_count()
+
+   if (nargs == 1) then
+
+      call get_command_argument(1, cfile_inp)
+
       call read_input(cfile_inp, stat)
 
       if (.not. stat) then
-         write(6,*) 'Error in reading input file'
-         stop (2)
+         error stop 'Error in reading input file'
+      endif
+      
+      restarted = .False.
+
+   else if (nargs == 2) then
+
+      call get_command_argument(1, cfile_inp)
+      call get_command_argument(2, cfile_rst)
+
+      call read_input(cfile_inp, stat)
+
+      if (.not. stat) then
+         error stop 'Error in reading input file'
       endif
 
-   else if (command_argument_count() == 5) then
+      open(hdl_rst, file=cfile_rst, status='old', action='read', iostat=istat, form='unformatted', access='stream')
 
+      if (istat > 0) then
+         error stop 'Error: cannot open the restart file ' // trim(cfile_rst)
+      endif
+
+      restarted = .True.
+
+   else if (nargs == 5) then
+
+      restarted = .False.
       job = JOBT%DCD
       tempK = 273.15 + 22.0
       kT = BOLTZ_KCAL_MOL * tempK
@@ -58,7 +86,7 @@ program sis
       cfile_prefix = trim(cline)
 
    else
-      write(6,*) 'Usage: PROGRAM input.toml'
+      write(6,*) 'Usage: PROGRAM input.toml [restart fiel]'
       write(6,*) '  or : PROGRAM ff_file dcd_file nrepeat nchains out_prefix'
       stop (2) 
    end if

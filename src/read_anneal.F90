@@ -80,5 +80,7 @@ subroutine read_anneal(stat)
 
    close(hdl)
    iopen_hdl = iopen_hdl - 1
+
+   stat = .True.
    
 end subroutine read_anneal
