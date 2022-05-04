@@ -3,16 +3,17 @@ subroutine neighbor_list()
    use const, only : PREC
    use const_idx, only : SEQT, BPT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
-   use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp
+   use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp, has_charge
    use var_state, only : xyz
    use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
                              bp_nl_cut2, bp_mp, nbp, nbp_max, bp_min_loop, &
-                             bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU
+                             bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU, &
+                             nele, nele_max, ele_mp, ele_nl_cut2, flg_ele
 
    implicit none
 
    integer :: ichain, jchain, i, imp, j, jmp, j_start
-   integer :: iwca, ibp
+   integer :: iwca, ibp, iele
    integer :: bptype
    real(PREC) :: d2, v(3), coef
 
@@ -30,22 +31,31 @@ subroutine neighbor_list()
 
    if (allocated(bp_mp)) then
       bp_mp(:,:) = 0
+      bp_U0(:) = 0.0_PREC
    else
       nbp_max = 5 * nmp
       allocate(bp_mp(3, nbp_max))
       bp_mp(:,:) = 0
-   endif
-
-   if (allocated(bp_U0)) then
-      bp_U0(:) = 0.0_PREC
-   else
-      nbp_max = 5 * nmp
       allocate(bp_U0(nbp_max))
       bp_U0(:) = 0.0_PREC
    endif
 
+   if (flg_ele) then
+      if (allocated(ele_mp)) then
+         ele_mp(:,:) = 0
+         !ele_coef(:) = 0.0_PREC
+      else
+         nele_max = 5 * nmp
+         allocate(ele_mp(2, nele_max))
+         ele_mp(:,:) = 0
+         !allocate(ele_coef(nele_max))
+         !ele_coef(:) = 0.0_PREC
+      endif
+   endif
+
    iwca = 0
    ibp = 0
+   iele = 0
 
    do ichain = 1, nchains 
 
@@ -68,6 +78,7 @@ subroutine neighbor_list()
                v(:) = pbc_vec_d(xyz(:,imp), xyz(:,jmp))
                d2 = dot_product(v,v)
 
+               ! WCA
                if (d2 <= wca_nl_cut2) then
                   if (ichain /= jchain .or. i+2 < j) then
                      iwca = iwca + 1
@@ -81,6 +92,23 @@ subroutine neighbor_list()
                   endif
                endif
 
+               ! Electrostatic
+               if (flg_ele .and. d2 <= ele_nl_cut2) then
+
+                  if (has_charge(imp) .and. has_charge(jmp)) then
+
+                     iele = iele + 1
+                     if (iele > nele_max) then
+                        call reallocate_ele_mp()
+                     endif
+
+                     ele_mp(1,iele) = imp
+                     ele_mp(2,iele) = jmp
+                     !ele_coef(iele) = charge(i) * charge(j)
+                  endif
+               endif
+
+               ! Basepairs
                if (d2 <= bp_nl_cut2) then
 
                   if (i == 1 .or. j == 1 .or. i == nmp_chain(ichain) .or. j == nmp_chain(ichain)) then
@@ -130,6 +158,7 @@ subroutine neighbor_list()
 
    nwca = iwca
    nbp = ibp
+   nele = iele
 
 contains
    
@@ -152,22 +181,55 @@ contains
 
    endsubroutine reallocate_wca_mp
 
+   subroutine reallocate_ele_mp()
+
+      integer :: old_max
+      integer :: tmp(2, nele_max)
+      !real(PREC) :: tmp2(nele_max)
+
+      old_max = nele_max   
+      tmp(1:2, 1:old_max) = ele_mp(1:2, 1:old_max)
+      !tmp2(1:old_max) = ele_coef(1:old_max)
+
+      deallocate(ele_mp)
+      !deallocate(ele_coef)
+
+      nele_max = int(nele_max * 1.2)
+
+      allocate(ele_mp(2, nele_max))
+      !allocate(ele_coef(nele_max))
+
+      ele_mp(:, :) = 0
+      ele_mp(1:2, 1:old_max) = tmp(1:2, 1:old_max)
+
+      !ele_coef(:) = 0.0_PREC
+      !ele_coef(1:old_max) = tmp2(1:old_max)
+
+   endsubroutine reallocate_ele_mp
+
    subroutine reallocate_bp_mp()
       
       integer :: old_max
       integer :: tmp(3, nbp_max)
+      real(PREC) :: tmp2(nbp_max)
 
       old_max = nbp_max   
       tmp(1:3, 1:old_max) = bp_mp(1:3, 1:old_max)
+      tmp2(1:old_max) = bp_U0(1:old_max)
 
       deallocate(bp_mp)
+      deallocate(bp_U0)
 
       nbp_max = int(nbp_max * 1.2)
 
       allocate(bp_mp(3, nbp_max))
+      allocate(bp_U0(nbp_max))
 
       bp_mp(:, :) = 0
       bp_mp(1:3, 1:old_max) = tmp(1:3, 1:old_max)
+
+      bp_U0(:) = 0.0_PREC
+      bp_U0(1:old_max) = tmp2(1:old_max)
 
    endsubroutine reallocate_bp_mp
 

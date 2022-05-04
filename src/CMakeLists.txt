@@ -9,14 +9,15 @@ add_executable(${SIS_EXE}
     read_force_field.F90 read_input.F90 read_pdb.F90 read_xyz.F90 read_fasta.F90
     read_anneal.F90
     write_rst.F90 read_rst.F90
-    list_local.F90 list_bp.F90 list_exv.F90
+    list_local.F90 list_bp.F90 list_exv.F90 list_ele.F90
+    set_ele.F90
     energy.F90
     energy_kinetic.F90
     energy_bond.F90 energy_angl.F90 energy_bp.F90 read_sisinfo.F90
-    energy_wca.F90
+    energy_wca.F90 energy_ele_DH.F90
     force.F90
     force_bond.F90 force_angl.F90 force_bp.F90
-    force_wca.F90
+    force_wca.F90 force_ele_DH.F90
     neighbor_list.F90
     job_md.F90 job_dcd.F90 job_check_force.F90
     main.F90

@@ -14,8 +14,10 @@ subroutine read_input(cfilepath, stat)
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
-                         rng_seed
-   use var_top, only : nrepeat, nchains
+                         rng_seed, &
+                         ionic_strength, length_per_charge
+   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp
+   use var_top, only : nrepeat, nchains, inp_no_charge
   
    implicit none
 
@@ -276,6 +278,73 @@ subroutine read_input(cfilepath, stat)
 
    endif
 
+   !################# Electrostatic #################
+   flg_ele = .False.
+   call get_value(table, "Electrostatic", group, requested=.False.)
+
+   if (associated(group)) then
+
+      write(6, '(a)') '# Electrostatic: On'
+      flg_ele = .True.
+
+      ! ionic_strength
+      ionic_strength = INVALID_VALUE
+      call get_value(group, "ionic_strength", ionic_strength)
+      if (ionic_strength > INVALID_JUDGE) then
+         write(6, '(a)') "Error: Invalid value for ionic_strength in [Electrostatic]."
+         return
+      else
+         write(6, '(a,g15.8)') '# Electrostatic, ionic strength: ', ionic_strength
+      endif
+
+      ! cutoff type   1: distance-based (default) 
+      !               2: x Debye length
+      ele_cutoff_type = 1
+      call get_value(group, "cutoff_type", ele_cutoff_type)
+      if (ele_cutoff_type == 1) then
+         write(6, '(a)') "# Electrostatic, cutoff type: 1 (distance-based)"
+      else if (ele_cutoff_type == 2) then
+         write(6, '(a)') "# Electrostatic, cutoff type: 2 cutoff will be multiplied by the Debye length"
+      else
+         write(6, '(a)') "Error: Invalid values for cutoff_type in [Electrostatic]."
+         return
+      endif
+
+      ! cutoff
+      ele_cutoff_inp = INVALID_VALUE
+      call get_value(group, "cutoff", ele_cutoff_inp)
+      if (ele_cutoff_inp > INVALID_JUDGE) then
+         write(6, '(a)') "Error: Invalid values or absence of cutoff in [Electrostatic]."
+         return
+      else
+         write(6, '(a,g15.8)') '# Electrostatic, cutoff: ', ele_cutoff_inp
+      endif
+
+      ! length_per_charge
+      length_per_charge = INVALID_VALUE
+      call get_value(group, "length_per_charge", length_per_charge)
+      write(6, '(a,g15.8)') '# Electrostatic, length_per_charge: ', length_per_charge
+      if (length_per_charge > INVALID_JUDGE) then
+         write(6, '(a)') "Error: Invalid value for length_per_charge in [Electrostatic]."
+         return
+      else
+         write(6, '(a,g15.8)') '# Electrostatic, length per charge: ', length_per_charge
+      endif
+
+      ! (optional) No charge particles
+      call get_value(group, "no_charge", array)
+
+      if (len(array) > 0) then
+         write(6, '(a)') "# No charges on the following particles:"
+         allocate(inp_no_charge(len(array)))
+         do i = 1, len(array)
+            call get_value(array, i, inp_no_charge(i))
+            write(6, '(i8, 1x, i8)') i, inp_no_charge(i)
+         enddo
+      endif
+
+   endif
+
    !################# box #################
    flg_pbc = .False.
    call get_value(table, "PBC_box", group, requested=.False.)
@@ -318,6 +387,7 @@ subroutine read_input(cfilepath, stat)
    write(6,*) 'Done: reading input file'
    write(6,*) ''
    flush(6)
+
    stat = .True.
 
 end subroutine read_input

@@ -38,7 +38,7 @@ subroutine job_dcd()
    allocate(xyz(3, nmp))
 
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
-   write(hdl_out, '(a)') '#(1)nframe  (2)Etotal  (3)Ebond   (4)Eangl   (5)Ebp   (6)Eexv'
+   write(hdl_out, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv       (9)Eele'
 
    nframe = 0
    do
@@ -48,7 +48,7 @@ subroutine job_dcd()
 
       call energy()
       
-      write(hdl_out, '(i10, 5(1x,g15.8))') nframe, (energies(i), i=0,ENE%MAX)
+      write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') nframe, 0.0, 0.0, (energies(i), i=0,ENE%MAX)
 
       !! Debug
       !if (nframe == 10) then

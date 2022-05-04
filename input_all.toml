@@ -49,6 +49,7 @@ x = 809.972
 y = 809.972
 z = 809.972
 
+
 [MD]
 integrator = "GJF-2GJ"
 dt = 0.05
@@ -60,8 +61,28 @@ neighbor_list_margin = 10.0
 viscosity_Pas = 0.00001
    # (optional) default is 0.00001
 
+
+[Electrostatic]
+ionic_strength = 0.1
+   # Ionic strength of the monovalent-ion solution
+
+cutoff_type = 1
+cutoff = 50.0
+   # cutoff_type: How to specify the cutoff distance for electrostatic interactions.
+   #             = 1: cutoff will be specified as distance in Angstrom. (default)
+   #             = 2: cutoff will be a factor to be multiplied by Debye length.
+   # cutoff: Either diestance (1) or factor (2), depending on the choice of cutoff_type.
+
+no_charge = [1, 27]
+   # Particles having no charges. This 
+
+length_per_charge = 4.38178046
+   # Paremeter in ion-condensation theory.
+
+
 [Progress]
 step = 1000
+
 
 [variable_box]
 step = 1000

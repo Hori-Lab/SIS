@@ -16,6 +16,7 @@ module var_potential
    real(PREC), save :: angl_k  ! = 10.0_PREC
    real(PREC), save :: angl_t0  ! = 2.618_PREC
 
+   ! Basepair
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
    real(PREC), save :: bp_cutoff  ! = 18.0
    !real(PREC), save :: bp_U0  ! = - 5.0 / 3.0
@@ -34,20 +35,39 @@ module var_potential
    real(PREC), save :: bp_dihd_phi1  ! = 1.8326
    real(PREC), save :: bp_dihd_phi2  ! = 1.1345
 
+   integer, save :: bp_type2nhb(1:3) = (/ 3, 2, 2/)
+
+   ! Basepair list
    integer, save :: nbp
    integer, save :: nbp_max  ! This defines the size of neighbor list
    integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
    real(PREC), allocatable, save :: bp_U0(:)
    real(PREC), save :: bp_nl_cut2
 
+   ! WCA parameters
    real(PREC), save :: wca_sigma  ! = 10.0
    real(PREC), save :: wca_eps    ! = 2.0
    real(PREC), save :: wca_nl_cut2 ! = (wca_sigma + nl_margin) ** 2
 
+   ! WCA list
    integer, save :: nwca
    integer, save :: nwca_max  ! This defines the size of neighbor list
    integer, allocatable, save :: wca_mp(:,:)  ! (2, nwca) or (2, nwca_max), 1:imp1, 2:imp2
 
-   integer, save :: bp_type2nhb(1:3) = (/ 3, 2, 2/)
+   ! Electrostatic parameters
+   logical, save :: flg_ele
+   integer, save :: ele_cutoff_type
+   real(PREC), save :: ele_cutoff_inp
+   real(PREC), save :: ele_cutoff
+   real(PREC), save :: ele_coef
+   real(PREC), save :: ele_coef_QQ
+
+   ! Electrostatic list
+   integer, save :: nele
+   integer, save :: nele_max
+   integer, allocatable, save :: ele_mp(:, :)
+
+   real(PREC), save :: ele_nl_cut2
+
 
 end module var_potential

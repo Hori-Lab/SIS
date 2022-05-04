@@ -19,4 +19,8 @@ module var_top
    integer, allocatable, save :: seq(:,:)
    real(PREC), allocatable, save :: mass(:)
 
+   integer, allocatable, save :: inp_no_charge(:)
+   logical, allocatable, save :: has_charge(:)
+   real(PREC), allocatable, save :: charge(:)
+
 end module var_top

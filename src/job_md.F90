@@ -14,7 +14,7 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff
+   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff, ele_cutoff, ele_nl_cut2
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -136,6 +136,7 @@ subroutine job_md()
    ! Neighbor list
    wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
    bp_nl_cut2 = (bp_cutoff + nl_margin) ** 2
+   ele_nl_cut2 = (ele_cutoff + nl_margin) ** 2
    call neighbor_list()
    xyz_move(:,:) = 0.0e0_PREC
 
@@ -178,20 +179,20 @@ subroutine job_md()
 
    ! Open .out file
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
-   write(hdl_out, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv'
-                         !1234567890 123456 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123
+   write(hdl_out, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv       (9)Eele'
+                         !1234567890 123456 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123
 
    ! Output initial structure
    if (restarted) then
       ! Only STDOUT if restarted. No DCD output.
       write(6, '(a)') '##### Energies at the beginning'
-      write(6, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv'
-      write(6, '(i10, 1x, f6.2, 6(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+      write(6, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv       (9)Eele'
+      write(6, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
       write(6, *)
 
    else
       ! At istep = 0 (not restarted), write both .out and DCD
-      write(hdl_out, '(i10, 1x, f6.2, 6(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+      write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
       call fdcd%write_onestep(nmp, xyz)
    endif
 
@@ -263,7 +264,7 @@ subroutine job_md()
       if (mod(istep, nstep_save) == 0) then
          call energy()
          call energy_kinetic()
-         write(hdl_out, '(i10, 1x, f6.2, 6(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+         write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
          call fdcd%write_onestep(nmp, xyz)
       endif
 

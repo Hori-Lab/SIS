@@ -4,6 +4,7 @@ program sis
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, JOBT, seqt2char
+   use var_potential, only : flg_ele
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat, lmp_mp
    use var_state, only : restarted, xyz, tempK, kT, job, nthreads, rng_seed, opt_anneal
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
@@ -97,14 +98,14 @@ program sis
    !! Load force field
    call read_force_field(stat)
    if (.not. stat) then
-      write(6,*) 'Error in reading force field file'
+      write(6, '(a)') 'Error in reading force field file'
       stop (2)
    endif
 
    if (opt_anneal > 0) then
       call read_anneal(stat)
       if (.not. stat) then
-         write(6,*) 'Error in reading annealing-schedule file'
+         write(6, '(a)') 'Error in reading annealing-schedule file'
          stop (2)
       endif
    endif
@@ -196,10 +197,14 @@ program sis
    write(6, '(a)') '################################'
    write(6, *) ''
 
-   write(6, '(a,f7.3)') '#T/K: ', tempK
-   write(6, '(a,f7.5)') '#kT/kcal/mol: ', kT
+   write(6, '(a)') 'Set Temperature'
+   write(6, '(a,f7.3)') '# T(K): ', tempK
+   write(6, '(a,f7.5)') '# kT(kcal/mol): ', kT
+   write(6, *)
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   if (flg_ele) call set_ele()
 
    call list_local()
 
@@ -211,10 +216,14 @@ program sis
       ! No neighbor list
       call list_bp()
       call list_exv()
+      if (flg_ele) call list_ele()
 
    endif
-   !call read_sisinfo(cfile_sis)
 
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !! Main jobs
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (job == JOBT%DCD) then
       write(6,*) 'Starting job_dcd'
       call job_dcd()

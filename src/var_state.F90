@@ -18,16 +18,12 @@ module var_state
    real(PREC), save :: kT
    integer(INT64), save :: rng_seed
 
-   integer, save :: opt_anneal
-   integer, save :: nanneal
-   integer(INT64), allocatable, save :: anneal_step(:)
-   real(PREC), allocatable, save :: anneal_tempK(:)
-
    real(PREC), allocatable, save :: xyz(:,:)
    real(PREC), allocatable, save :: velos(:,:)
    real(PREC), allocatable, save :: accels(:,:)
    real(PREC), allocatable, save :: forces(:,:)
 
+   ! Energies
    real(PREC), save :: energies(0:ENE%MAX)
    real(PREC), save :: Ekinetic
 
@@ -39,8 +35,19 @@ module var_state
    integer, save :: nstep_save
    integer, save :: nstep_save_rst
    real(PREC), save :: nl_margin
-
    integer(INT64) :: istep
+
+   ! Electrostatic
+   real(PREC), save :: ionic_strength
+   real(PREC), save :: length_per_charge
+   real(PREC), save :: lambdaD
+   real(PREC), save :: diele
+
+   ! Annealing
+   integer, save :: opt_anneal
+   integer, save :: nanneal
+   integer(INT64), allocatable, save :: anneal_step(:)
+   real(PREC), allocatable, save :: anneal_tempK(:)
    integer :: ianneal
    integer(INT64) :: istep_anneal_next
 

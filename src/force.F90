@@ -4,6 +4,7 @@ subroutine force()
    use const
    use const_idx, only : ENE
    use var_state, only : nthreads, forces
+   use var_potential, only : flg_ele
    use var_top, only : nmp
 
    implicit none
@@ -27,6 +28,7 @@ subroutine force()
    call force_angl(forces_t(1,1,tn))
    call force_bp(forces_t(1,1,tn))
    call force_wca(forces_t(1,1,tn))
+   if (flg_ele) call force_ele_DH(forces_t(1,1,tn))
 !$omp end parallel
 
    forces(:,:) = forces_t(:,:,0)

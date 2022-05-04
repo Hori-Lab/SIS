@@ -12,7 +12,9 @@ title = 'rna_cg1'
     [potential.basepair]
         min_loop = 4
         cutoff = 18.0
-        U0 = -1.66666666667
+        U0_GC = -5.00
+        U0_AU = -3.33
+        U0_GU = -3.33
 
         bond_k = 3.0
         bond_r = 13.8
