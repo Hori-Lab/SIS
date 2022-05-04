@@ -1,0 +1,24 @@
+title = "sis input"
+
+[job]
+type = "DCD"
+
+[files]
+      [files.in]
+      ff = "../rna_cg_NHT22.ff"
+      fasta = "./CAG47.fasta"
+      pdb_ini = "./CAG47.pdb"
+      dcd = "./CAG47.dcd"
+
+      [files.out]
+      prefix = "./test_DCD_CAG47"
+
+[condition]
+      tempK = 295.15
+      rng_seed = 123
+
+[Electrostatic]
+ionic_strength = 0.15
+cutoff_type = 1
+cutoff = 50.0
+length_per_charge = 4.38178046
