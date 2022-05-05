@@ -25,7 +25,7 @@ type = "MD"
 
       anneal = "./annealing_schedule.txt"
          # Annealing-schedule file.
-         # Required only when opt_anneal > 1 in [condition].
+         # Required only when opt_anneal > 0 in [condition].
 
       [files.out]
       types = ["bp", "bpe", "bpall"]
@@ -35,10 +35,10 @@ type = "MD"
 tempK = 310.15
 rng_seed = 123
 
-opt_anneal = 1
+opt_anneal = 0
    # (optional) flag for simulated annealing.
    # 0: No annealing (default)
-   # 1: Annealing (anneal is required in [files.in])
+   # 1: Annealing ("anneal" is required in [files.in])
 
 [repeat]
 n_repeat = 47
@@ -60,6 +60,18 @@ neighbor_list_margin = 10.0
    # (optional) default is 10.0
 viscosity_Pas = 0.00001
    # (optional) default is 0.00001
+
+
+[Basepair]
+min_loop_size = 3
+   # Minimum loop size allowed. The default value is 3 if this option is omitted.
+   # It is the number of nucleotides that must exist between a base pair.
+   # E.g., if min_loop_size = 3, then (i) and (i+4) can form a base pair, whereas (i) and (i+3) cannot.
+
+max_bp_per_nt = 1
+   # Maximum number of base pairs simultaneously formed by one nucleotide.
+   # The default is 1 if this option is omitted.
+   # If max_bp_per_nt <= 0, no limitation is applied.
 
 
 [Electrostatic]

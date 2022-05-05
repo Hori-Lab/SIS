@@ -4,7 +4,7 @@ subroutine neighbor_list()
    use const_idx, only : SEQT, BPT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
    use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp, has_charge
-   use var_state, only : xyz
+   use var_state, only : xyz, bp_status, ene_bp
    use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
                              bp_nl_cut2, bp_mp, nbp, nbp_max, bp_min_loop, &
                              bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU, &
@@ -29,16 +29,17 @@ subroutine neighbor_list()
       wca_mp(:,:) = 0
    endif
 
-   if (allocated(bp_mp)) then
-      bp_mp(:,:) = 0
-      bp_U0(:) = 0.0_PREC
-   else
+   if (.not. allocated(bp_mp)) then
       nbp_max = 5 * nmp
       allocate(bp_mp(3, nbp_max))
-      bp_mp(:,:) = 0
       allocate(bp_U0(nbp_max))
-      bp_U0(:) = 0.0_PREC
+      allocate(bp_status(nbp_max))
+      allocate(ene_bp(nbp_max))
    endif
+   bp_mp(:,:) = 0
+   bp_U0(:) = 0.0_PREC
+   bp_status(:) = .False.
+   ene_bp(:) = 0.0_PREC
 
    if (flg_ele) then
       if (allocated(ele_mp)) then
@@ -219,17 +220,24 @@ contains
 
       deallocate(bp_mp)
       deallocate(bp_U0)
+      deallocate(bp_status)
+      deallocate(ene_bp)
 
       nbp_max = int(nbp_max * 1.2)
 
       allocate(bp_mp(3, nbp_max))
       allocate(bp_U0(nbp_max))
+      allocate(bp_status(nbp_max))
+      allocate(ene_bp(nbp_max))
 
       bp_mp(:, :) = 0
       bp_mp(1:3, 1:old_max) = tmp(1:3, 1:old_max)
 
       bp_U0(:) = 0.0_PREC
       bp_U0(1:old_max) = tmp2(1:old_max)
+
+      bp_status(:) = .False.
+      ene_bp(:) = 0.0_PREC
 
    endsubroutine reallocate_bp_mp
 

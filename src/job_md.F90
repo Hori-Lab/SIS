@@ -7,14 +7,14 @@ subroutine job_md()
    use progress, only : progress_init, progress_update
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
-   use var_state, only : restarted, &
+   use var_state, only : restarted, flg_bp_energy, &
                          viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff, ele_cutoff, ele_nl_cut2
+   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff_dist, ele_cutoff, ele_nl_cut2
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -135,7 +135,7 @@ subroutine job_md()
 
    ! Neighbor list
    wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
-   bp_nl_cut2 = (bp_cutoff + nl_margin) ** 2
+   bp_nl_cut2 = (bp_cutoff_dist + nl_margin) ** 2
    ele_nl_cut2 = (ele_cutoff + nl_margin) ** 2
    call neighbor_list()
    xyz_move(:,:) = 0.0e0_PREC
@@ -167,6 +167,7 @@ subroutine job_md()
    endif
 
    ! Initial energies
+   flg_bp_energy = .False.
    call energy()
    call energy_kinetic()
 
@@ -224,6 +225,7 @@ subroutine job_md()
          xyz_move(:,:) = 0.0e0_PREC
       endif
 
+      flg_bp_energy = .False.
       call force()
 
       do imp= 1, nmp

@@ -27,6 +27,11 @@ module var_state
    real(PREC), save :: energies(0:ENE%MAX)
    real(PREC), save :: Ekinetic
 
+   ! Base pairs
+   logical, save :: flg_bp_energy
+   logical, allocatable, save :: bp_status(:)
+   real(PREC), allocatable, save :: ene_bp(:)
+
    ! MD
    integer, save :: integrator
    real(PREC), save :: viscosity_Pas

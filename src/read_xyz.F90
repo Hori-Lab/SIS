@@ -29,7 +29,6 @@ subroutine read_xyz(cfilepath, nmp, xyz)
 
 
    read (hdl, *, iostat = istat) n     ! Number of coordinates
-   write(*,*) n
    if (istat /= 0) then
       error stop 'Error: in reading XYZ file (N) ' // trim(cfilepath)
    end if
@@ -45,7 +44,6 @@ subroutine read_xyz(cfilepath, nmp, xyz)
 
    do imp = 1, n
       read (hdl, *, iostat = istat) c10, x, y, z
-         write(*,*) c10, x, y, z
 
       if (istat /= 0) then
          error stop 'Error: in reading XYZ file (coordinates) ' // trim(cfilepath)

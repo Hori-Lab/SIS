@@ -201,6 +201,7 @@ program sis
    write(6, '(a,f7.3)') '# T(K): ', tempK
    write(6, '(a,f7.5)') '# kT(kcal/mol): ', kT
    write(6, *)
+   flush(6)
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -219,7 +220,6 @@ program sis
       if (flg_ele) call list_ele()
 
    endif
-
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !! Main jobs

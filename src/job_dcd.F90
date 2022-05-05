@@ -5,7 +5,7 @@ subroutine job_dcd()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
    use var_top, only : nmp
-   use var_state, only : xyz, energies
+   use var_state, only : xyz, energies, flg_bp_energy
    use var_io, only : hdl_dcd, hdl_out, cfile_dcd_in, cfile_out
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -13,6 +13,8 @@ subroutine job_dcd()
 
    integer :: i, nframe, istat, nmp_dcd
    type(file_dcd) :: fdcd
+
+   flg_bp_energy = .False.
 
    fdcd = file_dcd(hdl_dcd, cfile_dcd_in, DCD_OPEN_MODE%READ)
 
@@ -49,11 +51,6 @@ subroutine job_dcd()
       call energy()
       
       write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') nframe, 0.0, 0.0, (energies(i), i=0,ENE%MAX)
-
-      !! Debug
-      !if (nframe == 10) then
-      !   exit
-      !endif
 
    enddo
 

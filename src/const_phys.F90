@@ -17,6 +17,9 @@ module const_phys
    real(PREC), parameter :: INVALID_VALUE = 1.0e31_PREC
    real(PREC), parameter :: ZERO_JUDGE    = 1.0e-6_PREC
 
+   integer, parameter :: INVALID_INT_VALUE = huge(M_INT)
+   integer, parameter :: INVALID_INT_JUDGE = INVALID_INT_VALUE - 1
+
 contains
 
    real(PREC) function J2kcalmol(j)

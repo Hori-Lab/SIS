@@ -16,7 +16,8 @@ subroutine read_input(cfilepath, stat)
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, &
                          ionic_strength, length_per_charge
-   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp
+   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
+                             bp_min_loop, max_bp_per_nt
    use var_top, only : nrepeat, nchains, inp_no_charge
   
    implicit none
@@ -42,7 +43,7 @@ subroutine read_input(cfilepath, stat)
    iopen_hdl = iopen_hdl + 1
    hdl = iopen_hdl
 
-   write(*,*) "Reading input file: ", trim(cfilePath)
+   write(6, '(a)') "Reading input file: " // trim(cfilePath)
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
@@ -59,7 +60,7 @@ subroutine read_input(cfilepath, stat)
    endif
 
    call get_value(table, "title", cline)
-   write(*,*) '# title: ', trim(cline)
+   write(6, '(a)') '# title: ' // trim(cline)
 
    !################# job #################
    call get_value(table, "job", group)
@@ -275,8 +276,44 @@ subroutine read_input(cfilepath, stat)
          write(*,*) 'Warning: viscosity_Pas is not specified in [MD] field. The default value will be used.'
       endif
       write(*,*) '# MD viscosity_Pas: ', viscosity_Pas
+      write(*,*)
 
    endif
+
+   !################# Basepair #################
+   call get_value(table, "Basepair", group, requested=.False.)
+
+   if (associated(group)) then
+
+      write(6, '(a)') '# Basepair'
+
+      ! max_bp_per_nt
+      max_bp_per_nt = INVALID_INT_VALUE
+      call get_value(group, "max_bp_per_nt", max_bp_per_nt)
+      if (max_bp_per_nt > INVALID_INT_JUDGE) then
+         write(6, '(a)') '#### max_bp_per_nt is not specified in the input file. Default value applies.'
+         max_bp_per_nt = 1    ! default
+      endif
+
+      ! min_loop
+      bp_min_loop = -1
+      call get_value(group, "min_loop", bp_min_loop)
+      if (bp_min_loop < 0) then
+         write(6, '(a)') '#### min_loop is not specified in the input file. Default value applies.'
+         bp_min_loop = 3    ! default
+      endif
+
+   else
+      write(6, '(a)') '#### [Basepair] section does not exist in the input file. Default values will be used.'
+      max_bp_per_nt = 1  ! default
+      bp_min_loop = 3    ! default
+
+   endif
+
+   write(6, '(a,i6)') '# Basepair, max_bp_per_nt: ', max_bp_per_nt
+   write(6, '(a,i6)') '# Basepair, min_loop: ', bp_min_loop
+   write(6,*)
+
 
    !################# Electrostatic #################
    flg_ele = .False.
@@ -343,6 +380,7 @@ subroutine read_input(cfilepath, stat)
          enddo
       endif
 
+      write(6,*)
    endif
 
    !################# box #################

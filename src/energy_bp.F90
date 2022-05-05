@@ -26,7 +26,7 @@ subroutine energy_bp(Ebp)
       
       d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp)))
 
-      if (d >= bp_cutoff) cycle
+      if (d >= bp_cutoff_dist) cycle
       
       u = bp_bond_k * (d - bp_bond_r)**2
 

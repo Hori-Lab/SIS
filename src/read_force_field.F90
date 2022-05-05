@@ -23,7 +23,7 @@ subroutine read_force_field(stat)
 
    stat = .False.
 
-   write(*,*) 'Reading force-field file: '//trim(cfile_ff)
+   write(6, '(a)') 'Reading force-field file: ' // trim(cfile_ff)
 
    call set_invalid()
 
@@ -33,8 +33,7 @@ subroutine read_force_field(stat)
    open(hdl, file=cfile_ff, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
-      write(*,*) 'Error: failed to open the force-field file. '//trim(cfile_ff)
-      stop (2)
+      error stop 'Error: failed to open the force-field file. ' // trim(cfile_ff)
    endif
 
    call toml_parse(table, hdl)
@@ -43,11 +42,11 @@ subroutine read_force_field(stat)
    iopen_hdl = iopen_hdl - 1
 
    call get_value(table, "title", cline)
-   write(*,*) '# title: ', trim(cline)
+   write(6, '(a)') '# title: ' // trim(cline)
 
    call get_value(table, "potential", group)
    if (.not. associated(group)) then
-      write(*,*) 'Error: [potential] required in FF file'
+      write(6, '(a)') 'Error: [potential] required in FF file'
       return
    endif
 
@@ -57,7 +56,7 @@ subroutine read_force_field(stat)
       call get_value(node, "r0", bond_r0)
 
    else
-      write(*,*) 'Error: [bond] parameters required in FF file'
+      write(6, '(a)') 'Error: [bond] parameters required in FF file'
       return
    endif
 
@@ -67,14 +66,14 @@ subroutine read_force_field(stat)
       call get_value(node, "a0", angl_t0)
 
    else
-      write(*,*) 'Error: [angle] parameters required in FF file'
+      write(6, '(a)') 'Error: [angle] parameters required in FF file'
       return
    endif
 
    call get_value(group, "basepair", node)
    if (associated(node)) then
-      call get_value(node, "min_loop", bp_min_loop)
-      call get_value(node, "cutoff", bp_cutoff)
+      !call get_value(node, "min_loop", bp_min_loop)
+      call get_value(node, "cutoff", bp_cutoff_dist)
       call get_value(node, "bond_k", bp_bond_k)
       call get_value(node, "bond_r", bp_bond_r)
       call get_value(node, "angl_k", bp_angl_k)
@@ -96,7 +95,7 @@ subroutine read_force_field(stat)
       endif
 
    else
-      write(*,*) 'Error: [basepair] parameters required in FF file'
+      write(6, '(a)') 'Error: [basepair] parameters required in FF file'
       return
    endif
 
@@ -106,7 +105,7 @@ subroutine read_force_field(stat)
       call get_value(node, "epsilon", wca_eps)
 
    else
-      write(*,*) 'Error: [wca] parameters required in FF file'
+      write(6, '(a)') 'Error: [wca] parameters required in FF file'
       return
    endif
 
@@ -126,8 +125,8 @@ contains
       angl_k  = INVALID_VALUE
       angl_t0 = INVALID_VALUE
    
-      bp_min_loop = -1
-      bp_cutoff = INVALID_VALUE
+      !bp_min_loop = -1
+      bp_cutoff_dist = INVALID_VALUE
       bp_U0_GC = INVALID_VALUE
       bp_U0_AU = INVALID_VALUE
       bp_U0_GU = INVALID_VALUE
@@ -179,11 +178,11 @@ contains
          write(*,*) "# angl_t0: ", angl_t0 
       endif
 
-      if (bp_cutoff > INVALID_JUDGE) then
+      if (bp_cutoff_dist > INVALID_JUDGE) then
          write(*,*) "INVALID bp_cutoff in the force field file"
          stat = .False.
       else
-         write(*,*) "# bp_cutoff: ", bp_cutoff
+         write(*,*) "# bp_cutoff: ", bp_cutoff_dist
       endif
 
       if (bp_seqdep == 0) then
@@ -272,12 +271,12 @@ contains
          write(*,*) "# bp_dihd_phi2: ", bp_dihd_phi2
       endif
 
-      if (bp_min_loop < 0) then
-         write(*,*) "INVALID bp_min_loop in the force field file"
-         stat = .False.
-      else
-         write(*,*) "# bp_min_loop: ", bp_min_loop
-      endif
+      !if (bp_min_loop < 0) then
+      !   write(*,*) "INVALID bp_min_loop in the force field file"
+      !   stat = .False.
+      !else
+      !   write(*,*) "# bp_min_loop: ", bp_min_loop
+      !endif
 
       if (wca_sigma > INVALID_JUDGE) then
          write(*,*) "INVALID wca_sigma in the force field file"

@@ -4,7 +4,7 @@ subroutine force_bp(forces)
    use pbc, only : pbc_vec_d
    use var_state, only : xyz
    use var_top, only : nmp
-   use var_potential, only : nbp, bp_cutoff, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
+   use var_potential, only : nbp, bp_cutoff_dist, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
                              bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2
    use var_potential, only : nbp
 
@@ -43,7 +43,7 @@ subroutine force_bp(forces)
       d1212 = dot_product(v12,v12)
       a12 = sqrt(d1212)
 
-      if (a12 >= bp_cutoff) cycle
+      if (a12 >= bp_cutoff_dist) cycle
 
       imp3 = imp1 - 1
       imp4 = imp2 - 1

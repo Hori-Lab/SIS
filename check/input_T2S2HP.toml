@@ -27,5 +27,16 @@ nstep_save = 10000
 neighbor_list_margin = 10.0
 viscosity_Pas = 0.00001
 
+#[Electrostatic]
+ionic_strength = 0.15
+cutoff_type = 2
+cutoff = 10.0
+no_charge = [1, 27]
+length_per_charge = 4.38178046
+
+[Basepair]
+min_loop_size = 3
+max_bp_per_nt = -1
+
 [Progress]
 step = 1000

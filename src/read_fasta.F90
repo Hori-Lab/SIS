@@ -21,11 +21,11 @@ subroutine read_fasta()
    iopen_hdl = iopen_hdl + 1
    hdl = iopen_hdl
 
-   write(*,*) "Reading FASTA file: ", trim(cfile_fasta_in)
+   write(6,'(a)') "Reading FASTA file: " // trim(cfile_fasta_in)
    open(hdl, file=cfile_fasta_in, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
-      write(*,*) 'Error: failed to open the FASTA file. '//trim(cfile_fasta_in)
+      write(6, '(a)') 'Error: failed to open the FASTA file. '//trim(cfile_fasta_in)
       stop (2)
    endif
 
@@ -36,11 +36,8 @@ subroutine read_fasta()
 
       if (istat < 0) then
          exit
-
       else if (istat > 0) then
-         write(*,*) 'Error: cannot read fasta file'
-         stop (2)
-
+         error stop 'Error: cannot read fasta file'
       end if
 
       if (cline(1:1) == '>') then
@@ -60,11 +57,8 @@ subroutine read_fasta()
 
       if (istat < 0) then
          exit
-
       else if (istat > 0) then
-         write(*,*) 'Error: cannot read fasta file'
-         stop (2)
-
+         error stop 'Error: cannot read fasta file'
       end if
 
       if (cline(1:1) == '>') then
@@ -116,11 +110,8 @@ subroutine read_fasta()
 
       if (istat < 0) then
          exit
-
       else if (istat > 0) then
-         write(*,*) 'Error: cannot read fasta file'
-         stop (2)
-
+         error stop 'Error: cannot read fasta file'
       end if
 
       if (cline(1:1) == '>') then
@@ -151,8 +142,8 @@ subroutine read_fasta()
    close(hdl)
    iopen_hdl = iopen_hdl - 1
 
-   write(6,*) 'Done: reading FASTA file'
-   write(6,*) ''
+   write(6, '(a)') 'Done: reading FASTA file'
+   write(6, *)
    flush(6)
    
 end subroutine read_fasta
