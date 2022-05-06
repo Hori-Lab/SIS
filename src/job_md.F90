@@ -225,7 +225,6 @@ subroutine job_md()
          xyz_move(:,:) = 0.0e0_PREC
       endif
 
-      flg_bp_energy = .False.
       call force()
 
       do imp= 1, nmp

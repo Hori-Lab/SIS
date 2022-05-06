@@ -3,7 +3,7 @@ subroutine list_bp()
    use const
    use const_idx, only : SEQT, BPT
    use var_top, only : nmp_chain, seq, imp_chain, nchains
-   use var_state, only : bp_status, ene_bp
+   use var_state, only : bp_status, ene_bp, for_bp
    use var_potential, only : nbp, bp_mp, bp_min_loop, bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU
 
    implicit none
@@ -84,11 +84,13 @@ subroutine list_bp()
          allocate(bp_U0(nbp))
          allocate(bp_status(nbp))
          allocate(ene_bp(nbp))
+         allocate(for_bp(3, 6, nbp))
 
          bp_mp(:,:) = 0
          bp_U0(:) = 0.0_PREC
          bp_status(:) = .False.
          ene_bp(:) = 0.0_PREC
+         for_bp(:,:,:) = 0.0_PREC
       endif
    enddo
 

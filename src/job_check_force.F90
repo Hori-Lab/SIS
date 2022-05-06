@@ -5,7 +5,7 @@ subroutine job_check_force()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_wrap
    use var_top, only : nmp
-   use var_state, only : xyz, energies, forces
+   use var_state, only : xyz, energies, forces, flg_bp_energy
    use var_io, only : hdl_out, cfile_out, cfile_pdb_ini
 
    implicit none
@@ -42,6 +42,8 @@ subroutine job_check_force()
    enddo
 
    call force()
+
+   flg_bp_energy = .False.
 
    do imp = 1, nmp
       do ixyz = 1, 3

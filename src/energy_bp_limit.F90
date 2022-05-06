@@ -1,12 +1,13 @@
 subroutine energy_bp_limit(Ebp)
 
-   use mt19937_64, only : genrand64_real1, genrand64_real2
-   use const
-   use const_phys, only : ZERO_JUDGE
+   use mt19937_64, only : genrand64_real1, genrand64_real3
+   use const, only : PREC
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
    use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy
-   use var_potential
+   use var_potential, only : max_bp_per_nt, bp_cutoff_dist, bp_cutoff_ene, bp_bond_k, bp_bond_r, &
+                             bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2, &
+                             nbp, bp_mp, bp_U0
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
@@ -31,12 +32,13 @@ subroutine energy_bp_limit(Ebp)
    if (.not. flg_bp_energy) then
 
       beta = 1.0_PREC / kT
-      ene_bp(:) = 0.0_PREC
-      nt_bp_excess(:) = -1
-      bp_status(:) = .False.
+      bp_status(1:nbp) = .False.
+      nt_bp_excess(1:nmp) = -max_bp_per_nt
+      ene_bp(1:nbp) = 0.0_PREC
 
+      !$omp barrier
 
-      !$omp parallel do private(imp,jmp,d,u,theta,phi)
+      !$omp parallel do private(imp, jmp, d, u, theta, phi, ene)
       do ibp = 1, nbp
 
          imp = bp_mp(1, ibp)
@@ -44,7 +46,7 @@ subroutine energy_bp_limit(Ebp)
 
          d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp)))
 
-         if (d >= bp_cutoff_dist) cycle
+         if (d > bp_cutoff_dist) cycle
       
          u = bp_bond_k * (d - bp_bond_r)**2
 
@@ -81,39 +83,43 @@ subroutine energy_bp_limit(Ebp)
       enddo
       !$omp end parallel do
 
-      nnt_bp_excess = 0  ! Number of nucleotides that have more than one base pair
-      ntlist_excess(:) = 0
-      do imp = 1, nmp
-         if (nt_bp_excess(imp) > 0) then
-            nnt_bp_excess = nnt_bp_excess + 1
-            ntlist_excess(nnt_bp_excess) = imp
-         endif
-      enddo
 
-      do while (nnt_bp_excess > 0)
+      do   ! loop while (nnt_bp_excess > 0)
+
+         nnt_bp_excess = 0  ! Number of nucleotides that have more than one base pair
+         ntlist_excess(:) = 0
+         do imp = 1, nmp
+            if (nt_bp_excess(imp) > 0) then
+               nnt_bp_excess = nnt_bp_excess + 1
+               ntlist_excess(nnt_bp_excess) = imp
+            endif
+         enddo
+
+         if (nnt_bp_excess == 0) exit
 
          ! Randomely choose one nucleotide (nt) that has more than one base pair
-         rnd = -genrand64_real2() + 1.0_PREC    ! to be (0, 1]
+         rnd = genrand64_real3()    ! (0,1)-real-interval
 
          nt_delete = ntlist_excess( ceiling(rnd * nnt_bp_excess) )
-         write(*,*) 'nt_delete = ', nt_delete
          !  1 <= nt_delete <= nnt_bp_excess
 
          ! Generate a sequence of nucleotides that form basepairs involving nt_delete
          nbp_seq = 0
          bp_seq(:) = 0
          do ibp = 1, nbp
-            imp = bp_mp(1, ibp)
-            jmp = bp_mp(2, ibp)
-            if (imp == nt_delete .or. jmp == nt_delete) then
-               nbp_seq = nbp_seq + 1
-               bp_seq(nbp_seq) = ibp
+            if (bp_status(ibp)) then
+               imp = bp_mp(1, ibp)
+               jmp = bp_mp(2, ibp)
+               if (imp == nt_delete .or. jmp == nt_delete) then
+                  nbp_seq = nbp_seq + 1
+                  bp_seq(nbp_seq) = ibp
+               endif
             endif
          enddo
 
          ! Shuffle
          do i = 1, nbp_seq
-            rnd = genrand64_real1()
+            rnd = genrand64_real3()   ! (0,1)-real-interval
             i_swap = ceiling(rnd*nbp_seq)
             i_save = bp_seq(i)
             bp_seq(i) = bp_seq(i_swap)
@@ -124,8 +130,9 @@ subroutine energy_bp_limit(Ebp)
          ibp_delete = bp_seq(1)
          do i = 2, nbp_seq
             jbp = bp_seq(i)
+
             ratio = exp( (ene_bp(jbp) - ene_bp(ibp_delete)) * beta )
-            rnd = genrand64_real1()
+            rnd = genrand64_real1()  ! [0,1]-real-interval
 
             if (rnd < ratio) then
                ibp_delete = jbp
@@ -134,24 +141,14 @@ subroutine energy_bp_limit(Ebp)
 
          ! Delete
          bp_status(ibp_delete) = .False.
-
-         !! This line was commented out because ene_hb has to be kept for CHECK_FORCE
-         !! Othe cases, in normal run, ene_bp will not be refered when hb_status is False,
-         !! thus it does not have to zero cleared.
-         !ene_bp( ibp_delete ) = 0.0_PREC
+         !ene_bp(ibp_delete) = 0.0_PREC
+         !! This line is commented out because ene_bp has to be kept for CHECK_FORCE.
+         !! In normal run, ene_bp will never be refered when bp_status is False,
+         !! thus it does not have to be zero cleared.
 
          ! Update nt_bp_excess
          nt_bp_excess(bp_mp(1, ibp_delete)) = nt_bp_excess(bp_mp(1, ibp_delete)) - 1
          nt_bp_excess(bp_mp(2, ibp_delete)) = nt_bp_excess(bp_mp(2, ibp_delete)) - 1
-
-         nnt_bp_excess = 0  ! Number of nucleotides that have more than one base pair
-         do imp = 1, nmp
-            if (nt_bp_excess(imp) > 0) then
-               nnt_bp_excess = nnt_bp_excess + 1
-               ntlist_excess(nnt_bp_excess) = imp
-            endif
-         enddo
-         write(*,*) 'nnt_bp_excess = ', nnt_bp_excess
 
       enddo
 

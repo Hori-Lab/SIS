@@ -22,7 +22,7 @@ subroutine force_bp(forces)
    real(PREC) :: d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262
    real(PREC) :: d1213over1212, d1242over1212, d1215over1212, d1262over1212
    real(PREC) :: m(3), n(3)
-   real(PREC) :: f_bp(3, 6)
+   real(PREC) :: f_bp(3, 6)  ! This can be private in each thread. Do not have to use for_bp in var_state.
 
    !#######################################
    ! imp-1 (3) --- imp (1) --- imp+1 (5)
