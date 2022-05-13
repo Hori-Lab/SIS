@@ -68,9 +68,9 @@ min_loop_size = 3
    # It is the number of nucleotides that must exist between a base pair.
    # E.g., if min_loop_size = 3, then (i) and (i+4) can form a base pair, whereas (i) and (i+3) cannot.
 
-max_bp_per_nt = 1
+max_bp_per_nt = -1
    # Maximum number of base pairs simultaneously formed by one nucleotide.
-   # The default is 1 if this option is omitted.
+   # The default is -1 if this option is omitted.
    # If max_bp_per_nt <= 0, no limitation is applied.
 
 
