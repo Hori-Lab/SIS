@@ -292,7 +292,7 @@ subroutine read_input(cfilepath, stat)
       call get_value(group, "max_bp_per_nt", max_bp_per_nt)
       if (max_bp_per_nt > INVALID_INT_JUDGE) then
          write(6, '(a)') '#### max_bp_per_nt is not specified in the input file. Default value applies.'
-         max_bp_per_nt = 1    ! default
+         max_bp_per_nt = -1   ! default
       endif
 
       ! min_loop
