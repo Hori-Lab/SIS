@@ -24,29 +24,34 @@ subroutine read_xyz(cfilepath, nmp, xyz)
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
-      error stop 'Error: failed to open the XYZ file. '//trim(cfilepath)
+      print '(2a)', 'Error: failed to open the XYZ file. ', trim(cfilepath)
+      error stop
    endif
 
 
    read (hdl, *, iostat = istat) n     ! Number of coordinates
    if (istat /= 0) then
-      error stop 'Error: in reading XYZ file (N) ' // trim(cfilepath)
+      print '(2a)', 'Error: in reading XYZ file (N) ', trim(cfilepath)
+      error stop
    end if
 
    if (n /= nmp) then
-      error stop "The number of coordinates in the XYZ file is not consitent (N != nmp). " // trim(cfilepath)
+      print '(2a)', "The number of coordinates in the XYZ file is not consitent (N != nmp). ", trim(cfilepath)
+      error stop
    endif
 
    read (hdl, *, iostat = istat)   ! Ignore a comment line
    if (istat /= 0) then
-      error stop 'Error: in reading XYZ file (comment) ' // trim(cfilepath)
+      print '(2a)', 'Error: in reading XYZ file (comment) ', trim(cfilepath)
+      error stop
    end if
 
    do imp = 1, n
       read (hdl, *, iostat = istat) c10, x, y, z
 
       if (istat /= 0) then
-         error stop 'Error: in reading XYZ file (coordinates) ' // trim(cfilepath)
+         print '(2a)', 'Error: in reading XYZ file (coordinates) ', trim(cfilepath)
+         error stop
       end if
 
       xyz(1, imp) = x

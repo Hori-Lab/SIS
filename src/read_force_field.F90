@@ -33,7 +33,8 @@ subroutine read_force_field(stat)
    open(hdl, file=cfile_ff, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
-      error stop 'Error: failed to open the force-field file. ' // trim(cfile_ff)
+      print '(2a)', 'Error: failed to open the force-field file. ', trim(cfile_ff)
+      error stop
    endif
 
    call toml_parse(table, hdl)

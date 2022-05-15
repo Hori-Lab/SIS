@@ -31,8 +31,7 @@ program show_rst
              form = 'unformatted', access = 'stream')
    ! exception
    if(istat > 0) then
-      print '(2a)', 'Error: cannot open the file in input ', trim(cfile_input)
-      error stop
+      error stop ('Error: cannot open the file in input ' // trim(cfile_input))
    end if
 
    do 
@@ -40,8 +39,7 @@ program show_rst
       if (istat < 0) then
          exit
       else if (istat > 0) then
-         print '(2a)', 'Error: cannot open the file in input ', trim(cfile_input)
-         error stop
+         error stop ('Error: cannot read the file in input ' // trim(cfile_input))
       endif
 
       read (luninp) nblock_size

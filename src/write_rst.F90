@@ -23,7 +23,8 @@ subroutine write_rst()
         iostat=istat, form = 'unformatted', access = 'stream')
 
    if(istat > 0) then
-      error stop 'Error: cannot open the file: ' // cfile_prefix // '.rst'
+      print '(3a)', 'Error: cannot open the file: ', trim(cfile_prefix), '.rst'
+      error stop
    end if
 
    grep = 1   ! Reserved for replica later

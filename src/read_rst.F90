@@ -17,7 +17,6 @@ subroutine read_rst(itype_wanted)
    integer :: istat
    integer :: nblock_size
    logical, allocatable :: flg_done(:)
-   character(100) :: error_message
 
    !if (myrank == 0) then
 
@@ -77,8 +76,8 @@ subroutine read_rst(itype_wanted)
             read (hdl_rst) grep
             read (hdl_rst) n
             if (n /= nmp) then
-               write(error_message, *) 'Error: nmp is not consistent. n=',n,' nmp=',nmp
-               error stop error_message
+               print '(a,i,a,i)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
+               error stop
             endif
 
             do imp = 1, nmp
@@ -97,8 +96,8 @@ subroutine read_rst(itype_wanted)
             read (hdl_rst) grep
             read (hdl_rst) n
             if (n /= nmp) then
-               write(error_message, *) 'Error: nmp is not consistent. n=',n,' nmp=',nmp
-               error stop error_message
+               print '(a,i,a,i)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
+               error stop
             endif
 
             do imp = 1, nmp
@@ -117,8 +116,8 @@ subroutine read_rst(itype_wanted)
             read (hdl_rst) grep
             read (hdl_rst) n
             if (n /= nmp) then
-               write(error_message, *) 'Error: nmp is not consistent. n=',n,' nmp=',nmp
-               error stop error_message
+               print '(a,i,a,i)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
+               error stop
             endif
 
             do imp = 1, nmp
@@ -131,8 +130,8 @@ subroutine read_rst(itype_wanted)
             exit
 
          case default
-            write(error_message, *) 'Error: Unknown block-identifier in restart file. itype=',itype
-            error stop error_message
+            print '(a,i)', 'Error: Unknown block-identifier in restart file. itype=',itype
+            error stop
 
          endselect
          !#############################################################################
@@ -152,24 +151,23 @@ contains
 
       use const_idx, only : RSTBLK
       integer, intent(in) :: itype_wanted
-      character(100) :: error_message
 
       select case (itype_wanted)
       case(RSTBLK%STEP)
-         write(error_message,*) 'Absence or invalid format of "STEP" block in restart file.'
+         print '(a)', 'Absence or invalid format of "STEP" block in restart file.'
       case(RSTBLK%ANNEAL)
-         write(error_message,*) 'Absence or invalid format of "ANNEAL" block in restart file.'
+         print '(a)', 'Absence or invalid format of "ANNEAL" block in restart file.'
       case(RSTBLK%XYZ)
-         write(error_message,*) 'Absence or invalid format of "XYZ" block in restart file.'
+         print '(a)', 'Absence or invalid format of "XYZ" block in restart file.'
       case(RSTBLK%VELO)
-         write(error_message,*) 'Absence or invalid format of "VELO" block in restart file.'
+         print '(a)', 'Absence or invalid format of "VELO" block in restart file.'
       case(RSTBLK%ACCEL)
-         write(error_message,*) 'Absence or invalid format of "ACCEL" block in restart file.'
+         print '(a)', 'Absence or invalid format of "ACCEL" block in restart file.'
       case default
          continue
       endselect
 
-      error stop error_message
+      error stop
 
    endsubroutine sub_not_found
 

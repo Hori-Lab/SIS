@@ -42,7 +42,8 @@ program sis
    call read_input(cfile_inp, stat)
 
    if (.not. stat) then
-      error stop 'Error in reading input file'
+      print '(a)', 'Error in reading input file'
+      error stop
    endif
 
 
@@ -55,7 +56,8 @@ program sis
       open(hdl_rst, file=cfile_rst, status='old', action='read', iostat=istat, form='unformatted', access='stream')
 
       if (istat > 0) then
-         error stop 'Error: cannot open the restart file ' // trim(cfile_rst)
+         print '(2a)', 'Error: cannot open the restart file ', trim(cfile_rst)
+         error stop
       endif
 
       restarted = .True.
