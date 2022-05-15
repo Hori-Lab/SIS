@@ -4,12 +4,30 @@ enable_language(Fortran)
 project(sis Fortran)
 
 
+#ifort
+if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
+    #set(CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -traceback -check all -warn all -fp-model strict -standf18")
+    set(CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -traceback -check all -warn all -fp-model strict")
+    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native")
+endif()
+
+#gfortran
+if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
+    set(CMAKE_Fortran_FLAGS_DEBUG   "-O0 -Wall -g -fbacktrace -ffpe-trap=zero,overflow,denormal,underflow -ffree-line-length-none -fbounds-check -fmax-errors=5")
+    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native -ffree-line-length-none")
+endif()
+
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS_RELEASE}")
+
+
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
 endif()
 
+
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
 
 # To output Git commit hash. Either CheckGitSetup or NoGitSetup will be called.
 include(./CheckGit.cmake)

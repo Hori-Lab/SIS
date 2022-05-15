@@ -76,7 +76,7 @@ subroutine read_rst(itype_wanted)
             read (hdl_rst) grep
             read (hdl_rst) n
             if (n /= nmp) then
-               print '(a,i,a,i)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
+               print '(a,i10,a,i10)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
                error stop
             endif
 
@@ -96,7 +96,7 @@ subroutine read_rst(itype_wanted)
             read (hdl_rst) grep
             read (hdl_rst) n
             if (n /= nmp) then
-               print '(a,i,a,i)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
+               print '(a,i10,a,i10)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
                error stop
             endif
 
@@ -116,7 +116,7 @@ subroutine read_rst(itype_wanted)
             read (hdl_rst) grep
             read (hdl_rst) n
             if (n /= nmp) then
-               print '(a,i,a,i)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
+               print '(a,i10,a,i10)', 'Error: nmp is not consistent. n=',n,' nmp=',nmp
                error stop
             endif
 
@@ -130,7 +130,7 @@ subroutine read_rst(itype_wanted)
             exit
 
          case default
-            print '(a,i)', 'Error: Unknown block-identifier in restart file. itype=',itype
+            print '(a,i3)', 'Error: Unknown block-identifier in restart file. itype=',itype
             error stop
 
          endselect
