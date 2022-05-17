@@ -24,11 +24,11 @@ subroutine energy_bp(Ebp)
       imp = bp_mp(1, ibp)
       jmp = bp_mp(2, ibp)
       
-      d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp)))
+      d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp))) - bp_bond_r
 
-      if (d >= bp_cutoff_dist) cycle
+      if (abs(d) > bp_cutoff_ddist) cycle
       
-      u = bp_bond_k * (d - bp_bond_r)**2
+      u = bp_bond_k * d**2
 
       theta = mp_angle(imp, jmp, jmp-1)
       u = u + bp_angl_k * (theta - bp_angl_theta1)**2

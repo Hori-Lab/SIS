@@ -5,7 +5,7 @@ subroutine energy_bp_limit(Ebp)
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
    use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy
-   use var_potential, only : max_bp_per_nt, bp_cutoff_dist, bp_cutoff_ene, bp_bond_k, bp_bond_r, &
+   use var_potential, only : max_bp_per_nt, bp_cutoff_ddist, bp_cutoff_ene, bp_bond_k, bp_bond_r, &
                              bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2, &
                              nbp, bp_mp, bp_U0
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
@@ -44,11 +44,11 @@ subroutine energy_bp_limit(Ebp)
          imp = bp_mp(1, ibp)
          jmp = bp_mp(2, ibp)
 
-         d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp)))
+         d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp))) - bp_bond_r
 
-         if (d > bp_cutoff_dist) cycle
+         if (abs(d) > bp_cutoff_ddist) cycle
       
-         u = bp_bond_k * (d - bp_bond_r)**2
+         u = bp_bond_k * d**2
 
          theta = mp_angle(imp, jmp, jmp-1)
          u = u + bp_angl_k * (theta - bp_angl_theta1)**2

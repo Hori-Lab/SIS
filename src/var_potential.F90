@@ -19,7 +19,9 @@ module var_potential
    ! Basepair
    integer,    save :: max_bp_per_nt
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
-   real(PREC), save :: bp_cutoff_dist  ! = 18.0
+   real(PREC), save :: bp_cutoff_energy  ! 0.01 kcal/mol
+   real(PREC), save :: bp_cutoff_dist
+   real(PREC), save :: bp_cutoff_ddist
    real(PREC), parameter :: bp_cutoff_ene = -0.01_PREC
    !real(PREC), save :: bp_U0  ! = - 5.0 / 3.0
    integer,    save :: bp_seqdep

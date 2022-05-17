@@ -34,6 +34,7 @@ subroutine read_force_field(stat)
 
    if (istat /= 0) then
       print '(2a)', 'Error: failed to open the force-field file. ', trim(cfile_ff)
+      flush(6)
       error stop
    endif
 
@@ -72,9 +73,12 @@ subroutine read_force_field(stat)
    endif
 
    call get_value(group, "basepair", node)
+   bp_cutoff_energy = 0.01_PREC  ! Default /kcal/mol
    if (associated(node)) then
       !call get_value(node, "min_loop", bp_min_loop)
-      call get_value(node, "cutoff", bp_cutoff_dist)
+      !call get_value(node, "cutoff", bp_cutoff_dist)
+      call get_value(node, "cutoff_energy", bp_cutoff_energy)
+      print *, 'bp_cutoff_energy=', bp_cutoff_energy
       call get_value(node, "bond_k", bp_bond_k)
       call get_value(node, "bond_r", bp_bond_r)
       call get_value(node, "angl_k", bp_angl_k)
@@ -127,7 +131,8 @@ contains
       angl_t0 = INVALID_VALUE
    
       !bp_min_loop = -1
-      bp_cutoff_dist = INVALID_VALUE
+      !bp_cutoff_dist = INVALID_VALUE
+      !bp_cutoff_energy = INVALID_VALUE
       bp_U0_GC = INVALID_VALUE
       bp_U0_AU = INVALID_VALUE
       bp_U0_GU = INVALID_VALUE
@@ -179,12 +184,12 @@ contains
          write(*,*) "# angl_t0: ", angl_t0 
       endif
 
-      if (bp_cutoff_dist > INVALID_JUDGE) then
-         write(*,*) "INVALID bp_cutoff in the force field file"
-         stat = .False.
-      else
-         write(*,*) "# bp_cutoff: ", bp_cutoff_dist
-      endif
+      !if (bp_cutoff_dist > INVALID_JUDGE) then
+      !   write(*,*) "INVALID bp_cutoff in the force field file"
+      !   stat = .False.
+      !else
+      !   write(*,*) "# bp_cutoff: ", bp_cutoff_dist
+      !endif
 
       if (bp_seqdep == 0) then
          if (bp_U0_GC > INVALID_JUDGE) then

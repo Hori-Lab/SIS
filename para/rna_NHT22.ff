@@ -1,0 +1,31 @@
+title = 'NHG22'
+
+[potential]
+    [potential.bond]
+        k = 15.0
+        r0 = 5.9
+
+    [potential.angle]
+        k = 10.0
+        a0 = 2.618
+
+    [potential.basepair]
+        cutoff_energy = -0.01
+        U0_GC = -5.00000
+        U0_AU = -3.33333
+        U0_GU = -3.33333
+
+        bond_k = 3.0
+        bond_r = 13.8
+
+        angl_k = 1.5
+        angl_theta1 = 1.8326
+        angl_theta2 = 0.9425
+
+        dihd_k = 0.5
+        dihd_phi1 = 1.8326
+        dihd_phi2 = 1.1345
+
+    [potential.wca]
+        sigma = 10.0
+        epsilon = 2.0

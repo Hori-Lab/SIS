@@ -5,7 +5,7 @@ subroutine force_bp_limit(forces)
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
    use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy
-   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_dist, bp_cutoff_ene, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
+   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_ddist, bp_cutoff_ene, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
                              bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2
 
    implicit none
@@ -64,8 +64,7 @@ subroutine force_bp_limit(forces)
       a12 = sqrt(d1212)
       d = a12 - bp_bond_r
 
-      if (a12 > bp_cutoff_dist) cycle
-      !if (abs(d) > 2.0_PREC) cycle
+      if (abs(d) > bp_cutoff_ddist) cycle
 
       imp3 = imp1 - 1
       imp4 = imp2 - 1

@@ -4,7 +4,7 @@ subroutine force_bp(forces)
    use pbc, only : pbc_vec_d
    use var_state, only : xyz
    use var_top, only : nmp
-   use var_potential, only : nbp, bp_cutoff_dist, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
+   use var_potential, only : nbp, bp_cutoff_ddist, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
                              bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2
    use var_potential, only : nbp
 
@@ -42,8 +42,9 @@ subroutine force_bp(forces)
       v12(:) = pbc_vec_d(xyz(:,imp1), xyz(:,imp2))
       d1212 = dot_product(v12,v12)
       a12 = sqrt(d1212)
+      d = a12 - bp_bond_r
 
-      if (a12 >= bp_cutoff_dist) cycle
+      if (abs(d) > bp_cutoff_ddist) cycle
 
       imp3 = imp1 - 1
       imp4 = imp2 - 1
@@ -51,8 +52,6 @@ subroutine force_bp(forces)
       imp6 = imp2 + 1
 
       !===== Distance =====
-      d = a12 - bp_bond_r
-
       u = bp_bond_k * d**2
       f_i(:) = (2.0e0_PREC * bp_bond_k * d / a12) * v12(:)
       f_bp(:, 1) = + f_i(:)

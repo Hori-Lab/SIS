@@ -14,7 +14,8 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff_dist, ele_cutoff, ele_nl_cut2
+   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff_dist, ele_cutoff, ele_nl_cut2, &
+                             bp_cutoff_energy, bp_cutoff_dist, bp_cutoff_ddist, bp_bond_r, bp_bond_k, bp_U0_GC
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -133,10 +134,27 @@ subroutine job_md()
       end do
    endif
 
+   ! Calcuate BP cutoff
+   ! If bp_cutoff_energy is not specified in ff, the default value is 0.01 (kcal/mol).
+   if (abs(bp_cutoff_energy) <= epsilon(bp_cutoff_energy)) then
+      ! When bp_cutoff_energy = 0.0, treat it as in the original way Hung did.
+      bp_cutoff_dist = 18.0_PREC
+      bp_cutoff_ddist = bp_cutoff_dist - bp_bond_r
+
+   else
+      bp_cutoff_ddist = sqrt(log(abs(bp_U0_GC / bp_cutoff_energy)) / bp_bond_k)
+      bp_cutoff_dist = bp_bond_r + bp_cutoff_ddist
+
+   endif
+
+   print '(a,f10.3)', 'bp_cutoff_ddist = ', bp_cutoff_ddist
+   print '(a,f10.3)', 'bp_cutoff_dist = ', bp_cutoff_dist
+
    ! Neighbor list
    wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
    bp_nl_cut2 = (bp_cutoff_dist + nl_margin) ** 2
    ele_nl_cut2 = (ele_cutoff + nl_margin) ** 2
+
    call neighbor_list()
    xyz_move(:,:) = 0.0e0_PREC
 
