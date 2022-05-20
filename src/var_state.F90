@@ -38,6 +38,8 @@ module var_state
    real(PREC), save :: viscosity_Pas
    real(PREC), save :: dt
    integer(INT64), save :: nstep
+   integer(INT64), save :: stop_wall_time_sec
+
    integer, save :: nstep_save
    integer, save :: nstep_save_rst
    real(PREC), save :: nl_margin

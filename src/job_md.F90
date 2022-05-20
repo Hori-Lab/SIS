@@ -4,12 +4,12 @@ subroutine job_md()
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, RSTBLK
-   use progress, only : progress_init, progress_update
+   use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
    use var_state, only : restarted, flg_bp_energy, &
                          viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, &
-                         nstep, nstep_save, nstep_save_rst, &
+                         nstep, nstep_save, nstep_save_rst, stop_wall_time_sec, &
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
@@ -32,6 +32,7 @@ subroutine job_md()
    real(PREC) :: accels_pre(3)
    real(PREC) :: d2, d2max, d2max_2nd
    character(CHAR_FILE_PATH), save :: cfile_dcd_out
+   logical :: flg_stop
 
    ! Function
    real(PREC) :: rnd_boxmuller
@@ -219,6 +220,8 @@ subroutine job_md()
       call progress_init(istep)
    endif
 
+   flg_stop = .False.
+
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Time integration
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -310,15 +313,22 @@ subroutine job_md()
          endif
       endif
 
-      if (mod(istep, nstep_save_rst) == 0) then
-         call write_rst()
-      endif
-
       if (flg_progress) then
          if (mod(istep, step_progress) == 0) then
             call progress_update(istep, nstep)
          endif
       endif
+
+      if (stop_wall_time_sec > 0 .and. wall_time_sec() > stop_wall_time_sec) then
+         flg_stop = .True.
+         print '(a)', 'Wall-clock time limit reached. Stop the job after writing rst file.'
+      endif
+
+      if (mod(istep, nstep_save_rst) == 0 .or. flg_stop) then
+         call write_rst()
+      endif
+
+      if (flg_stop) exit
    enddo
 
    call fdcd%close()

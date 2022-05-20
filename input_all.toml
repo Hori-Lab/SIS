@@ -61,6 +61,15 @@ neighbor_list_margin = 10.0
 viscosity_Pas = 0.00001
    # (optional) default is 0.00001
 
+stop_wall_time_hour = 47.9
+   # (optional) Set wall-clock time limit for the job.
+   # If a positive value is specified, the job will be terminated once the wall time
+   # reaches the limit value. A restart file (.rst) will be recorded.
+   # The unit is hour and can be any positive real number, e.g. 0.25 for 15 minutes.
+   # If the specified value is negative, no limit will be set.
+   # The default is -1 thus no time limit.
+   # It is recommended to set a slightly smaller value than the resource time allowed,
+   # e.g. 47.9 for 48-hour job.
 
 [Basepair]
 min_loop_size = 3

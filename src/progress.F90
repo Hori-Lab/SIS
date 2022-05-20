@@ -12,10 +12,13 @@ module progress
    integer(INT64), save :: clock_pre, clock_ini
    real(REAL64), save :: rt_rate
 
+   integer(INT64), save :: wall_clock_0
+
    logical, save :: flg_init = .False.
 
    public :: progress_init
    public :: progress_update
+   public :: wall_time_sec
 
 contains
 
@@ -42,6 +45,8 @@ contains
       step_ini = istep
       step_pre = istep
       rt_rate = 1.0_REAL64 / real(t_rate, kind=REAL64)
+
+      wall_clock_0 = -clock
 
       flg_init = .True.
    endsubroutine progress_init
@@ -81,5 +86,14 @@ contains
       step_pre = istep
 
    endsubroutine progress_update
+
+   integer(INT64) function wall_time_sec()
+      integer(INT64) :: clock
+
+      call system_clock(clock)
+
+      wall_time_sec = int((wall_clock_0 + clock) * rt_rate, kind=INT64)
+
+   end function wall_time_sec
 
 endmodule progress

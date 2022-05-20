@@ -14,7 +14,7 @@ subroutine read_input(cfilepath, stat)
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
-                         rng_seed, &
+                         rng_seed, stop_wall_time_sec, &
                          ionic_strength, length_per_charge
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
                              bp_min_loop, max_bp_per_nt
@@ -35,7 +35,8 @@ subroutine read_input(cfilepath, stat)
    integer :: i
    integer :: istat
    integer :: hdl
-   real(PREC) :: v(3)
+   integer(INT64) :: idummy
+   real(PREC) :: rdummy, v(3)
    character(len=:), allocatable :: cline
 
    stat = .False.
@@ -276,8 +277,34 @@ subroutine read_input(cfilepath, stat)
          viscosity_Pas = 0.00001_PREC
          write(*,*) 'Warning: viscosity_Pas is not specified in [MD] field. The default value will be used.'
       endif
-      write(*,*) '# MD viscosity_Pas: ', viscosity_Pas
-      write(*,*)
+      print '(a,f12.8)', '# MD viscosity_Pas: ', viscosity_Pas
+
+      !###### stop_wall_time_hour ######
+      rdummy = -1.0
+      call get_value(group, "stop_wall_time_hour", rdummy, stat=istat)
+
+      if (istat /= 0) then
+         ! Try integer
+         call get_value(group, "stop_wall_time_hour", idummy, stat=istat)
+
+         if (istat /= 0) then
+            print '(a)', 'Error: invalid value for stop_wall_time_hour in [MD].'
+            return
+         endif
+
+         rdummy = real(idummy, kind=PREC)
+      endif
+
+      if (rdummy < 0.0) then
+         stop_wall_time_sec = -1
+         print '(a,g15.8,a)', '# MD stop_wall_time_hour: ', rdummy, ' (wall time limit not set)'
+
+      else
+         stop_wall_time_sec = int(rdummy * 3600.0_PREC, kind=INT64)
+         print '(a,g15.8)', '# MD stop_wall_time_hour: ', rdummy
+      endif
+
+      print '(a)', '#'
 
    endif
 

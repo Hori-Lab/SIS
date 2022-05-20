@@ -43,6 +43,7 @@ program sis
 
    if (.not. stat) then
       print '(a)', 'Error in reading input file'
+      flush(6)
       error stop
    endif
 
@@ -229,6 +230,7 @@ program sis
 
    deallocate(xyz)
 
+   flush(6)
    stop
 
 contains
