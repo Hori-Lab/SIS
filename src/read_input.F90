@@ -44,7 +44,7 @@ subroutine read_input(cfilepath, stat)
    iopen_hdl = iopen_hdl + 1
    hdl = iopen_hdl
 
-   write(6, '(a)') "Reading input file: " // trim(cfilePath)
+   print '(2a)', "Reading input file: ", trim(cfilePath)
    open(hdl, file=cfilepath, status='old', action='read', iostat=istat)
 
    if (istat /= 0) then
@@ -62,7 +62,7 @@ subroutine read_input(cfilepath, stat)
    endif
 
    call get_value(table, "title", cline)
-   write(6, '(a)') '# title: ' // trim(cline)
+   print '(2a)', '# title: ', trim(cline)
 
    !################# job #################
    call get_value(table, "job", group)
@@ -79,16 +79,16 @@ subroutine read_input(cfilepath, stat)
       job = JOBT%MD
 
    else
-      write(*,*) 'Error: Unknown job type, '//trim(cline)
+      print '(2a)', 'Error: Unknown job type, ', trim(cline)
       return
    endif
-   write(*,*) '# job type: ', trim(cline), ' (job=', job,')'
+   print '(3a,i3,a)', '# job type: ', trim(cline), ' (job=', job,')'
 
    !################# input files #################
    call get_value(table, "files", group)
 
    if (.not. associated(group)) then
-      write(*,*) 'Error in input file: no files gorup in input.'
+      print '(a)', 'Error in input file: no files gorup in input.'
       return
    endif
 
@@ -106,7 +106,7 @@ subroutine read_input(cfilepath, stat)
       call get_value(node, "anneal", cfile_anneal_in)
 
    else
-      write(*,*) 'Error in input file: no files.in.'
+      print '(a)', 'Error in input file: no files.in.'
       return
    endif
 
@@ -130,7 +130,7 @@ subroutine read_input(cfilepath, stat)
       !do i = 1, size(list)
       !   !call get_value(node, list(i)%key, cline, stat=stat)
       !   call get_value(node, list(i)%key, cline)
-      !   write(*,*) list(i)%key, cline
+      !   print *, list(i)%key, cline
       !enddo
 
       call get_value(node, "types", array)
@@ -145,13 +145,13 @@ subroutine read_input(cfilepath, stat)
          else if (cline == "bpe") then
             flg_out_bpe = .True.
          else
-            write(*,*) 'Error in input file: Unknown output type, '//trim(cline)
+            print '(a)', 'Error in input file: Unknown output type, '//trim(cline)
             return
          endif
       enddo
 
    else
-      write(*,*) 'Error in input file: no files.out.'
+      print '(a)', 'Error in input file: no files.out.'
       return
    endif
 
@@ -164,7 +164,7 @@ subroutine read_input(cfilepath, stat)
    call get_value(group, "opt_anneal", opt_anneal)
 
    if (opt_anneal > 0 .and. .not. allocated(cfile_anneal_in)) then
-      write(*,*) 'Error: opt_anneal requires anneal in [files.in].'
+      print '(a)', 'Error: opt_anneal requires anneal in [files.in].'
       return
    endif
 
@@ -172,13 +172,14 @@ subroutine read_input(cfilepath, stat)
    call get_value(group, "tempK", tempK)
 
    if (opt_anneal == 0 .and. tempK < 0.0) then
-      write(*,*) 'Error: tempK is invalid or undefined in [condition].'
+      print '(a)', 'Error: tempK is invalid or undefined in [condition].'
       return
    endif
 
    kT = BOLTZ_KCAL_MOL * tempK
-   write(*,*) '# tempK: ', tempK
-   write(*,*) '# rng_seed: ', rng_seed
+   print '(a,g15.8)', '# Condition, tempK: ', tempK
+   print '(a,i16)', '# Condition, rng_seed: ', rng_seed
+   print '(a)', '#'
 
    !################# Repeat sequence #################
    if (.not. allocated(cfile_fasta_in)) then
@@ -186,8 +187,9 @@ subroutine read_input(cfilepath, stat)
       if (associated(group)) then
          call get_value(group, "n_repeat", nrepeat)
          call get_value(group, "n_chain", nchains)
-         write(*,*) '# repeat n_repeat: ', nrepeat
-         write(*,*) '# repeat n_chains: ', nchains
+         print '(a,i10)', '# Repeat n_repeat: ', nrepeat
+         print '(a,i10)', '# Repeat n_chains: ', nchains
+         print '(a)',
       endif
    else
       nrepeat = 0
@@ -199,7 +201,7 @@ subroutine read_input(cfilepath, stat)
       call get_value(table, "MD", group, requested=.false.)
 
       if (.not. associated(group)) then 
-         write(*,*) 'Error: [MD] field required.'
+         print '(a)', 'Error: [MD] field required.'
          return
       endif
 
@@ -207,75 +209,75 @@ subroutine read_input(cfilepath, stat)
       call get_value(group, "integrator", cline)
 
       if (.not. allocated(cline)) then
-         write(*,*) 'Error: integrator is required in [MD].'
+         print '(a)', 'Error: integrator is required in [MD].'
          return
 
       else if (cline == 'GJF-2GJ') then
          integrator = INTGRT%LD_GJF2GJ
 
       else
-         write(*,*) 'Error: Unknown integrator type, '//trim(cline)
+         print '(2a)', 'Error: Unknown integrator type, ', trim(cline)
          return
       endif
-      write(*,*) '# MD integrator: ', trim(cline)
+      print '(2a)', '# MD integrator: ', trim(cline)
 
       !###### dt #######
       dt = -1.0
       call get_value(group, "dt", dt, stat=istat)
       if (istat /= 0 .or. dt < 0.0) then
-         write(*,*) 'Error: invalid value for dt in [MD].'
+         print '(a)', 'Error: invalid value for dt in [MD].'
          return
       endif
-      write(*,*) '# MD dt: ', dt
+      print '(a,g15.8)', '# MD dt: ', dt
 
       !###### nstep #######
       nstep = -1
       call get_value(group, "nstep", nstep, stat=istat)
       if (istat /= 0 .or. nstep < 0) then
-         write(*,*) 'Error: invalid value for nstep in [MD].'
+         print '(a)', 'Error: invalid value for nstep in [MD].'
          return
       endif
-      write(*,*) '# MD nstep: ', nstep
+      print '(a,i16)', '# MD nstep: ', nstep
 
       !###### nstep_save #######
       nstep_save = -1
       call get_value(group, "nstep_save", nstep_save, stat=istat)
       if (istat /= 0 .or. nstep_save < 0) then
-         write(*,*) 'Error: invalid value for nstep_save in [MD].'
+         print '(a)', 'Error: invalid value for nstep_save in [MD].'
          return
       endif
-      write(*,*) '# MD nstep_save: ', nstep_save
+      print '(a,i16)', '# MD nstep_save: ', nstep_save
 
       !###### nstep_save_rst #######
       nstep_save_rst = nstep_save
       call get_value(group, "nstep_save_rst", nstep_save_rst, stat=istat)
       if (istat /= 0) then
-         write(*,*) 'Error: invalid value for nstep_save_rst in [MD].'
+         print '(a)', 'Error: invalid value for nstep_save_rst in [MD].'
          return
       endif
-      write(*,*) '# MD nstep_save_rst: ', nstep_save_rst
+      print '(a,i16)', '# MD nstep_save_rst: ', nstep_save_rst
 
       !###### neighbor_list_margin ######
       nl_margin = -1.0
-      call get_value(group, "neighbor_list_margin", nl_margin)
+      call get_value(group, "neighbor_list_margin", nl_margin, stat=istat)
       if (istat /= 0) then
-         write(*,*) 'Error: invalid value for neighbor_list_margin in [MD].'
+         print '(a)', 'Error: invalid value for neighbor_list_margin in [MD].'
          return
       else if (nl_margin < 0.0) then
          nl_margin = 10.0_PREC
-         write(*,*) 'Warning: neighbor_list_margin is not specified in [MD] field. The default value will be used.'
+         print '(a)', 'Warning: neighbor_list_margin is not specified in [MD] field. The default value will be used.'
       endif
-      write(*,*) '# MD neighbor_list_margin: ', nl_margin
+      print '(a,g15.8)', '# MD neighbor_list_margin: ', nl_margin
 
       !###### viscosity_Pas ######
       viscosity_Pas = -1.0
-      call get_value(group, "viscosity_Pas", viscosity_Pas)
+      call get_value(group, "viscosity_Pas", viscosity_Pas, stat=istat)
       if (istat /= 0) then
-         write(*,*) 'Error: invalid value for viscosity_Pas in [MD].'
+         print '(a)', 'Error: invalid value for viscosity_Pas in [MD].'
          return
       else if (viscosity_Pas < 0.0) then
          viscosity_Pas = 0.00001_PREC
-         write(*,*) 'Warning: viscosity_Pas is not specified in [MD] field. The default value will be used.'
+         print '(a)', 'Warning: viscosity_Pas is not specified in [MD] field. The default value will be used.'
       endif
       print '(a,f12.8)', '# MD viscosity_Pas: ', viscosity_Pas
 
@@ -313,13 +315,11 @@ subroutine read_input(cfilepath, stat)
 
    if (associated(group)) then
 
-      write(6, '(a)') '# Basepair'
-
       ! max_bp_per_nt
       max_bp_per_nt = INVALID_INT_VALUE
       call get_value(group, "max_bp_per_nt", max_bp_per_nt)
       if (max_bp_per_nt > INVALID_INT_JUDGE) then
-         write(6, '(a)') '#### max_bp_per_nt is not specified in the input file. Default value applies.'
+         print '(a)', '# [Basepair] max_bp_per_nt is not specified in the input file. Default value applies.'
          max_bp_per_nt = -1   ! default
       endif
 
@@ -327,20 +327,20 @@ subroutine read_input(cfilepath, stat)
       bp_min_loop = -1
       call get_value(group, "min_loop", bp_min_loop)
       if (bp_min_loop < 0) then
-         write(6, '(a)') '#### min_loop is not specified in the input file. Default value applies.'
+         print '(a)', '# [Basepair] min_loop is not specified in the input file. Default values are used.'
          bp_min_loop = 3    ! default
       endif
 
    else
-      write(6, '(a)') '#### [Basepair] section does not exist in the input file. Default values will be used.'
+      print '(a)', '# [Basepair] section does not exist in the input file. Default values are used.'
       max_bp_per_nt = 1  ! default
       bp_min_loop = 3    ! default
 
    endif
 
-   write(6, '(a,i6)') '# Basepair, max_bp_per_nt: ', max_bp_per_nt
-   write(6, '(a,i6)') '# Basepair, min_loop: ', bp_min_loop
-   write(6,*)
+   print '(a,i6)', '# Basepair, max_bp_per_nt: ', max_bp_per_nt
+   print '(a,i6)', '# Basepair, min_loop: ', bp_min_loop
+   print '(a)', '#'
 
 
    !################# Electrostatic #################
@@ -349,17 +349,17 @@ subroutine read_input(cfilepath, stat)
 
    if (associated(group)) then
 
-      write(6, '(a)') '# Electrostatic: On'
+      print '(a)', '# Electrostatic: On'
       flg_ele = .True.
 
       ! ionic_strength
       ionic_strength = INVALID_VALUE
       call get_value(group, "ionic_strength", ionic_strength)
       if (ionic_strength > INVALID_JUDGE) then
-         write(6, '(a)') "Error: Invalid value for ionic_strength in [Electrostatic]."
+         print '(a)', "Error: Invalid value for ionic_strength in [Electrostatic]."
          return
       else
-         write(6, '(a,g15.8)') '# Electrostatic, ionic strength: ', ionic_strength
+         print '(a,g15.8)', '# Electrostatic, ionic strength: ', ionic_strength
       endif
 
       ! cutoff type   1: distance-based (default) 
@@ -367,11 +367,11 @@ subroutine read_input(cfilepath, stat)
       ele_cutoff_type = 1
       call get_value(group, "cutoff_type", ele_cutoff_type)
       if (ele_cutoff_type == 1) then
-         write(6, '(a)') "# Electrostatic, cutoff type: 1 (distance-based)"
+         print '(a)', "# Electrostatic, cutoff type: 1 (distance-based)"
       else if (ele_cutoff_type == 2) then
-         write(6, '(a)') "# Electrostatic, cutoff type: 2 cutoff will be multiplied by the Debye length"
+         print '(a)', "# Electrostatic, cutoff type: 2 cutoff will be multiplied by the Debye length"
       else
-         write(6, '(a)') "Error: Invalid values for cutoff_type in [Electrostatic]."
+         print '(a)', "Error: Invalid values for cutoff_type in [Electrostatic]."
          return
       endif
 
@@ -379,36 +379,35 @@ subroutine read_input(cfilepath, stat)
       ele_cutoff_inp = INVALID_VALUE
       call get_value(group, "cutoff", ele_cutoff_inp)
       if (ele_cutoff_inp > INVALID_JUDGE) then
-         write(6, '(a)') "Error: Invalid values or absence of cutoff in [Electrostatic]."
+         print '(a)', "Error: Invalid values or absence of cutoff in [Electrostatic]."
          return
       else
-         write(6, '(a,g15.8)') '# Electrostatic, cutoff: ', ele_cutoff_inp
+         print '(a,g15.8)', '# Electrostatic, cutoff: ', ele_cutoff_inp
       endif
 
       ! length_per_charge
       length_per_charge = INVALID_VALUE
       call get_value(group, "length_per_charge", length_per_charge)
-      write(6, '(a,g15.8)') '# Electrostatic, length_per_charge: ', length_per_charge
       if (length_per_charge > INVALID_JUDGE) then
-         write(6, '(a)') "Error: Invalid value for length_per_charge in [Electrostatic]."
+         print '(a)', "Error: Invalid value for length_per_charge in [Electrostatic]."
          return
       else
-         write(6, '(a,g15.8)') '# Electrostatic, length per charge: ', length_per_charge
+         print '(a,g15.8)', '# Electrostatic, length per charge: ', length_per_charge
       endif
 
       ! (optional) No charge particles
       call get_value(group, "no_charge", array)
 
       if (len(array) > 0) then
-         write(6, '(a)') "# No charges on the following particles:"
+         print '(a)', "# Electrostatic, no charges on the following particles:"
          allocate(inp_no_charge(len(array)))
          do i = 1, len(array)
             call get_value(array, i, inp_no_charge(i))
-            write(6, '(i8, 1x, i8)') i, inp_no_charge(i)
+            print '(a, i8, 1x, i8)', '#         ', i, inp_no_charge(i)
          enddo
       endif
 
-      write(6,*)
+      print '(a)', '#'
    endif
 
    !################# box #################
@@ -420,9 +419,10 @@ subroutine read_input(cfilepath, stat)
       call get_value(group, "y", v(2))
       call get_value(group, "z", v(3))
       call set_pbc_size(v)
-      write(*,*) '# pbc_box x: ', pbc_box(1)
-      write(*,*) '# pbc_box y: ', pbc_box(2)
-      write(*,*) '# pbc_box z: ', pbc_box(3)
+      print '(a,g15.8)', '# pbc_box x: ', pbc_box(1)
+      print '(a,g15.8)', '# pbc_box y: ', pbc_box(2)
+      print '(a,g15.8)', '# pbc_box z: ', pbc_box(3)
+      print '(a)', '#'
    endif
 
    !################# variable box #################
@@ -434,9 +434,11 @@ subroutine read_input(cfilepath, stat)
       call get_value(group, "change_x", variable_box_change(1))
       call get_value(group, "change_y", variable_box_change(2))
       call get_value(group, "change_z", variable_box_change(3))
-      write(*,*) '# variable_box change_x: ', variable_box_change(1)
-      write(*,*) '# variable_box change_y: ', variable_box_change(2)
-      write(*,*) '# variable_box change_z: ', variable_box_change(3)
+      print '(a,i16)', '# variable_box step: ', variable_box_step
+      print '(a,g15.8)', '# variable_box change_x: ', variable_box_change(1)
+      print '(a,g15.8)', '# variable_box change_y: ', variable_box_change(2)
+      print '(a,g15.8)', '# variable_box change_z: ', variable_box_change(3)
+      print '(a)', '#'
    endif
 
    !################# Progress #################
@@ -445,13 +447,14 @@ subroutine read_input(cfilepath, stat)
    if (associated(group)) then
       flg_progress = .True.
       call get_value(group, "step", step_progress)
-      write(*,*) '# Progress step: ', step_progress
+      print '(a,i16)', '# Progress step: ', step_progress
+      print '(a)', '#'
    endif
 
    call table%destroy
 
-   write(6,*) 'Done: reading input file'
-   write(6,*) ''
+   print '(a)', 'Done: reading input file'
+   print *
    flush(6)
 
    stat = .True.

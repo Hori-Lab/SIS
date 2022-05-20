@@ -52,18 +52,21 @@ subroutine job_md()
    !! Set up variables for dynamics
    radius = 10.0
    v = viscosity_Pas * sqrt(1.0e3_PREC / KCAL2JOUL) * N_AVO * 1.0e-20_PREC
-   write(6,*) 'v =', v
    fric(:) = 6.0e0_PREC * PI * v * radius
-   write(6,*) 'fric =', fric(1)
+   print '(a)', 'Langevin dynamics parameters'
+   print '(a,f10.3)', 'Stokes radius = ', radius
+   print '(a,f10.3)', 'Viscosity = ', v
+   print '(a,f10.3)', 'Friction coefficient = ', fric(1)
+   print *
 
    !v = 0.5 ! ps^(-1)
    !write(*,*) 'v =', v
 
-   write(6,*) 'mass(A) = 328.212'
-   write(6,*) 'mass(G) = 344.212'
-   write(6,*) 'mass(C) = 304.182'
-   write(6,*) 'mass(U) = 305.164'
-   write(6,*)
+   print '(a)', 'mass(A) = 328.212'
+   print '(a)', 'mass(G) = 344.212'
+   print '(a)', 'mass(C) = 304.182'
+   print '(a)', 'mass(U) = 305.164'
+   print *
            
    do imp = 1, nmp
       ! Mass hard coded
@@ -148,13 +151,18 @@ subroutine job_md()
 
    endif
 
-   print '(a,f10.3)', 'bp_cutoff_ddist = ', bp_cutoff_ddist
-   print '(a,f10.3)', 'bp_cutoff_dist = ', bp_cutoff_dist
-
    ! Neighbor list
    wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
    bp_nl_cut2 = (bp_cutoff_dist + nl_margin) ** 2
    ele_nl_cut2 = (ele_cutoff + nl_margin) ** 2
+
+   print '(a)', 'Potential and neighbor list cutoffs'
+   print '(a,f10.3)', 'bp_cutoff_ddist = ', bp_cutoff_ddist
+   print '(a,f10.3)', 'bp_cutoff_dist = ', bp_cutoff_dist
+   print '(a,f10.3)', 'wca_sigma = ', wca_sigma
+   print '(a,f10.3)', 'ele_cutoff = ', ele_cutoff
+   print '(a,f10.3)', 'nl_margin = ', nl_margin
+   print *
 
    call neighbor_list()
    xyz_move(:,:) = 0.0e0_PREC
@@ -192,7 +200,7 @@ subroutine job_md()
 
    ! Open DCD file and write the header
    cfile_dcd_out = trim(cfile_prefix) // '.dcd'
-   write(6, '(a)') '# Opening dcd file to write: ' // trim(cfile_dcd_out)
+   print '(2a)', '# Opening dcd file to write: ', trim(cfile_dcd_out)
    fdcd = file_dcd(hdl_dcd, cfile_dcd_out, DCD_OPEN_MODE%WRITE)
 
    call fdcd%write_header(nmp)
@@ -205,10 +213,10 @@ subroutine job_md()
    ! Output initial structure
    if (restarted) then
       ! Only STDOUT if restarted. No DCD output.
-      write(6, '(a)') '##### Energies at the beginning'
-      write(6, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv       (9)Eele'
-      write(6, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
-      write(6, *)
+      print '(a)', '##### Energies at the beginning'
+      print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv       (9)Eele'
+      print '(i10, 1x, f6.2, 7(1x,g13.6))', istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+      print *
 
    else
       ! At istep = 0 (not restarted), write both .out and DCD
@@ -298,7 +306,7 @@ subroutine job_md()
             call neighbor_list()
             xyz_move(:,:) = 0.0e0_PREC
 
-            write(*,'(a,i10,a,f8.3)') 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
+            print '(a,i10,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
          endif
       endif
 

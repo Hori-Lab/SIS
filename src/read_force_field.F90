@@ -78,7 +78,6 @@ subroutine read_force_field(stat)
       !call get_value(node, "min_loop", bp_min_loop)
       !call get_value(node, "cutoff", bp_cutoff_dist)
       call get_value(node, "cutoff_energy", bp_cutoff_energy)
-      print *, 'bp_cutoff_energy=', bp_cutoff_energy
       call get_value(node, "bond_k", bp_bond_k)
       call get_value(node, "bond_r", bp_bond_r)
       call get_value(node, "angl_k", bp_angl_k)
@@ -190,6 +189,7 @@ contains
       !else
       !   write(*,*) "# bp_cutoff: ", bp_cutoff_dist
       !endif
+      print *, '# bp_cutoff_energy=', bp_cutoff_energy
 
       if (bp_seqdep == 0) then
          if (bp_U0_GC > INVALID_JUDGE) then
