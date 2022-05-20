@@ -189,7 +189,7 @@ subroutine read_input(cfilepath, stat)
          call get_value(group, "n_chain", nchains)
          print '(a,i10)', '# Repeat n_repeat: ', nrepeat
          print '(a,i10)', '# Repeat n_chains: ', nchains
-         print '(a)',
+         print '(a)', '#'
       endif
    else
       nrepeat = 0
