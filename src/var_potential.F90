@@ -1,6 +1,7 @@
 module var_potential
 
    use const, only : PREC
+   use const_idx, only : BPT
 
    implicit none
   
@@ -20,24 +21,28 @@ module var_potential
    integer,    save :: max_bp_per_nt
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
    real(PREC), save :: bp_cutoff_energy  ! 0.01 kcal/mol
-   real(PREC), save :: bp_cutoff_dist
-   real(PREC), save :: bp_cutoff_ddist
    real(PREC), parameter :: bp_cutoff_ene = -0.01_PREC
    !real(PREC), save :: bp_U0  ! = - 5.0 / 3.0
    integer,    save :: bp_seqdep
       ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.
       ! = 1: Sequence dependent parameters. All possible combinations of trinucleotide-dimer are required.
-   real(PREC), save :: bp_U0_GC
-   real(PREC), save :: bp_U0_AU
-   real(PREC), save :: bp_U0_GU
-   real(PREC), save :: bp_bond_k  ! = 3.0
-   real(PREC), save :: bp_bond_r  ! = 13.8
-   real(PREC), save :: bp_angl_k  ! = 1.5
-   real(PREC), save :: bp_angl_theta1  ! = 1.8326
-   real(PREC), save :: bp_angl_theta2  ! = 0.9425
-   real(PREC), save :: bp_dihd_k  ! = 0.5
-   real(PREC), save :: bp_dihd_phi1  ! = 1.8326
-   real(PREC), save :: bp_dihd_phi2  ! = 1.1345
+
+   type basepair_parameters
+      real(PREC) :: cutoff_ddist
+      real(PREC) :: U0
+      real(PREC) :: bond_k
+      real(PREC) :: bond_r
+      real(PREC) :: angl_k1
+      real(PREC) :: angl_k2
+      real(PREC) :: angl_theta1
+      real(PREC) :: angl_theta2
+      real(PREC) :: dihd_k1
+      real(PREC) :: dihd_k2
+      real(PREC) :: dihd_phi1
+      real(PREC) :: dihd_phi2
+   end type basepair_parameters
+
+   type(basepair_parameters), save :: bp_paras(BPT%MAX)
 
    integer, save :: bp_type2nhb(1:3) = (/ 3, 2, 2/)
 

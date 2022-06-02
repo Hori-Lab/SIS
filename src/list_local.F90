@@ -10,6 +10,8 @@ subroutine list_local()
    integer :: n, i, imp
    integer :: ibond, iangl
 
+   print '(a)', 'Making lists of local interactions.'
+
    do n = 1, 2
   
       ibond = 0
@@ -52,7 +54,8 @@ subroutine list_local()
        endif
    enddo
 
-   write(*,*) '#nbond: ', nbond
-   write(*,*) '#nangl: ', nangl
+   print '(a,i10)', "# Number of bonds: ", nbond
+   print '(a,i10)', "# Number of angles: ", nangl
+   print *
 
 end subroutine list_local

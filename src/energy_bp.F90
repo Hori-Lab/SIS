@@ -4,7 +4,7 @@ subroutine energy_bp(Ebp)
    use const_phys, only : ZERO_JUDGE
    use pbc, only : pbc_vec_d
    use var_state, only : xyz, kT
-   use var_potential
+   use var_potential, only : bp_paras, nbp, bp_mp, bp_type2nhb, basepair_parameters
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
@@ -12,43 +12,45 @@ subroutine energy_bp(Ebp)
    real(PREC), intent(inout) :: Ebp
 
    integer :: ibp, imp, jmp, nhb
+   type(basepair_parameters) :: bpp
    real(PREC) :: u
    real(PREC) :: d, theta, phi
    real(PREC) :: e_bp(nbp)
 
    e_bp(:) = 0.0e0_PREC
 
-   !$omp parallel do private(imp,jmp,d,u,theta,phi)
+   !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp)
    do ibp = 1, nbp
 
       imp = bp_mp(1, ibp)
       jmp = bp_mp(2, ibp)
+      bpp = bp_paras(bp_mp(3, ibp))
       
-      d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp))) - bp_bond_r
+      d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp))) - bpp%bond_r
 
-      if (abs(d) > bp_cutoff_ddist) cycle
-      
-      u = bp_bond_k * d**2
+      if (abs(d) > bpp%cutoff_ddist) cycle
+
+      u = bpp%bond_k * d**2
 
       theta = mp_angle(imp, jmp, jmp-1)
-      u = u + bp_angl_k * (theta - bp_angl_theta1)**2
+      u = u + bpp%angl_k1 * (theta - bpp%angl_theta1)**2
 
       theta = mp_angle(imp-1, imp, jmp)
-      u = u + bp_angl_k * (theta - bp_angl_theta1)**2
+      u = u + bpp%angl_k1 * (theta - bpp%angl_theta1)**2
 
       theta = mp_angle(imp, jmp, jmp+1)
-      u = u + bp_angl_k * (theta - bp_angl_theta2)**2
+      u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
 
       theta = mp_angle(imp+1, imp, jmp)
-      u = u + bp_angl_k * (theta - bp_angl_theta2)**2
+      u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
 
       phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
-      u = u + bp_dihd_k * (1.0 + cos(phi + bp_dihd_phi1))
+      u = u + bpp%dihd_k1 * (1.0_PREC + cos(phi + bpp%dihd_phi1))
 
       phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
-      u = u + bp_dihd_k * (1.0 + cos(phi + bp_dihd_phi2))
+      u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
-      e_bp(ibp) = bp_U0(ibp) * exp(-u)
+      e_bp(ibp) = bpp%U0 * exp(-u)
 
    enddo
    !$omp end parallel do

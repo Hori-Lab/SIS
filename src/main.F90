@@ -72,6 +72,7 @@ program sis
    call read_force_field(stat)
    if (.not. stat) then
       print *, 'Error in reading force field file'
+      flush(6)
       stop (2)
    endif
 

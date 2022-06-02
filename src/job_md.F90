@@ -3,7 +3,7 @@ subroutine job_md()
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, SEQT, RSTBLK
+   use const_idx, only : ENE, SEQT, RSTBLK, BPT
    use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
@@ -14,14 +14,13 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, bp_cutoff_dist, ele_cutoff, ele_nl_cut2, &
-                             bp_cutoff_energy, bp_cutoff_dist, bp_cutoff_ddist, bp_bond_r, bp_bond_k, bp_U0_GC
+   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, ele_cutoff, ele_nl_cut2, bp_paras, bp_cutoff_energy
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   integer :: i, imp
+   integer :: i, imp, bptype
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
@@ -31,6 +30,7 @@ subroutine job_md()
    real(PREC) :: rnd_bm(3, nmp)
    real(PREC) :: accels_pre(3)
    real(PREC) :: d2, d2max, d2max_2nd
+   real(PREC) :: bp_bond_r, bp_cutoff_dist
    character(CHAR_FILE_PATH), save :: cfile_dcd_out
    logical :: flg_stop
 
@@ -57,7 +57,6 @@ subroutine job_md()
    print '(a,f10.3)', 'Stokes radius = ', radius
    print '(a,f10.3)', 'Viscosity = ', v
    print '(a,f10.3)', 'Friction coefficient = ', fric(1)
-   print *
 
    !v = 0.5 ! ps^(-1)
    !write(*,*) 'v =', v
@@ -143,11 +142,27 @@ subroutine job_md()
    if (abs(bp_cutoff_energy) <= epsilon(bp_cutoff_energy)) then
       ! When bp_cutoff_energy = 0.0, treat it as in the original way Hung did.
       bp_cutoff_dist = 18.0_PREC
-      bp_cutoff_ddist = bp_cutoff_dist - bp_bond_r
+
+      do bptype = 1, BPT%MAX
+         bp_paras(bptype)%cutoff_ddist = bp_cutoff_dist - 13.8_PREC
+      enddo
 
    else
-      bp_cutoff_ddist = sqrt(log(abs(bp_U0_GC / bp_cutoff_energy)) / bp_bond_k)
-      bp_cutoff_dist = bp_bond_r + bp_cutoff_ddist
+      bp_cutoff_dist = 0.0_PREC
+      bp_bond_r = 0.0_PREC
+
+      do bptype = 1, BPT%MAX
+         bp_paras(bptype)%cutoff_ddist = sqrt(log(abs(bp_paras(bptype)%U0 / bp_cutoff_energy)) / bp_paras(bptype)%bond_k)
+
+         ! To get the maximum bond_r and cutoff_ddist
+         if (bp_paras(bptype)%cutoff_ddist > bp_cutoff_dist) then
+            bp_cutoff_dist = bp_paras(bptype)%cutoff_ddist
+         endif
+         if (bp_paras(bptype)%bond_r > bp_bond_r) then
+            bp_bond_r = bp_paras(bptype)%bond_r
+         endif
+      enddo
+      bp_cutoff_dist = bp_bond_r + bp_cutoff_dist
 
    endif
 
@@ -157,8 +172,11 @@ subroutine job_md()
    ele_nl_cut2 = (ele_cutoff + nl_margin) ** 2
 
    print '(a)', 'Potential and neighbor list cutoffs'
-   print '(a,f10.3)', 'bp_cutoff_ddist = ', bp_cutoff_ddist
-   print '(a,f10.3)', 'bp_cutoff_dist = ', bp_cutoff_dist
+   print '(a,f10.3)', 'bp_cutoff_energy = ', bp_cutoff_energy
+   print '(a,f10.3)', 'bp_cutoff_ddist(GC) = ', bp_paras(BPT%GC)%cutoff_ddist
+   print '(a,f10.3)', 'bp_cutoff_ddist(AU) = ', bp_paras(BPT%AU)%cutoff_ddist
+   print '(a,f10.3)', 'bp_cutoff_ddist(GU) = ', bp_paras(BPT%GU)%cutoff_ddist
+   print '(a,f10.3)', 'bp_cutoff_dist(for neighbor list) = ', bp_cutoff_dist
    print '(a,f10.3)', 'wca_sigma = ', wca_sigma
    print '(a,f10.3)', 'ele_cutoff = ', ele_cutoff
    print '(a,f10.3)', 'nl_margin = ', nl_margin

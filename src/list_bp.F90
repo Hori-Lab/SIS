@@ -4,7 +4,7 @@ subroutine list_bp()
    use const_idx, only : SEQT, BPT
    use var_top, only : nmp_chain, seq, imp_chain, nchains
    use var_state, only : bp_status, ene_bp, for_bp
-   use var_potential, only : nbp, bp_mp, bp_min_loop, bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU
+   use var_potential, only : nbp, bp_mp, bp_min_loop
 
    implicit none
   
@@ -42,8 +42,8 @@ subroutine list_bp()
                      if (n == 2) then
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%GC_WCF
-                        bp_U0(ibp) = bp_U0_GC
+                        bp_mp(3,ibp) = BPT%GC
+                        !bp_U0(ibp) = bp_U0_GC
                      endif
     
                   else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
@@ -54,8 +54,8 @@ subroutine list_bp()
                      if (n == 2) then
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%AU_WCF
-                        bp_U0(ibp) = bp_U0_AU
+                        bp_mp(3,ibp) = BPT%AU
+                        !bp_U0(ibp) = bp_U0_AU
                      endif
     
                   else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
@@ -66,8 +66,8 @@ subroutine list_bp()
                      if (n == 2) then
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%GU_WBL
-                        bp_U0(ibp) = bp_U0_GU
+                        bp_mp(3,ibp) = BPT%GU
+                        !bp_U0(ibp) = bp_U0_GU
                      endif
 
                   endif
@@ -81,13 +81,13 @@ subroutine list_bp()
       if (n == 1) then
          nbp = ibp
          allocate(bp_mp(3, nbp))
-         allocate(bp_U0(nbp))
+         !allocate(bp_U0(nbp))
          allocate(bp_status(nbp))
          allocate(ene_bp(nbp))
          allocate(for_bp(3, 6, nbp))
 
          bp_mp(:,:) = 0
-         bp_U0(:) = 0.0_PREC
+         !bp_U0(:) = 0.0_PREC
          bp_status(:) = .False.
          ene_bp(:) = 0.0_PREC
          for_bp(:,:,:) = 0.0_PREC

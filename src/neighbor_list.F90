@@ -7,7 +7,6 @@ subroutine neighbor_list()
    use var_state, only : xyz, bp_status, ene_bp, for_bp
    use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
                              bp_nl_cut2, bp_mp, nbp, nbp_max, bp_min_loop, &
-                             bp_U0, bp_U0_GC, bp_U0_AU, bp_U0_GU, &
                              nele, nele_max, ele_mp, ele_nl_cut2, flg_ele
 
    implicit none
@@ -15,7 +14,7 @@ subroutine neighbor_list()
    integer :: ichain, jchain, i, imp, j, jmp, j_start
    integer :: iwca, ibp, iele
    integer :: bptype
-   real(PREC) :: d2, v(3), coef
+   real(PREC) :: d2, v(3)
 
    if (flg_pbc) then
       call pbc_wrap()
@@ -32,13 +31,11 @@ subroutine neighbor_list()
    if (.not. allocated(bp_mp)) then
       nbp_max = 5 * nmp
       allocate(bp_mp(3, nbp_max))
-      allocate(bp_U0(nbp_max))
       allocate(bp_status(nbp_max))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
    endif
    bp_mp(:,:) = 0
-   bp_U0(:) = 0.0_PREC
    bp_status(:) = .False.
    ene_bp(:) = 0.0_PREC
    for_bp(:,:,:) = 0.0_PREC
@@ -121,22 +118,19 @@ subroutine neighbor_list()
                   else if (ichain /= jchain .or. i+bp_min_loop < j) then
 
                      bptype = BPT%UNDEF
-                     coef = 0.0_PREC
+                     !coef = 0.0_PREC
 
                      if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
                          (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
-                        bptype = BPT%GC_WCF
-                        coef = bp_U0_GC
+                        bptype = BPT%GC
 
                      else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
                               (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
-                        bptype = BPT%AU_WCF
-                        coef = bp_U0_AU
+                        bptype = BPT%AU
 
                      else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
                               (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
-                        bptype = BPT%GU_WBL
-                        coef = bp_U0_GU
+                        bptype = BPT%GU
                      endif
 
                      if (bptype /= BPT%UNDEF) then
@@ -148,7 +142,6 @@ subroutine neighbor_list()
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
                         bp_mp(3,ibp) = bptype
-                        bp_U0(ibp) = coef
                      endif
                   endif
                endif
@@ -214,14 +207,11 @@ contains
       
       integer :: old_max
       integer :: tmp(3, nbp_max)
-      real(PREC) :: tmp2(nbp_max)
 
       old_max = nbp_max   
       tmp(1:3, 1:old_max) = bp_mp(1:3, 1:old_max)
-      tmp2(1:old_max) = bp_U0(1:old_max)
 
       deallocate(bp_mp)
-      deallocate(bp_U0)
       deallocate(bp_status)
       deallocate(ene_bp)
       deallocate(for_bp)
@@ -229,16 +219,12 @@ contains
       nbp_max = int(nbp_max * 1.2)
 
       allocate(bp_mp(3, nbp_max))
-      allocate(bp_U0(nbp_max))
       allocate(bp_status(nbp_max))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
 
       bp_mp(:, :) = 0
       bp_mp(1:3, 1:old_max) = tmp(1:3, 1:old_max)
-
-      bp_U0(:) = 0.0_PREC
-      bp_U0(1:old_max) = tmp2(1:old_max)
 
       bp_status(:) = .False.
       ene_bp(:) = 0.0_PREC

@@ -10,20 +10,49 @@ title = "sis force field refined parameter 2"
         a0 = 2.618
 
     [potential.basepair]
-        min_loop = 3
-        cutoff = 18.0
-        U0_GC = -8.40
-        U0_AU = -4.20
-        U0_GU = -2.80
 
+        [potential.basepair.GC]
+        U0 = -8.40
         bond_k = 3.0
         bond_r = 13.8
 
-        angl_k = 3.2
+        angl_k1 = 3.2
+        angl_k2 = 3.2
         angl_theta1 = 1.8326
         angl_theta2 = 0.9425
 
-        dihd_k = 1.3
+        dihd_k1 = 1.3
+        dihd_k2 = 1.3
+        dihd_phi1 = 1.8326
+        dihd_phi2 = 1.1345
+
+        [potential.basepair.AU]
+        U0 = -4.20
+        bond_k = 3.0
+        bond_r = 13.8
+
+        angl_k1 = 3.2
+        angl_k2 = 3.2
+        angl_theta1 = 1.8326
+        angl_theta2 = 0.9425
+
+        dihd_k1 = 1.3
+        dihd_k2 = 1.3
+        dihd_phi1 = 1.8326
+        dihd_phi2 = 1.1345
+
+        [potential.basepair.GU]
+        U0 = -2.80
+        bond_k = 3.0
+        bond_r = 13.8
+
+        angl_k1 = 3.2
+        angl_k2 = 3.2
+        angl_theta1 = 1.8326
+        angl_theta2 = 0.9425
+
+        dihd_k1 = 1.3
+        dihd_k2 = 1.3
         dihd_phi1 = 1.8326
         dihd_phi2 = 1.1345
 

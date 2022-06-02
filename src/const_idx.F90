@@ -43,13 +43,15 @@ module const_idx
    type(integrator_types), parameter :: INTGRT = integrator_types(0,1,1)
 
    type bp_types
-      integer :: UNDEF    ! 0
-      integer :: GC_WCF   ! 1
-      integer :: AU_WCF   ! 2
-      integer :: GU_WBL   ! 3
+      integer :: UNDEF   ! 0
+      integer :: GC      ! 1
+      integer :: AU      ! 2
+      integer :: GU      ! 3
       integer :: MAX
    endtype bp_types
    type(bp_types), parameter :: BPT = bp_types(0,1,2,3,3)
+
+   character(len=*), dimension(3), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU'/)
 
    type rst_block
       integer :: STEP

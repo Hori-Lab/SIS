@@ -5,8 +5,7 @@ subroutine force_bp_limit(forces)
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
    use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy
-   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_ddist, bp_cutoff_ene, bp_mp, bp_U0, bp_bond_k, bp_bond_r, &
-                             bp_angl_k, bp_angl_theta1, bp_angl_theta2, bp_dihd_k, bp_dihd_phi1, bp_dihd_phi2
+   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_ene, bp_mp, bp_paras, basepair_parameters
 
    implicit none
 
@@ -20,6 +19,7 @@ subroutine force_bp_limit(forces)
    integer :: bp_seq(nbp)
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
+   type(basepair_parameters) :: bpp
    real(PREC) :: u, pre, beta, ene, ratio, rnd
    real(PREC) :: d, cosine, dih
    real(PREC) :: f_i(3), f_j(3), f_k(3), f_l(3)
@@ -50,7 +50,7 @@ subroutine force_bp_limit(forces)
    ! Wait until the master initializes the arrays
    !$omp barrier
 
-   !$omp do private(imp1, imp2, imp3, imp4, imp5, imp6, d, u, ene, pre, cosine, dih, &
+   !$omp do private(bpp, imp1, imp2, imp3, imp4, imp5, imp6, d, u, ene, pre, cosine, dih, &
    !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
    !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
    !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212)
@@ -58,13 +58,14 @@ subroutine force_bp_limit(forces)
 
       imp1 = bp_mp(1, ibp)
       imp2 = bp_mp(2, ibp)
+      bpp = bp_paras(bp_mp(3, ibp))
 
       v12(:) = pbc_vec_d(xyz(:,imp1), xyz(:,imp2))
       d1212 = dot_product(v12,v12)
       a12 = sqrt(d1212)
-      d = a12 - bp_bond_r
+      d = a12 - bpp%bond_r
 
-      if (abs(d) > bp_cutoff_ddist) cycle
+      if (abs(d) > bpp%cutoff_ddist) cycle
 
       imp3 = imp1 - 1
       imp4 = imp2 - 1
@@ -72,10 +73,10 @@ subroutine force_bp_limit(forces)
       imp6 = imp2 + 1
 
       !===== Distance =====
-      !d = a12 - bp_bond_r
+      !d = a12 - bpp%bond_r
 
-      u = bp_bond_k * d**2
-      f_i(:) = (2.0e0_PREC * bp_bond_k * d / a12) * v12(:)
+      u = bpp%bond_k * d**2
+      f_i(:) = (2.0e0_PREC * bpp%bond_k * d / a12) * v12(:)
       for_bp(:, 1, ibp) = + f_i(:)
       for_bp(:, 2, ibp) = - f_i(:)
 
@@ -99,9 +100,9 @@ subroutine force_bp_limit(forces)
 
       !===== Angle of 3-1=2 (imp-1 -- imp -- jmp) =====
       cosine = d1213 / (sqrt(d1313) * a12)
-      d = acos(cosine) - bp_angl_theta1
-      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1313*d1212 - d1213**2)
-      u = u + bp_angl_k * d**2
+      d = acos(cosine) - bpp%angl_theta1
+      pre = 2.0e0_PREC * bpp%angl_k1 * d / sqrt(d1313*d1212 - d1213**2)
+      u = u + bpp%angl_k1 * d**2
 
       f_i(:) = pre * (v12(:) - (d1213 / d1313 * v13(:)))
       f_k(:) = pre * (v13(:) - (d1213over1212 * v12(:)))
@@ -112,9 +113,9 @@ subroutine force_bp_limit(forces)
 
       !===== Angle of 1=2-4 (imp -- jmp -- jmp-1) =====
       cosine = d1242 / (a12 * sqrt(d4242))
-      d = acos(cosine) - bp_angl_theta1
-      u = u + bp_angl_k * d**2
-      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1212*d4242 - d1242**2)
+      d = acos(cosine) - bpp%angl_theta1
+      u = u + bpp%angl_k1 * d**2
+      pre = 2.0e0_PREC * bpp%angl_k1 * d / sqrt(d1212*d4242 - d1242**2)
 
       f_i(:) = - pre * (v42(:) - (d1242over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1242 / d4242 * v42(:)))
@@ -125,9 +126,9 @@ subroutine force_bp_limit(forces)
 
       !===== Angle of 5-1=2 (imp+1 -- imp -- jmp) =====
       cosine = d1215 / (sqrt(d1515) * a12)
-      d = acos(cosine) - bp_angl_theta2
-      u = u + bp_angl_k * d**2
-      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1515*d1212 - d1215**2)
+      d = acos(cosine) - bpp%angl_theta2
+      u = u + bpp%angl_k2 * d**2
+      pre = 2.0e0_PREC * bpp%angl_k2 * d / sqrt(d1515*d1212 - d1215**2)
 
       f_i(:) = pre * (v12(:) - (d1215 / d1515 * v15(:)))
       f_k(:) = pre * (v15(:) - (d1215over1212 * v12(:)))
@@ -138,9 +139,9 @@ subroutine force_bp_limit(forces)
 
       !===== Angle of 1=2-6 (imp -- jmp -- jmp+1) =====
       cosine = d1262 / (a12 * sqrt(d6262))
-      d = acos(cosine) - bp_angl_theta2
-      u = u + bp_angl_k * d**2
-      pre = 2.0e0_PREC * bp_angl_k * d / sqrt(d1212*d6262 - d1262**2)
+      d = acos(cosine) - bpp%angl_theta2
+      u = u + bpp%angl_k2 * d**2
+      pre = 2.0e0_PREC * bpp%angl_k2 * d / sqrt(d1212*d6262 - d1262**2)
 
       f_i(:) = - pre * (v62(:) - (d1262over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1262 / d6262 * v62(:)))
@@ -158,10 +159,10 @@ subroutine force_bp_limit(forces)
       n(3) = v12(1)*v13(2) - v12(2)*v13(1)
 
       dih = atan2(dot_product(v42,n)*a12, dot_product(m,n))
-      d = dih + bp_dihd_phi1
-      u = u + bp_dihd_k * (1.0 + cos(d))
+      d = dih + bpp%dihd_phi1
+      u = u + bpp%dihd_k1 * (1.0 + cos(d))
 
-      pre = -bp_dihd_k * sin(d) * a12
+      pre = -bpp%dihd_k1 * sin(d) * a12
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
@@ -181,10 +182,10 @@ subroutine force_bp_limit(forces)
       n(3) = v12(1)*v15(2) - v12(2)*v15(1)
 
       dih = atan2(dot_product(v62,n)*a12, dot_product(m,n))
-      d = dih + bp_dihd_phi2
-      u = u + bp_dihd_k * (1.0 + cos(d))
+      d = dih + bpp%dihd_phi2
+      u = u + bpp%dihd_k2 * (1.0 + cos(d))
 
-      pre = -bp_dihd_k * sin(d) * a12
+      pre = -bpp%dihd_k2 * sin(d) * a12
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
@@ -196,7 +197,7 @@ subroutine force_bp_limit(forces)
       for_bp(:, 5, ibp) = for_bp(:, 5, ibp) + f_l(:)
 
       !===== Total =====
-      ene = bp_U0(ibp) * exp(-u)
+      ene = bpp%U0 * exp(-u)
 
       if (ene <= bp_cutoff_ene) then
          bp_status(ibp) = .True.
