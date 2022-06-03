@@ -5,7 +5,7 @@ subroutine force_bp_limit(forces)
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
    use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy
-   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_ene, bp_mp, bp_paras, basepair_parameters
+   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, bp_paras, basepair_parameters
 
    implicit none
 
@@ -199,7 +199,7 @@ subroutine force_bp_limit(forces)
       !===== Total =====
       ene = bpp%U0 * exp(-u)
 
-      if (ene <= bp_cutoff_ene) then
+      if (ene <= bp_cutoff_energy) then
          bp_status(ibp) = .True.
          ene_bp(ibp) = ene
 

@@ -21,8 +21,6 @@ module var_potential
    integer,    save :: max_bp_per_nt
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
    real(PREC), save :: bp_cutoff_energy  ! 0.01 kcal/mol
-   real(PREC), parameter :: bp_cutoff_ene = -0.01_PREC
-   !real(PREC), save :: bp_U0  ! = - 5.0 / 3.0
    integer,    save :: bp_seqdep
       ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.
       ! = 1: Sequence dependent parameters. All possible combinations of trinucleotide-dimer are required.
