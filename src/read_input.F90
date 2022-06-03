@@ -10,14 +10,15 @@ subroutine read_input(cfilepath, stat)
                       flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       cfile_ff, cfile_dcd_in, &
-                      cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in
+                      cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
+                      cfile_ct_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, stop_wall_time_sec, &
                          ionic_strength, length_per_charge
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
-                             bp_min_loop, max_bp_per_nt
+                             bp_min_loop, max_bp_per_nt, bp_model
    use var_top, only : nrepeat, nchains, inp_no_charge
   
    implicit none
@@ -103,6 +104,7 @@ subroutine read_input(cfilepath, stat)
       call get_value(node, "pdb_ini", cfile_pdb_ini)
       call get_value(node, "xyz_ini", cfile_xyz_ini)
       call get_value(node, "fasta", cfile_fasta_in)
+      call get_value(node, "ct", cfile_ct_in)
       call get_value(node, "anneal", cfile_anneal_in)
 
    else
@@ -315,6 +317,14 @@ subroutine read_input(cfilepath, stat)
 
    if (associated(group)) then
 
+      ! bp_model
+      bp_model = INVALID_INT_VALUE
+      call get_value(group, "model", bp_model)
+      if (bp_model > INVALID_INT_JUDGE) then
+         print '(a)', '# [Basepair] model is not specified in the input file. Default value applies.'
+         bp_model = 1   ! default
+      endif
+
       ! max_bp_per_nt
       max_bp_per_nt = INVALID_INT_VALUE
       call get_value(group, "max_bp_per_nt", max_bp_per_nt)
@@ -338,6 +348,7 @@ subroutine read_input(cfilepath, stat)
 
    endif
 
+   print '(a,i6)', '# Basepair, model: ', bp_model
    print '(a,i6)', '# Basepair, max_bp_per_nt: ', max_bp_per_nt
    print '(a,i6)', '# Basepair, min_loop: ', bp_min_loop
    print '(a)', '#'

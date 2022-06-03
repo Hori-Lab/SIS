@@ -3,12 +3,11 @@ program sis
    use, intrinsic :: iso_fortran_env, Only : iostat_end, compiler_version, compiler_options
    use const, only : CHAR_FILE_PATH, init_const
    use const_phys, only : BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, SEQT, JOBT, seqt2char
+   use const_idx, only : ENE, JOBT
    use var_potential, only : flg_ele
-   use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat, lmp_mp
    use var_state, only : restarted, xyz, tempK, kT, job, nthreads, rng_seed, opt_anneal
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
-                      cfile_prefix, cfile_out, cfile_fasta_in, hdl_rst
+                      cfile_prefix, cfile_out, hdl_rst
    use mt19937_64, only : init_genrand64
 !$ use omp_lib
 
@@ -17,9 +16,7 @@ program sis
    character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_bp, cfile_rst
 
    integer :: nargs
-   integer :: i, j, k, imp
    integer :: istat
-
    logical :: stat
 
    call init_const()
@@ -115,70 +112,11 @@ program sis
       open(hdl_bpe, file=cfile_bp, status='replace', action='write', form='formatted')
    endif
 
-
    !! Construct the sequences
-   if (allocated(cfile_fasta_in)) then
+   call set_sequence()
 
-      call read_fasta()
-
-   else if (nrepeat > 0) then
-
-      allocate(nmp_chain(nchains))
-      nmp_chain(:) = 3 * nrepeat
-      nmp = sum(nmp_chain)
-      write(*, '(a,i5)') '#Nrepeat: ', nrepeat
-      allocate(seq(3*nrepeat, nchains))
-      allocate(imp_chain(3*nrepeat, nchains))
-      allocate(ichain_mp(nmp))
-      allocate(lmp_mp(nmp))
-      imp = 0
-      do i = 1, nchains
-         do j = 1, nrepeat
-            seq(3*(j-1)+1, i) = SEQT%C
-            seq(3*(j-1)+2, i) = SEQT%A
-            seq(3*(j-1)+3, i) = SEQT%G
-            imp_chain(3*(j-1)+1, i) = imp+1
-            imp_chain(3*(j-1)+2, i) = imp+2
-            imp_chain(3*(j-1)+3, i) = imp+3
-            ichain_mp(imp+1) = i
-            ichain_mp(imp+2) = i
-            ichain_mp(imp+3) = i
-            lmp_mp(imp+1) = 3*(j-1)+1
-            lmp_mp(imp+2) = 3*(j-1)+2
-            lmp_mp(imp+3) = 3*(j-1)+3
-            imp = imp + 3
-         enddo
-         !write(*,'(a,141(i1))') '# ', seq(:,i)
-         !write(*,*) '# ', imp_chain(1,i), imp_chain((nrepeat-1)*3+3, i)
-      enddo
-
-   else
-      print *,'Error: either FASTA or [repeat] is required.'
-      stop (2)
-
-   endif
-
-   print '(a)', '############ System ############'
-   print '(a,i8)', 'Nchain: ', nchains
-   print *
-   do i = 1, nchains
-      print '(a, i4)', 'Chain ', i
-      print '(a, i10)', 'Nnt: ', nmp_chain(i)
-      k = 0
-      do j = 1, nmp_chain(i)
-         write(6, '(a)', advance='no') seqt2char(seq(j,i))
-         k = k + 1
-         if (mod(k,100) == 0) then
-            write(6, *) ''
-            k = 0
-         endif
-      enddo
-      if (k /= 0) then
-         write(6, *) ''
-      endif
-   enddo
-   print '(a)', '################################'
-   print *
+   !! Construct possible combinations of basepairs
+   call set_bp_map()
 
    print '(a)', 'Temperature'
    print '(a,f7.3)', '# T(K): ', tempK

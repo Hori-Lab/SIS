@@ -27,6 +27,9 @@ type = "MD"
          # Annealing-schedule file.
          # Required only when opt_anneal > 0 in [condition].
 
+      ct = "./test.ct"
+         # CT (Connectivity Table) file
+
       [files.out]
       types = ["bp", "bpe", "bpall"]
       prefix = "./test"
@@ -72,6 +75,11 @@ stop_wall_time_hour = 47.9
    # e.g. 47.9 for 48-hour job.
 
 [Basepair]
+model = 1
+   # Secondary structure allowed.
+   # 1: All pairwise (default).
+   # 2: Specific pairs given in CT file. (ct is required in [files.in].)
+
 min_loop_size = 3
    # Minimum loop size allowed. The default value is 3 if this option is omitted.
    # It is the number of nucleotides that must exist between a base pair.
@@ -81,7 +89,6 @@ max_bp_per_nt = -1
    # Maximum number of base pairs simultaneously formed by one nucleotide.
    # The default is -1 if this option is omitted.
    # If max_bp_per_nt <= 0, no limitation is applied.
-
 
 [Electrostatic]
 ionic_strength = 0.1

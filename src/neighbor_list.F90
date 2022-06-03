@@ -3,17 +3,17 @@ subroutine neighbor_list()
    use const, only : PREC
    use const_idx, only : SEQT, BPT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
-   use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp, has_charge
+   use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge
    use var_state, only : xyz, bp_status, ene_bp, for_bp
    use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
-                             bp_nl_cut2, bp_mp, nbp, nbp_max, bp_min_loop, &
-                             nele, nele_max, ele_mp, ele_nl_cut2, flg_ele
+                             bp_nl_cut2, bp_mp, nbp, nbp_max, &
+                             nele, nele_max, ele_mp, ele_nl_cut2, flg_ele, &
+                             bp_map
 
    implicit none
 
    integer :: ichain, jchain, i, imp, j, jmp, j_start
    integer :: iwca, ibp, iele
-   integer :: bptype
    real(PREC) :: d2, v(3)
 
    if (flg_pbc) then
@@ -109,41 +109,17 @@ subroutine neighbor_list()
                endif
 
                ! Basepairs
-               if (d2 <= bp_nl_cut2) then
+               if (bp_map(imp, jmp) > 0 .and. d2 <= bp_nl_cut2) then
 
-                  if (i == 1 .or. j == 1 .or. i == nmp_chain(ichain) .or. j == nmp_chain(ichain)) then
-                     ! Terminal nucleotides do not form base pairs.
-                     continue
-
-                  else if (ichain /= jchain .or. i+bp_min_loop < j) then
-
-                     bptype = BPT%UNDEF
-                     !coef = 0.0_PREC
-
-                     if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
-                         (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
-                        bptype = BPT%GC
-
-                     else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
-                              (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
-                        bptype = BPT%AU
-
-                     else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
-                              (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
-                        bptype = BPT%GU
-                     endif
-
-                     if (bptype /= BPT%UNDEF) then
-                        ibp = ibp + 1
-                        if (ibp > nbp_max) then
-                           !write(*,*) 'Error: ibp > nbp_max. ibp =', ibp, 'nbp_max = ', nbp_max
-                           call reallocate_bp_mp()
-                        endif
-                        bp_mp(1,ibp) = imp
-                        bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = bptype
-                     endif
+                  ibp = ibp + 1
+                  if (ibp > nbp_max) then
+                     !write(*,*) 'Error: ibp > nbp_max. ibp =', ibp, 'nbp_max = ', nbp_max
+                     call reallocate_bp_mp()
                   endif
+                  bp_mp(1, ibp) = imp
+                  bp_mp(2, ibp) = jmp
+                  bp_mp(3, ibp) = bp_map(imp, jmp)
+
                endif
    
             enddo
