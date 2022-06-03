@@ -50,7 +50,6 @@ module var_potential
    integer, save :: nbp
    integer, save :: nbp_max  ! This defines the size of neighbor list
    integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
-   real(PREC), allocatable, save :: bp_U0(:)
    real(PREC), save :: bp_nl_cut2
 
    ! WCA parameters

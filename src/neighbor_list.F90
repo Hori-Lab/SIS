@@ -29,7 +29,7 @@ subroutine neighbor_list()
    endif
 
    if (.not. allocated(bp_mp)) then
-      nbp_max = 5 * nmp
+      nbp_max = nmp / 2
       allocate(bp_mp(3, nbp_max))
       allocate(bp_status(nbp_max))
       allocate(ene_bp(nbp_max))
