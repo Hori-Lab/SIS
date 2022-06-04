@@ -15,7 +15,7 @@ subroutine read_input(cfilepath, stat)
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
-                         rng_seed, stop_wall_time_sec, &
+                         rng_seed, stop_wall_time_sec, fix_com_origin, &
                          ionic_strength, length_per_charge
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
                              bp_min_loop, max_bp_per_nt, bp_model
@@ -307,6 +307,16 @@ subroutine read_input(cfilepath, stat)
          stop_wall_time_sec = int(rdummy * 3600.0_PREC, kind=INT64)
          print '(a,g15.8)', '# MD stop_wall_time_hour: ', rdummy
       endif
+
+      !###### fix_com_origin ######
+      fix_com_origin = 0
+      call get_value(group, "fix_com_origin", fix_com_origin, stat=istat)
+
+      if (istat /= 0) then
+         print '(a)', 'Error: invalid value for fix_com_origin in [MD].'
+         return
+      endif
+      print '(a,i5)', '# MD fix_com_origin: ', fix_com_origin
 
       print '(a)', '#'
 

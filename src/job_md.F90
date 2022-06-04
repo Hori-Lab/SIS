@@ -9,7 +9,7 @@ subroutine job_md()
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
    use var_state, only : restarted, flg_bp_energy, &
                          viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, &
-                         nstep, nstep_save, nstep_save_rst, stop_wall_time_sec, &
+                         nstep, nstep_save, nstep_save_rst, stop_wall_time_sec, fix_com_origin, &
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
@@ -239,7 +239,7 @@ subroutine job_md()
    else
       ! At istep = 0 (not restarted), write both .out and DCD
       write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
-      call fdcd%write_onestep(nmp, xyz)
+      call fdcd%write_onestep(nmp, xyz, fix_com_origin)
    endif
 
    if (flg_progress) then
@@ -313,7 +313,7 @@ subroutine job_md()
          call energy()
          call energy_kinetic()
          write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
-         call fdcd%write_onestep(nmp, xyz)
+         call fdcd%write_onestep(nmp, xyz, fix_com_origin)
       endif
 
       if (flg_variable_box) then

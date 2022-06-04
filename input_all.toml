@@ -74,6 +74,12 @@ stop_wall_time_hour = 47.9
    # It is recommended to set a slightly smaller value than the resource time allowed,
    # e.g. 47.9 for 48-hour job.
 
+fix_com_origin = 0
+   # (optional) Fix the translational motion of the molecule.
+   # 0 : No operation (default)
+   # 1 : Move the center of mass to the origin when output the coordinates.
+   # This should not be used if there are more than one chains.
+
 [Basepair]
 model = 1
    # Secondary structure allowed.

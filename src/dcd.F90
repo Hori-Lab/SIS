@@ -535,16 +535,18 @@ module dcd
     
    end subroutine read_onestep
 
-   subroutine write_onestep(self, nmp, xyz)
+   subroutine write_onestep(self, nmp, xyz, fix_com_origin)
     
       implicit none
     
       class(file_dcd), intent(inout) :: self
       integer, intent(in) :: nmp
       real(PREC), intent(in) :: xyz(3,nmp)
+      integer, intent(in), optional :: fix_com_origin
 
       integer :: imp
       integer(4) :: num, nblock_size
+      real(PREC) :: com(3)
       real(PREC), parameter :: rdummy = 0.0   
       ! DCD format uses cosine values to store angles.
       ! Therefore, the value 0 corresponds to a rectangle (cos(0.0) => angle = 90 degree).
@@ -570,16 +572,23 @@ module dcd
          write(self%hdl) nblock_size
 
       endif
-   
+
+      com(:) = 0.0_PREC
+      if (present(fix_com_origin)) then
+         if (fix_com_origin > 0) then
+            com(:) = sum(xyz, dim=2) / real(nmp, kind=PREC)
+         endif
+      endif
+
       num = nmp*4
       write(self%hdl) num
-      write(self%hdl) (real(xyz(1,imp), kind=4),imp=1, nmp)
+      write(self%hdl) (real(xyz(1,imp) - com(1), kind=4),imp=1, nmp)
       write(self%hdl) num
       write(self%hdl) num
-      write(self%hdl) (real(xyz(2,imp), kind=4),imp=1, nmp)
+      write(self%hdl) (real(xyz(2,imp) - com(2), kind=4),imp=1, nmp)
       write(self%hdl) num
       write(self%hdl) num
-      write(self%hdl) (real(xyz(3,imp), kind=4),imp=1, nmp)
+      write(self%hdl) (real(xyz(3,imp) - com(3), kind=4),imp=1, nmp)
       write(self%hdl) num
     
       flush(self%hdl)
