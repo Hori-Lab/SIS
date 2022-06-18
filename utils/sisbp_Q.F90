@@ -57,6 +57,8 @@ program sisbp_Q
          read(hdl_ref, *, iostat=istat) i, cdummy, idummy, idummy, j, idummy
          if (istat == iostat_end) exit
 
+         if (j == 0) cycle
+
          if (i > j) then
             idummy = i
             i = j
@@ -84,6 +86,8 @@ program sisbp_Q
       do
          read(hdl_ref, *, iostat=istat) i, cdummy, j
          if (istat == iostat_end) exit
+
+         if (j == 0) cycle
 
          if (i > j) then
             idummy = i
@@ -151,6 +155,10 @@ contains
          i = int(i2)
          j = int(j2)
          e = real(e4, kind=PREC)
+
+      else
+         print '(a)', 'Error: Unknown format of bp file.'
+         stop
       endif
 
    endsubroutine read_bp
