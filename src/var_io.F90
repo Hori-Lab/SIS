@@ -7,6 +7,9 @@ module var_io
    logical, save :: flg_out_bpe = .False.
    logical, save :: flg_out_T = .False.
 
+   logical, save :: flg_in_bpseq = .False.
+   logical, save :: flg_in_ct = .False.
+
    integer, parameter :: KIND_OUT_BP  = 2  ! Defines the format of bp output file.
    integer, parameter :: KIND_OUT_BPE = 4  ! Defines the format of bp output file.
 
@@ -25,7 +28,7 @@ module var_io
 
    character(CHAR_FILE_PATH), save :: cfile_out
    character(len=:), allocatable, save :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini, &
-                                          cfile_fasta_in, cfile_ct_in, &
+                                          cfile_fasta_in, cfile_ct_in, cfile_bpseq_in, &
                                           cfile_anneal_in, cfile_xyz_ini, cfile_rst
 
 end module var_io

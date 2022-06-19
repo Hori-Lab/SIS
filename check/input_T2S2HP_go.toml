@@ -9,7 +9,8 @@ type = "MD"
       fasta = "T2S2HP.fasta"
       pdb_ini = "T2S2HP_random.pdb"
       #xyz_ini = "T2S2HP_random.xyz"
-      ct = "T2S2HP.ct"
+      #ct = "T2S2HP.ct"
+      bpseq = "T2S2HP.bpseq"
 
       [files.out]
       types = ["bp", "bpe", "bpall"]

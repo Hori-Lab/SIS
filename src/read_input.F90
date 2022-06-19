@@ -9,9 +9,10 @@ subroutine read_input(cfilepath, stat)
    use var_io, only : iopen_hdl, &
                       flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
+                      flg_in_ct, flg_in_bpseq, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
-                      cfile_ct_in
+                      cfile_ct_in, cfile_bpseq_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
@@ -105,10 +106,19 @@ subroutine read_input(cfilepath, stat)
       call get_value(node, "xyz_ini", cfile_xyz_ini)
       call get_value(node, "fasta", cfile_fasta_in)
       call get_value(node, "ct", cfile_ct_in)
+      call get_value(node, "bpseq", cfile_bpseq_in)
       call get_value(node, "anneal", cfile_anneal_in)
 
    else
       print '(a)', 'Error in input file: no files.in.'
+      return
+   endif
+
+   if (allocated(cfile_ct_in)) flg_in_ct = .True.
+   if (allocated(cfile_bpseq_in)) flg_in_bpseq = .True.
+
+   if (flg_in_ct .and. flg_in_bpseq) then
+      print '(a)', 'Error: only one of ct and bpseq files can be specified.'
       return
    endif
 

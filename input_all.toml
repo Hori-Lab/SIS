@@ -27,8 +27,11 @@ type = "MD"
          # Annealing-schedule file.
          # Required only when opt_anneal > 0 in [condition].
 
+      ## Either ct or bpseq is required when model = 2 in [Basepair]
       ct = "./test.ct"
          # CT (Connectivity Table) file
+      bpseq = "./test.bpseq"
+         # BPSEQ file (no comment line allowed)
 
       [files.out]
       types = ["bp", "bpe", "bpall"]
@@ -84,7 +87,7 @@ fix_com_origin = 0
 model = 1
    # Secondary structure allowed.
    # 1: All pairwise (default).
-   # 2: Specific pairs given in CT file. (ct is required in [files.in].)
+   # 2: Specific pairs given in CT/BPSEQ file. (ct or bpseq is required in [files.in].)
 
 min_loop_size = 3
    # Minimum loop size allowed. The default value is 3 if this option is omitted.
