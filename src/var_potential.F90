@@ -16,6 +16,8 @@ module var_potential
    real(PREC), allocatable, save :: angl_para(:,:)
    real(PREC), save :: angl_k  ! = 10.0_PREC
    real(PREC), save :: angl_t0  ! = 2.618_PREC
+   real(PREC), save :: angl_kphi !=
+   real(PREC), save :: angl_phi0 !=
 
    ! Basepair
    integer,    save :: max_bp_per_nt
