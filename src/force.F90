@@ -27,7 +27,9 @@ subroutine force()
    call force_bond(forces_t(1,1,tn))
 
    call force_angl(forces_t(1,1,tn))
-
+   
+   call force_dihedral(forces_t(1, 1, tn))
+   
    if (max_bp_per_nt < 1) then
       call force_bp(forces_t(1,1,tn))
    else
