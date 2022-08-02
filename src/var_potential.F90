@@ -16,6 +16,10 @@ module var_potential
    real(PREC), allocatable, save :: angl_para(:,:)
    real(PREC), save :: angl_k  ! = 10.0_PREC
    real(PREC), save :: angl_t0  ! = 2.618_PREC
+   
+   integer, save :: ndihedral
+   integer, allocatable, save :: dihedral_mp(:,:)
+   real(PREC), allocatable, save :: dihedral_para(:,:)
    real(PREC), save :: angl_kphi !=
    real(PREC), save :: angl_phi0 !=
 
