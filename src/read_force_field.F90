@@ -68,6 +68,11 @@ subroutine read_force_field(stat)
    if (associated(node)) then
       call get_value(node, "k", angl_k)
       call get_value(node, "a0", angl_t0)
+      
+   call get_value(group, "BAdihedral", node)
+   if (associated(node)) then
+      call get_value(node, "k", angl_kphi)
+      call get_value(node, "phi0", angl_phi0)
 
    else
       print '(a)', 'Error: [angle] parameters required in FF file'
