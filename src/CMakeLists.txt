@@ -17,7 +17,7 @@ add_executable(${SIS_EXE}
     energy_bond.F90 energy_angl.F90 energy_bp.F90 energy_bp_limit.F90
     energy_wca.F90 energy_ele_DH.F90
     force.F90
-    force_bond.F90 force_angl.F90 force_bp.F90 force_bp_limit.F90
+    force_bond.F90 force_angl.F90 force_bp.F90 force_bp_limit.F90 force_dihedral.f90
     force_wca.F90 force_ele_DH.F90
     neighbor_list.F90
     job_md.F90 job_dcd.F90 job_check_force.F90
