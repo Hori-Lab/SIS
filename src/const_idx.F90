@@ -12,9 +12,10 @@ module const_idx
       integer :: BP     ! 3
       integer :: EXV    ! 4
       integer :: ELE    ! 5
+      integer :: DIHE   ! 6
       integer :: MAX
    endtype energy_types
-   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,5)
+   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,5,6)
 
    type seq_types
       integer :: UNDEF  ! 0
