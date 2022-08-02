@@ -12,6 +12,8 @@ subroutine energy()
    call energy_bond(energies(ENE%BOND))
 
    call energy_angl(energies(ENE%ANGL))
+   
+   call energy_dihedral(energies(ENE%DIHE))
 
    if (max_bp_per_nt < 1) then
       call energy_bp(energies(ENE%BP))
