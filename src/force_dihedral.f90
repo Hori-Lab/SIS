@@ -45,7 +45,7 @@ subroutine force_dihedral(forces)
       delta = (acos(cosine) - angl_phi0)
       !endergydelta = angl_kphi * (delta**2)
       f = -(2 * (angl_kphi * delta))
-
+      !f = k_phi * (sin(delta))
       fi = f*(-((NORM2(v23)/(c1)**2)*c1))
       fj = f*(((NORM2(v23)/(c1)**2)*c1)+(dot_product(v12, v23)/((c1**2)*NORM2(v23)*c1))-(dot_product(v43, v23)/((c2**2)*NORM2(v23)*c2)))
       fk = f*((dot_product(v43, v23)/((c2**2)*NORM2(v23)*c2))+(dot_product(v12, v23)/((c1**2)*NORM2(v23)*c1))-((NORM2(v23)/(c1)**2)*c1))
