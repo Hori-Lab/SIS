@@ -43,6 +43,6 @@ subroutine energy_dihedral(Edihedral)
       end if
 
       delta = (acos(cosine) - angl_phi0)
-      Edihedral = Edihedral + 0.5 * angl_kphi * (delta**2)
+      Edihedral = Edihedral + k_phi *(1+cos(delta))
     end do
 end subroutine energy_dihedral
