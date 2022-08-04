@@ -28,6 +28,10 @@ subroutine list_local()
              if (i /= nmp_chain(ichain) - 1) then
                 iangl = iangl + 1
              endif
+             
+             if (i < nmp_chain(ichain) - 2) then
+                idihedral = idihedral + 1
+             endif
 
              if (n == 2) then
 
@@ -39,8 +43,8 @@ subroutine list_local()
                    angl_mp(2, iangl) = imp + 1
                    angl_mp(3, iangl) = imp + 2
                 endif
-                !CHECK HERE - -1, -2 or -3
-                if (i /= nmp_chain(ichain) - 1) then
+                
+                if (i < nmp_chain(ichain) - 2) then
                    dihedral_mp(1, idihedral) = imp
                    dihedral_mp(2, idihedral) = imp + 1
                    dihedral_mp(3, idihedral) = imp + 2
