@@ -18,6 +18,7 @@ module var_potential
    real(PREC), save :: angl_t0  ! = 2.618_PREC
    
    integer, save :: ndihedral
+   logical, save :: flg_dihedral
    integer, allocatable, save :: dihedral_mp(:,:)
    real(PREC), allocatable, save :: dihedral_para(:,:)
    real(PREC), save :: angl_kphi !=
