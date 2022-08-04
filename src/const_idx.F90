@@ -15,7 +15,7 @@ module const_idx
       integer :: DIHE   ! 6
       integer :: MAX
    endtype energy_types
-   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,5,6)
+   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,6)
 
    type seq_types
       integer :: UNDEF  ! 0
