@@ -73,12 +73,14 @@ subroutine read_force_field(stat)
       return
    endif 
    call get_value(group, "dihedral", node)
+   flg_dihedral = .True.
    if (associated(node)) then
       call get_value(node, "k", angl_kphi)
       call get_value(node, "phi0", angl_phi0)
    
    else
-      print '(a)', 'Error: [dihedral] parameters required in FF file'
+      !print '(a)', 'Error: [dihedral] parameters required in FF file'
+      flg_dihedral = .False.
       return
    endif
 
