@@ -4,7 +4,7 @@ subroutine force()
    use const
    use const_idx, only : ENE
    use var_state, only : nthreads, forces
-   use var_potential, only : flg_ele, max_bp_per_nt
+   use var_potential, only : flg_ele, max_bp_per_nt, flg_dihedral
    use var_top, only : nmp
 
    implicit none
