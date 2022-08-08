@@ -3,7 +3,6 @@ subroutine energy_dihedral(Edihedral)
    use const
    use pbc, only : pbc_vec_d
    use var_state, only : xyz
-   use var_top, only : nmp
    use var_potential, only : ndihedral, dihedral_mp, angl_kphi, angl_phi0
 
    implicit none
@@ -11,9 +10,9 @@ subroutine energy_dihedral(Edihedral)
    real(PREC), intent(inout) :: Edihedral
   
    integer :: ibd, imp1, imp2, imp3, imp4
-   real(PREC) :: f, delta, cosine, anglsign, d1
+   real(PREC) :: delta, cosine, anglsign, d1
    real(PREC) :: c1(3), c2(3), c3(3)
-   real(PREC) :: v12(3), v23(3), v43(3), fi(3), fj(3), fk(3), fl(3)
+   real(PREC) :: v12(3), v23(3), v43(3)
 
    do ibd = 1, ndihedral
       imp1 = dihedral_mp(1, ibd)

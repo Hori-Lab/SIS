@@ -2,7 +2,7 @@ subroutine list_local()
 
    use const
    use var_top, only : nmp_chain, imp_chain, nchains
-   use var_potential, only : nbond, bond_mp, nangl, angl_mp, ndihedral, dihedral_mp
+   use var_potential, only : nbond, bond_mp, nangl, angl_mp, ndihedral, dihedral_mp, flg_dihedral
 
    implicit none
 
@@ -44,7 +44,7 @@ subroutine list_local()
                   angl_mp(3, iangl) = imp + 2
                endif
 
-               if (i < nmp_chain(ichain) - 2) then
+               if (flg_dihedral .and. i < nmp_chain(ichain) - 2) then
                   dihedral_mp(1, idihedral) = imp
                   dihedral_mp(2, idihedral) = imp + 1
                   dihedral_mp(3, idihedral) = imp + 2
@@ -58,10 +58,13 @@ subroutine list_local()
       if (n == 1) then
          nbond = ibond
          nangl = iangl
-         ndihedral = idihedral
          allocate(bond_mp(2, nbond))
          allocate(angl_mp(3, nangl))
-         allocate(dihedral_mp(4, ndihedral))
+
+         if (flg_dihedral) then
+            ndihedral = idihedral
+            allocate(dihedral_mp(4, ndihedral))
+         endif
       endif
    enddo
 
