@@ -7,11 +7,12 @@ subroutine job_check_force()
    use var_top, only : nmp
    use var_state, only : xyz, energies, forces, flg_bp_energy
    use var_io, only : hdl_out, cfile_out, cfile_pdb_ini, cfile_xyz_ini
+   use mt19937_64
 
    implicit none
 
    integer :: i, imp, ixyz
-   real(PREC) :: r, xyz_save, e_save
+   real(PREC) :: xyz_save, e_save
    real(PREC) :: f_energy(3), diff(3)
    real(PREC), parameter :: small = 0.001
 
@@ -39,8 +40,7 @@ subroutine job_check_force()
    ! Slightly shift the structure to make sure it's not at the energy minimum
    do imp = 1, nmp
       do ixyz = 1, 3
-         call random_number(r)
-         xyz(ixyz, imp) = xyz(ixyz, imp) + small * r
+         xyz(ixyz, imp) = xyz(ixyz, imp) + small * genrand64_real3()
       enddo
    enddo
 
