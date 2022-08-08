@@ -21,8 +21,8 @@ module var_potential
    logical, save :: flg_dihedral
    integer, allocatable, save :: dihedral_mp(:,:)
    real(PREC), allocatable, save :: dihedral_para(:,:)
-   real(PREC), save :: angl_kphi !=
-   real(PREC), save :: angl_phi0 !=
+   real(PREC), save :: angl_kphi
+   real(PREC), save :: angl_phi0
 
    ! Basepair
    integer,    save :: max_bp_per_nt
