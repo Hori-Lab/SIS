@@ -10,56 +10,44 @@ subroutine force_dihedral(forces)
 
    real(PREC), intent(inout) :: forces(3, nmp)
   
-   integer :: ibd, imp1, imp2, imp3, imp4
-   real(PREC) :: f, delta, cosine, anglsign, d1
-   real(PREC) :: c1(3), c2(3), c3(3)
-   real(PREC) :: v12(3), v23(3), v43(3), fi(3), fj(3), fk(3), fl(3)
+   integer :: idih, imp1, imp2, imp3, imp4
+   real(PREC) :: dih, akj, akj2, pre, dvijvkj_akj2, dvklvkj_akj2
+   real(PREC) :: m(3), n(3)
+   real(PREC) :: vij(3), vkj(3), vkl(3), fi(3), fj(3), fk(3), fl(3)
 
-   do ibd = 1, ndihedral
-      imp1 = dihedral_mp(1, ibd)
-      imp2 = dihedral_mp(2, ibd)
-      imp3 = dihedral_mp(3, ibd)
-      imp4 = dihedral_mp(4, ibd)
+   do idih = 1, ndihedral
+      imp1 = dihedral_mp(1, idih)
+      imp2 = dihedral_mp(2, idih)
+      imp3 = dihedral_mp(3, idih)
+      imp4 = dihedral_mp(4, idih)
 
-      v12(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
-      v23(:) = pbc_vec_d(xyz(:, imp2), xyz(:, imp3))
-      v43(:) = pbc_vec_d(xyz(:, imp4), xyz(:, imp3))
+      vij(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
+      vkj(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
+      vkl(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp4))
 
-      c1(1) = v12(2)*v23(3) - v12(3)*v23(2)
-      c1(2) = v12(3)*v23(1) - v12(1)*v23(3)
-      c1(3) = v12(1)*v23(2) - v12(2)*v23(1)
+      ! m = rij x rkj
+      m(1) = vij(2)*vkj(3) - vij(3)*vkj(2)
+      m(2) = vij(3)*vkj(1) - vij(1)*vkj(3)
+      m(3) = vij(1)*vkj(2) - vij(2)*vkj(1)
 
-      c2(1) = v43(2)*v23(3) - v43(3)*v23(2)
-      c2(2) = v43(3)*v23(1) - v43(1)*v23(3)
-      c2(3) = v43(1)*v23(2) - v43(2)*v23(1)
+      ! n = rkj x rkl
+      n(1) = vkj(2)*vkl(3) - vkj(3)*vkl(2)
+      n(2) = vkj(3)*vkl(1) - vkj(1)*vkl(3)
+      n(3) = vkj(1)*vkl(2) - vkj(2)*vkl(1)
 
-      d1 = dot_product(c1, c2)
-      cosine = - d1 /((NORM2(c1)*NORM2(c2)))
-     
-      if (abs(cosine) > 1.0e0_PREC) then
-         cosine = sign(1.0e0_PREC, cosine)
-      endif
+      akj2 = dot_product(vkj, vkj)
+      akj = sqrt(akj2)
+
+      dih = atan2(-akj * dot_product(vij, n), dot_product(m, n))
+
+      pre = - angl_kphi * sin(dih + angl_phi0) * akj
+      fi(:) =  pre / dot_product(m,m) * m(:)
+      fl(:) = -pre / dot_product(n,n) * n(:)
       
-      c3(1) = c2(2)*c1(3) - c2(3)*c1(2)
-      c3(2) = c2(3)*c1(1) - c2(1)*c1(3)
-      c3(3) = c2(1)*c1(2) - c2(2)*c1(1)
-
-      anglsign = dot_product(c3, v23)
-      if (anglsign < 0) then
-         cosine = - cosine
-      end if
-      if (anglsign > 0) then
-         cosine = abs(cosine)
-      end if
-
-      delta = (acos(cosine) - angl_phi0)
-      !endergydelta = angl_kphi * (delta**2)
-      f = - (2 * (angl_kphi * delta))
-      !f = k_phi * (sin(delta))
-      fi = f*(-((NORM2(v23)/(c1)**2)*c1))
-      fj = f*(((NORM2(v23)/(c1)**2)*c1)+(dot_product(v12, v23)/((c1**2)*NORM2(v23)*c1))-(dot_product(v43, v23)/((c2**2)*NORM2(v23)*c2)))
-      fk = f*((dot_product(v43, v23)/((c2**2)*NORM2(v23)*c2))+(dot_product(v12, v23)/((c1**2)*NORM2(v23)*c1))-((NORM2(v23)/(c1)**2)*c1))
-      fl = f*(-((NORM2(v23)/(c2)**2)*c2))
+      dvijvkj_akj2 = dot_product(vij, vkj) / akj2
+      dvklvkj_akj2 = dot_product(vkl, vkj) / akj2
+      fj(:) = (-1.0_PREC + dvijvkj_akj2) * fi(:) + (          - dvklvkj_akj2) * fl(:)
+      fk(:) = (          - dvijvkj_akj2) * fi(:) + (-1.0_PREC + dvklvkj_akj2) * fl(:)
 
       forces(:, imp1) = forces(:, imp1) + fi(:)
       forces(:, imp2) = forces(:, imp2) + fj(:)
