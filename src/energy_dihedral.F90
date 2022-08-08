@@ -34,6 +34,6 @@ subroutine energy_dihedral(Edihedral)
 
       dih = atan2(norm2(v23) * dot_product(v12, c2), dot_product(c1, c2))
 
-      Edihedral = Edihedral + angl_kphi * (1.0_PREC + cos(dih - angl_phi0))
+      Edihedral = Edihedral + angl_kphi * (1.0_PREC + cos(dih + angl_phi0))
     end do
 end subroutine energy_dihedral
