@@ -4,7 +4,7 @@ subroutine force()
    use const
    use const_idx, only : ENE
    use var_state, only : nthreads, forces
-   use var_potential, only : flg_ele, max_bp_per_nt, flg_dihedral
+   use var_potential, only : flg_ele, max_bp_per_nt, flg_dih
    use var_top, only : nmp
 
    implicit none
@@ -28,7 +28,7 @@ subroutine force()
 
    call force_angl(forces_t(1,1,tn))
    
-   if (flg_dihedral) call force_dihedral(forces_t(1, 1, tn))
+   if (flg_dih) call force_dihedral(forces_t(1, 1, tn))
       
    
    if (max_bp_per_nt < 1) then

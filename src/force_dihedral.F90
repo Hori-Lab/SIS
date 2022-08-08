@@ -4,7 +4,7 @@ subroutine force_dihedral(forces)
    use pbc, only : pbc_vec_d
    use var_state, only : xyz
    use var_top, only : nmp
-   use var_potential, only : ndihedral, dihedral_mp, angl_kphi, angl_phi0
+   use var_potential, only : ndih, dih_mp, dih_k, dih_p0
 
    implicit none
 
@@ -17,11 +17,11 @@ subroutine force_dihedral(forces)
 
    !$omp   do private(imp1, imp2, imp3, imp4, vij, vkj, vkl, m, n, &
    !$omp&             akj2, akj, dih, pre, fi, fj, fk, fl, dvijvkj_akj2, dvklvkj_akj2)
-   do idih = 1, ndihedral
-      imp1 = dihedral_mp(1, idih)
-      imp2 = dihedral_mp(2, idih)
-      imp3 = dihedral_mp(3, idih)
-      imp4 = dihedral_mp(4, idih)
+   do idih = 1, ndih
+      imp1 = dih_mp(1, idih)
+      imp2 = dih_mp(2, idih)
+      imp3 = dih_mp(3, idih)
+      imp4 = dih_mp(4, idih)
 
       vij(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
       vkj(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
@@ -42,7 +42,7 @@ subroutine force_dihedral(forces)
 
       dih = atan2(-akj * dot_product(vij, n), dot_product(m, n))
 
-      pre = - angl_kphi * sin(dih + angl_phi0) * akj
+      pre = - dih_k * sin(dih + dih_p0) * akj
       fi(:) =  pre / dot_product(m,m) * m(:)
       fl(:) = -pre / dot_product(n,n) * n(:)
       

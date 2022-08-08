@@ -73,15 +73,15 @@ subroutine read_force_field(stat)
       return
    endif 
 
-   flg_dihedral = .True.
+   flg_dih = .True.
    call get_value(group, "dihedral", node, requested=.False.)
 
    if (associated(node)) then
-      call get_value(node, "k", angl_kphi)
-      call get_value(node, "phi0", angl_phi0)
+      call get_value(node, "k", dih_k)
+      call get_value(node, "phi0", dih_p0)
    
    else
-      flg_dihedral = .False.
+      flg_dih = .False.
       print '(a)', '[potential.dihedral] not found, thus no dihedral potential set.'
    endif
 
@@ -191,6 +191,9 @@ contains
       angl_k  = INVALID_VALUE
       angl_t0 = INVALID_VALUE
    
+      dih_k  = INVALID_VALUE
+      dih_p0 = INVALID_VALUE
+
       !bp_min_loop = -1
       !bp_cutoff_dist = INVALID_VALUE
       !bp_cutoff_energy = INVALID_VALUE
@@ -329,6 +332,20 @@ contains
          stat = .False.
       else
          print '(a,g15.8)', "# angl_t0: ", angl_t0 
+      endif
+
+      if (flg_dih .and. dih_k  > INVALID_JUDGE) then
+         print '(a)', "INVALID dih_k in the force field file"
+         stat = .False.
+      else
+         print '(a,g15.8)', "# dih_k: ", dih_k
+      endif
+
+      if (flg_dih .and. dih_p0 > INVALID_JUDGE) then
+         print '(a)', "INVALID dih_p0 in the force field file"
+         stat = .False.
+      else
+         print '(a,g15.8)', "# dih_p0: ", dih_p0 
       endif
 
       !if (bp_cutoff_dist > INVALID_JUDGE) then
