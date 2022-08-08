@@ -15,6 +15,8 @@ subroutine force_dihedral(forces)
    real(PREC) :: m(3), n(3)
    real(PREC) :: vij(3), vkj(3), vkl(3), fi(3), fj(3), fk(3), fl(3)
 
+   !$omp   do private(imp1, imp2, imp3, imp4, vij, vkj, vkl, m, n, &
+   !$omp&             akj2, akj, dih, pre, fi, fj, fk, fl, dvijvkj_akj2, dvklvkj_akj2)
    do idih = 1, ndihedral
       imp1 = dihedral_mp(1, idih)
       imp2 = dihedral_mp(2, idih)
@@ -54,4 +56,6 @@ subroutine force_dihedral(forces)
       forces(:, imp3) = forces(:, imp3) + fk(:) 
       forces(:, imp4) = forces(:, imp4) + fl(:)
    end do 
+   !$omp end do nowait
+
 end subroutine force_dihedral
