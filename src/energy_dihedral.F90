@@ -20,9 +20,9 @@ subroutine energy_dihedral(Edih)
       imp3 = dih_mp(3, idih)
       imp4 = dih_mp(4, idih)
 
-      v12(:)= pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
-      v23(:)= pbc_vec_d(xyz(:, imp2), xyz(:, imp3))
-      v34(:)= pbc_vec_d(xyz(:, imp3), xyz(:, imp4))
+      v12(:)= pbc_vec_d(xyz(:, imp2), xyz(:, imp1))
+      v23(:)= pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
+      v34(:)= pbc_vec_d(xyz(:, imp4), xyz(:, imp3))
 
       c1(1) = v12(2)*v23(3) - v12(3)*v23(2)
       c1(2) = v12(3)*v23(1) - v12(1)*v23(3)

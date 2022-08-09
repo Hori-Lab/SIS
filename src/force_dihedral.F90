@@ -40,11 +40,11 @@ subroutine force_dihedral(forces)
       akj2 = dot_product(vkj, vkj)
       akj = sqrt(akj2)
 
-      dih = atan2(-akj * dot_product(vij, n), dot_product(m, n))
+      dih = atan2(akj * dot_product(vij, n), dot_product(m, n))
 
       pre = - dih_k * sin(dih + dih_p0) * akj
-      fi(:) =  pre / dot_product(m,m) * m(:)
-      fl(:) = -pre / dot_product(n,n) * n(:)
+      fi(:) = -pre / dot_product(m,m) * m(:)
+      fl(:) =  pre / dot_product(n,n) * n(:)
       
       dvijvkj_akj2 = dot_product(vij, vkj) / akj2
       dvklvkj_akj2 = dot_product(vkl, vkj) / akj2
