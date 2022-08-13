@@ -1,0 +1,3 @@
+molecule m;
+m = fd_helix("arna", "gggggggggggggggggggggggggggggggggggggggg", "rna");
+putpdb("rGC40.pdb", m);
