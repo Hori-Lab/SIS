@@ -2,7 +2,7 @@ subroutine list_local()
 
    use const
    use var_top, only : nmp_chain, imp_chain, nchains
-   use var_potential, only : nbond, bond_mp, nangl, angl_mp, ndih, dih_mp, flg_dih
+   use var_potential, only : nbond, bond_mp, nangl, angl_mp, ndih, dih_mp, flg_dih_cos, flg_dih_exp
 
    implicit none
 
@@ -44,7 +44,7 @@ subroutine list_local()
                   angl_mp(3, iangl) = imp + 2
                endif
 
-               if (flg_dih .and. i < nmp_chain(ichain) - 2) then
+               if ((flg_dih_cos .or. flg_dih_exp) .and. i < nmp_chain(ichain) - 2) then
                   dih_mp(1, idih) = imp
                   dih_mp(2, idih) = imp + 1
                   dih_mp(3, idih) = imp + 2
@@ -61,7 +61,7 @@ subroutine list_local()
          allocate(bond_mp(2, nbond))
          allocate(angl_mp(3, nangl))
 
-         if (flg_dih) then
+         if (flg_dih_cos .or. flg_dih_exp) then
             ndih = idih
             allocate(dih_mp(4, ndih))
          endif

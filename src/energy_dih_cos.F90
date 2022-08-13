@@ -1,4 +1,4 @@
-subroutine energy_dihedral(Edih)
+subroutine energy_dih_cos(Edih)
    
    use const
    use pbc, only : pbc_vec_d
@@ -36,4 +36,4 @@ subroutine energy_dihedral(Edih)
 
       Edih = Edih + dih_k * (1.0_PREC + cos(dih + dih_p0))
     end do
-end subroutine energy_dihedral
+end subroutine energy_dih_cos

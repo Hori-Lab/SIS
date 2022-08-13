@@ -1,4 +1,4 @@
-subroutine force_dihedral(forces)
+subroutine force_dih_cos(forces)
    
    use const
    use pbc, only : pbc_vec_d
@@ -58,4 +58,4 @@ subroutine force_dihedral(forces)
    end do 
    !$omp end do nowait
 
-end subroutine force_dihedral
+end subroutine force_dih_cos

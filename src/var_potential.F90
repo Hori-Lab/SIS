@@ -19,10 +19,12 @@ module var_potential
    real(PREC), save :: angl_t0  ! = 2.618_PREC
    
    integer, save :: ndih
-   logical, save :: flg_dih
+   logical, save :: flg_dih_cos
+   logical, save :: flg_dih_exp
    integer, allocatable, save :: dih_mp(:,:)
    real(PREC), allocatable, save :: dih_para(:,:)
    real(PREC), save :: dih_k
+   real(PREC), save :: dih_w
    real(PREC), save :: dih_p0
 
    ! Basepair
