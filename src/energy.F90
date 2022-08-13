@@ -3,7 +3,7 @@ subroutine energy()
    use const
    use const_idx, only : ENE
    use var_state, only : energies
-   use var_potential, only : flg_ele, max_bp_per_nt, flg_dih
+   use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih
 
    implicit none
 
@@ -11,7 +11,11 @@ subroutine energy()
 
    call energy_bond(energies(ENE%BOND))
 
-   call energy_angl(energies(ENE%ANGL))
+   if (flg_angl_ReB) then
+      call energy_angl_ReB(energies(ENE%ANGL))
+   else
+      call energy_angl(energies(ENE%ANGL))
+   endif
    
    if (flg_dih) call energy_dihedral(energies(ENE%DIHE))
 

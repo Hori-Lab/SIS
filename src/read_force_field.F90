@@ -12,6 +12,7 @@ subroutine read_force_field(stat)
   
    integer :: istat
    integer :: hdl
+   logical :: flg_angl
 
    character(len=:), allocatable :: cline
 
@@ -64,14 +65,32 @@ subroutine read_force_field(stat)
       return
    endif
 
-   call get_value(group, "angle", node)
+   flg_angl = .True.
+   call get_value(group, "angle", node, requested=.False.)
    if (associated(node)) then
       call get_value(node, "k", angl_k)
       call get_value(node, "a0", angl_t0)
    else
-      print '(a)', 'Error: [angle] parameters required in FF file'
+      flg_angl = .False.
+   endif
+
+   flg_angl_ReB = .True.
+   call get_value(group, "angle_ReB", node, requested=.False.)
+   if (associated(node)) then
+      call get_value(node, "k", angl_k)
+      call get_value(node, "a0", angl_t0)
+   else
+      flg_angl_ReB = .False.
+   endif
+
+   if (flg_angl .and. flg_angl_ReB) then
+      print '(a)', 'Error: [angle] and [angle_ReB] cannot be specified together in FF file.'
       return
-   endif 
+
+   else if (flg_angl .and. flg_angl_ReB) then
+      print '(a)', 'Error: Either [angle] or [angle_ReB] parameters are required in FF file'
+      return
+   endif
 
    flg_dih = .True.
    call get_value(group, "dihedral", node, requested=.False.)

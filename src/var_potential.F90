@@ -11,6 +11,7 @@ module var_potential
    real(PREC), save :: bond_k  ! = 15.0_PREC
    real(PREC), save :: bond_r0  ! = 5.9_PREC
 
+   logical, save :: flg_angl_ReB
    integer, save :: nangl
    integer, allocatable, save :: angl_mp(:,:)
    real(PREC), allocatable, save :: angl_para(:,:)
