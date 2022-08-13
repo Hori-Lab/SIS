@@ -87,7 +87,7 @@ subroutine read_force_field(stat)
       print '(a)', 'Error: [angle] and [angle_ReB] cannot be specified together in FF file.'
       return
 
-   else if (flg_angl .and. flg_angl_ReB) then
+   else if (.not. flg_angl .and. .not. flg_angl_ReB) then
       print '(a)', 'Error: Either [angle] or [angle_ReB] parameters are required in FF file'
       return
    endif
