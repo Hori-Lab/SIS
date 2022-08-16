@@ -225,20 +225,24 @@ subroutine job_md()
 
    ! Open .out file
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
-   write(hdl_out, '(a)') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv       (9)Eele'
-                         !1234567890 123456 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123
+   write(hdl_out, '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Edih      '
+                                       !1234567890 123456 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123'
+   write(hdl_out, '(a)') ' (8)Ebp        (9)Eexv       (10)Eele'
+                         ! 1234567890123 1234567890123 1234567890123
 
    ! Output initial structure
    if (restarted) then
       ! Only STDOUT if restarted. No DCD output.
       print '(a)', '##### Energies at the beginning'
-      print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Ebp        (8)Eexv       (9)Eele'
-      print '(i10, 1x, f6.2, 7(1x,g13.6))', istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+      print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
+      print '(i10, 1x, f6.2, 2(1x,g13.6))', istep, tempK, Ekinetic, energies(0)
+      print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele'
+      print '(6(1x,g13.6))', (energies(i), i=1, ENE%MAX)
       print *
 
    else
       ! At istep = 0 (not restarted), write both .out and DCD
-      write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+      write(hdl_out, '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
       call fdcd%write_onestep(nmp, xyz, fix_com_origin)
    endif
 
@@ -312,7 +316,7 @@ subroutine job_md()
       if (mod(istep, nstep_save) == 0) then
          call energy()
          call energy_kinetic()
-         write(hdl_out, '(i10, 1x, f6.2, 7(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+         write(hdl_out, '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
          call fdcd%write_onestep(nmp, xyz, fix_com_origin)
       endif
 

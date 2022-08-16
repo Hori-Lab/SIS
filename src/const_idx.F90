@@ -9,10 +9,10 @@ module const_idx
       integer :: TOTAL  ! 0
       integer :: BOND   ! 1
       integer :: ANGL   ! 2
-      integer :: BP     ! 3
-      integer :: EXV    ! 4
-      integer :: ELE    ! 5
-      integer :: DIHE   ! 6
+      integer :: DIHE   ! 3
+      integer :: BP     ! 4
+      integer :: EXV    ! 5
+      integer :: ELE    ! 6
       integer :: MAX
    endtype energy_types
    type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,6)
