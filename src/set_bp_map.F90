@@ -58,6 +58,49 @@ subroutine set_bp_map()
          enddo
       enddo
 
+   else if (bp_model == 3) then
+
+      do imp = 1, nmp-1
+         i = lmp_mp(imp)
+         ichain = ichain_mp(imp)
+
+         ! Either 5' or 3' end
+         if (i == 1 .or. i == nmp_chain(ichain)) cycle
+
+         do jmp = imp+1, nmp
+            j = lmp_mp(jmp)
+            jchain = ichain_mp(jmp)
+
+            ! Either 5' or 3' end
+            if (j == 1 .or. j == nmp_chain(jchain)) cycle
+
+            ! Minimum loop length
+            if (ichain == jchain .and. i + bp_min_loop >= j) cycle
+
+            ! Isolated base pair not allowed
+            if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
+                .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
+               cycle
+            endif
+
+            if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
+                (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
+               bp_map(imp, jmp) = BPT%GC
+               bp_map(jmp, imp) = BPT%GC
+
+            else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
+                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
+               bp_map(imp, jmp) = BPT%AU
+               bp_map(jmp, imp) = BPT%AU
+
+            else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
+                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
+               bp_map(imp, jmp) = BPT%GU
+               bp_map(jmp, imp) = BPT%GU
+            endif
+         enddo
+      enddo
+
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Specific pairs given in CT file
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -207,4 +250,35 @@ subroutine set_bp_map()
       flush(output_unit)
    endif
 
+contains
+
+   logical function is_complement(s1, s2)
+
+      integer, intent(in) :: s1, s2
+
+      is_complement = .False.
+
+      if (s1 == SEQT%A) then
+         if (s2 == SEQT%U) then
+            is_complement = .True.
+         endif
+
+      else if (s1 == SEQT%U) then
+         if (s2 == SEQT%A .or. s2 == SEQT%G) then
+            is_complement = .True.
+         endif
+
+      else if (s1 == SEQT%G) then
+         if (s2 == SEQT%C .or. s2 == SEQT%U) then
+            is_complement = .True.
+         endif
+
+      else if (s1 == SEQT%C) then
+         if (s2 == SEQT%G) then
+            is_complement = .True.
+         endif
+
+      endif
+
+   end function is_complement
 endsubroutine set_bp_map
