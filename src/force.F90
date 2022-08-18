@@ -4,7 +4,7 @@ subroutine force()
    use const
    use const_idx, only : ENE
    use var_state, only : nthreads, forces
-   use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp
+   use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, bp_model
    use var_top, only : nmp
 
    implicit none
@@ -39,7 +39,11 @@ subroutine force()
    if (max_bp_per_nt < 1) then
       call force_bp(forces_t(1,1,tn))
    else
-      call force_bp_limit(forces_t(1,1,tn))
+      if (bp_model == 4) then
+         call force_bp_limit_triplet(forces_t(1,1,tn))
+      else
+         call force_bp_limit(forces_t(1,1,tn))
+      endif
    endif
 
    call force_wca(forces_t(1,1,tn))
