@@ -4,7 +4,7 @@ subroutine neighbor_list()
    use const_idx, only : SEQT, BPT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
    use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge
-   use var_state, only : xyz, bp_status, ene_bp, for_bp
+   use var_state, only : xyz, bp_status, ene_bp, for_bp, nt_bp_excess
    use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
                              bp_nl_cut2, bp_mp, nbp, nbp_max, &
                              nele, nele_max, ele_mp, ele_nl_cut2, flg_ele, &
@@ -34,11 +34,13 @@ subroutine neighbor_list()
       allocate(bp_status(nbp_max))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
+      allocate(nt_bp_excess(nmp))
    endif
    bp_mp(:,:) = 0
    bp_status(:) = .False.
    ene_bp(:) = 0.0_PREC
    for_bp(:,:,:) = 0.0_PREC
+   nt_bp_excess(:) = 0
 
    if (flg_ele) then
       if (allocated(ele_mp)) then

@@ -4,7 +4,7 @@ subroutine force_bp_limit(forces)
    use const, only : PREC
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
-   use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy
+   use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy, nt_bp_excess
    use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, bp_paras, basepair_parameters
 
    implicit none
@@ -14,7 +14,6 @@ subroutine force_bp_limit(forces)
    integer :: i, ibp, jbp, ibp_delete, nt_delete
    integer :: imp1, imp2, imp3, imp4, imp5, imp6
    integer :: i_save, i_swap
-   integer :: nt_bp_excess(nmp)
    integer :: nbp_seq
    integer :: bp_seq(nbp)
    integer :: nnt_bp_excess
@@ -39,8 +38,9 @@ subroutine force_bp_limit(forces)
    ! jmp+1 (6) --- jmp (2) --- jmp-1 (4)
    !#######################################
 
-   !$omp master
    beta = 1.0_PREC / kT
+
+   !$omp master
    bp_status(1:nbp) = .False.
    nt_bp_excess(1:nmp) = -max_bp_per_nt
    ene_bp(1:nbp) = 0.0_PREC

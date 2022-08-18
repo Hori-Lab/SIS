@@ -30,6 +30,7 @@ module var_state
    ! Base pairs
    logical, save :: flg_bp_energy
    logical, allocatable, save :: bp_status(:)
+   integer, allocatable, save :: nt_bp_excess(:)
    real(PREC), allocatable, save :: ene_bp(:)
    real(PREC), allocatable, save :: for_bp(:,:,:)
 
