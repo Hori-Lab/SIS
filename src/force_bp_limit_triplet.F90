@@ -40,10 +40,10 @@ subroutine force_bp_limit_triplet(forces)
    ! jmp+1 (6) --- jmp (2) --- jmp-1 (4)
    !#######################################
 
-   !$omp master
    beta = 1.0_PREC / kT
-   bp_status(1:nbp) = .False.
    nt_bp_excess(1:nmp) = -max_bp_per_nt
+   !$omp master
+   bp_status(1:nbp) = .False.
    ene_bp(1:nbp) = 0.0_PREC
    for_bp(1:3,1:6,1:nbp) = 0.0_PREC
    !$omp end master
