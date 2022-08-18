@@ -4,7 +4,7 @@ subroutine energy_bp_limit(Ebp)
    use const, only : PREC
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
-   use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy
+   use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy, nt_bp_excess
    use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, bp_paras, basepair_parameters
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
@@ -21,7 +21,6 @@ subroutine energy_bp_limit(Ebp)
    real(PREC) :: d, theta, phi
    real(PREC) :: ene
    real(PREC) :: rnd
-   integer :: nt_bp_excess(nmp)
    integer :: nbp_seq
    integer :: bp_seq(nbp)
    integer :: nnt_bp_excess
@@ -34,8 +33,6 @@ subroutine energy_bp_limit(Ebp)
       bp_status(1:nbp) = .False.
       nt_bp_excess(1:nmp) = -max_bp_per_nt
       ene_bp(1:nbp) = 0.0_PREC
-
-      !$omp barrier
 
       !$omp parallel do private(imp, jmp, d, u, theta, phi, ene, bpp)
       do ibp = 1, nbp
