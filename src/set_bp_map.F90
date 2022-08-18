@@ -18,7 +18,6 @@ subroutine set_bp_map()
    character(len=1) :: nt
    character(len=5) :: cNN
 
-   print *, 'start set_bp_map'
    flush(output_unit)
 
    allocate(bp_map(nmp, nmp))
@@ -32,20 +31,13 @@ subroutine set_bp_map()
       hdl = iopen_hdl
       open(hdl, file='../NN.txt', status='old', action='read', iostat=istat)
       do
-         print *, 'read'
-         flush(6)
          read (hdl, *, iostat = istat) cNN, dG
-         print *, istat, cNN, dG
-         flush(6)
 
          if (istat < 0) then
             exit
          else if (istat > 0) then
             error stop 'Error: cannot read NN file'
          end if
-
-         print *, cNN, dG
-         flush(6)
 
          call store_NN_dG(cNN, dG)
       enddo
