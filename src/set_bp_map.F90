@@ -16,8 +16,9 @@ subroutine set_bp_map()
    real(PREC) :: dG
    real(PREC), allocatable :: NN_dG(:,:,:,:)
    character(len=1) :: nt
-   character(len=5) :: cNN
+   character(len=4) :: cNN
 
+   print *, 'start set_bp_map'
    flush(output_unit)
 
    allocate(bp_map(nmp, nmp))
@@ -305,11 +306,13 @@ contains
 
    subroutine store_NN_dG(cNN, dG)
 
-      character(len=5), intent(in) :: cNN
+      character(len=4), intent(in) :: cNN
       real(PREC), intent(in) :: dG
       
       integer :: i
       integer :: s(4)
+
+      s(:) = 0
 
       do i = 1, 4
          if (cNN(i:i) == 'A') then
