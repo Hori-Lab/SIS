@@ -1,5 +1,7 @@
 subroutine energy_bp_limit_triplet(Ebp)
 
+   use :: ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
+
    use mt19937_64, only : genrand64_real1, genrand64_real3
    use const, only : PREC
    use pbc, only : pbc_vec_d
@@ -27,7 +29,7 @@ subroutine energy_bp_limit_triplet(Ebp)
    integer :: bp_seq(nbp)
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
-
+   logical :: halt_mode
 
    if (.not. flg_bp_energy) then
 
@@ -159,6 +161,9 @@ subroutine energy_bp_limit_triplet(Ebp)
 
    if (flg_out_bp) then
 
+      call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
+
       do ibp = 1, nbp
 
          !nhb = bp_type2nhb(bp_mp(3, ibp))
@@ -171,9 +176,14 @@ subroutine energy_bp_limit_triplet(Ebp)
       enddo
 
       write(hdl_bp) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
+
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
    endif
 
    if (flg_out_bpall) then
+
+      call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
 
       do ibp = 1, nbp
 
@@ -186,6 +196,8 @@ subroutine energy_bp_limit_triplet(Ebp)
       enddo
 
       write(hdl_bpall) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
+
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
    endif
 
    if (flg_out_bpe) then

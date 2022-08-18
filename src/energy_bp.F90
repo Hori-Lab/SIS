@@ -1,5 +1,7 @@
 subroutine energy_bp(Ebp)
 
+   use :: ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
+
    use const
    use const_phys, only : ZERO_JUDGE
    use pbc, only : pbc_vec_d
@@ -16,6 +18,7 @@ subroutine energy_bp(Ebp)
    real(PREC) :: u
    real(PREC) :: d, theta, phi
    real(PREC) :: e_bp(nbp)
+   logical :: halt_mode
 
    e_bp(:) = 0.0e0_PREC
 
@@ -59,6 +62,9 @@ subroutine energy_bp(Ebp)
 
    if (flg_out_bp) then
 
+      call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
+
       do ibp = 1, nbp
 
          nhb = bp_type2nhb(bp_mp(3, ibp))
@@ -71,9 +77,14 @@ subroutine energy_bp(Ebp)
       enddo
 
       write(hdl_bp) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
+
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
    endif
 
    if (flg_out_bpall) then
+
+      call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
 
       do ibp = 1, nbp
 
@@ -85,6 +96,8 @@ subroutine energy_bp(Ebp)
       enddo
 
       write(hdl_bpall) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
+
+      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
    endif
 
 
