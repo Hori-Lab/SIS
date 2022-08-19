@@ -27,6 +27,9 @@ module var_potential
    real(PREC), save :: dih_w
    real(PREC), save :: dih_p0
 
+   ! Nearest neighbour parameters
+   real(PREC), allocatable :: NN_dG(:)  ! (1:NNT%MAX) if bp_model == 4
+
    ! Basepair
    integer,    save :: max_bp_per_nt
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)

@@ -2,10 +2,10 @@ subroutine set_bp_map()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const
-   use const_idx, only : SEQT, BPT, seqt2char
+   use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
-   use var_potential, only : bp_model, bp_map, bp_min_loop, bp_map_dG
+   use var_potential, only : bp_model, bp_map, bp_min_loop, bp_map_dG, NN_dG
 
    implicit none
 
@@ -14,38 +14,12 @@ subroutine set_bp_map()
    integer :: l, n, idummy
    integer :: istat, hdl
    real(PREC) :: dG
-   real(PREC), allocatable :: NN_dG(:,:,:,:)
    character(len=1) :: nt
-   character(len=4) :: cNN
-
-   print *, 'start set_bp_map'
-   flush(output_unit)
 
    allocate(bp_map(nmp, nmp))
    bp_map(:,:) = 0
 
    if (bp_model == 4) then
-      allocate(NN_dG(4,4,4,4))
-      NN_dG(:,:,:,:) = 0.0_PREC
-
-      iopen_hdl = iopen_hdl + 1
-      hdl = iopen_hdl
-      open(hdl, file='../NN.txt', status='old', action='read', iostat=istat)
-      do
-         read (hdl, *, iostat = istat) cNN, dG
-
-         if (istat < 0) then
-            exit
-         else if (istat > 0) then
-            error stop 'Error: cannot read NN file'
-         end if
-
-         call store_NN_dG(cNN, dG)
-      enddo
-
-      close(hdl)
-      iopen_hdl = iopen_hdl - 1
-
       allocate(bp_map_dG(nmp, nmp))
       bp_map_dG(:,:) = 0.0_PREC
    endif
@@ -102,18 +76,23 @@ subroutine set_bp_map()
                   dG = 0.0_PREC
                   if (i == 2 .or. j+1 == nmp_chain(jchain)) then
                      continue
-                  else
-                     dG = 0.5 * NN_dG(seq(i-1, ichain), seq(i, ichain), seq(j+1, jchain), seq(j, jchain))
+                  else if (is_complement(seq(i-1, ichain), seq(j+1, jchain))) then
+                     dG = 0.5 * NN_dG(seqt2nnt(seq(i-1, ichain), seq(i, ichain), seq(j+1, jchain), seq(j, jchain)))
                   endif
 
                   if (i+1 == nmp_chain(ichain) .or. j == 2) then
                      continue
-                  else
-                     dG = dG + 0.5 * NN_dG(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain))
+                  else if (is_complement(seq(i+1, ichain), seq(j-1, jchain))) then
+                     dG = dG + 0.5 * NN_dG(seqt2nnt(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain)))
                   endif
 
-                  bp_map_dG(imp, jmp) = dG
-                  bp_map_dG(jmp, imp) = dG
+                  if (dG < 0.0_PREC) then
+                     bp_map_dG(imp, jmp) = dG
+                     bp_map_dG(jmp, imp) = dG
+                     !print '(i5,1x,i5,3x,7a1,3x,f6.3)', imp, jmp, &
+                     !          seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
+                     !          seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
+                  endif
                endif
             endif
          enddo
@@ -268,10 +247,6 @@ subroutine set_bp_map()
       flush(output_unit)
    endif
 
-   if (bp_model == 4) then
-      deallocate(NN_dG)
-   endif
-
 contains
 
    logical function is_complement(s1, s2)
@@ -303,32 +278,5 @@ contains
       endif
 
    end function is_complement
-
-   subroutine store_NN_dG(cNN, dG)
-
-      character(len=4), intent(in) :: cNN
-      real(PREC), intent(in) :: dG
-      
-      integer :: i
-      integer :: s(4)
-
-      s(:) = 0
-
-      do i = 1, 4
-         if (cNN(i:i) == 'A') then
-            s(i) = SEQT%A
-         else if (cNN(i:i) == 'U') then
-            s(i) = SEQT%U
-         else if (cNN(i:i) == 'G') then
-            s(i) = SEQT%G
-         else if (cNN(i:i) == 'C') then
-            s(i) = SEQT%C
-         endif
-      enddo
-
-      NN_dG(s(1), s(2), s(3), s(4)) = dG
-      NN_dG(s(4), s(3), s(2), s(1)) = dG
-   
-   endsubroutine store_NN_dG
 
 endsubroutine set_bp_map

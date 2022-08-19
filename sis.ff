@@ -72,3 +72,32 @@ title = 'SIS force field file template'
     [potential.wca]
         sigma = 10.0
         epsilon = 2.0
+
+[NN]
+    # Nearest neighbor parameters taken from
+    # J Zuber, S.J. Schroeder, H. Sun, D.H. Turner, and D.H. Mathews (2022) Nucl. Acids Res. 50, 5251–5262
+    #
+    # NN format XY_WZ indicates that one strand is 5'-XY-3' and the other is 3'-WZ-5'.
+    #
+    #NN      dG
+    GC_CG  =  -3.46
+    CC_GG  =  -3.28
+    GA_CU  =  -2.42
+    CG_GC  =  -2.33
+    AC_UG  =  -2.25
+    CA_GU  =  -2.07
+    AG_UC  =  -2.01
+    UA_AU  =  -1.29
+    AU_UA  =  -1.09
+    AA_UU  =  -0.94
+    GC_UG  =  -2.23
+    CU_GG  =  -1.93
+    GG_CU  =  -1.80
+    CG_GU  =  -1.05
+    AU_UG  =  -0.76
+    GA_UU  =  -0.60
+    UG_GU  =  -0.38
+    UA_GU  =  -0.22
+    GG_UU  =  -0.20
+    GU_UG  =  -0.19
+    AG_UU  =   0.02

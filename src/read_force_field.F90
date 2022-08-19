@@ -2,6 +2,7 @@ subroutine read_force_field(stat)
 
    use tomlf
       
+   use const_idx, only : NNT, nnt2char
    use const_phys, only : INVALID_VALUE, INVALID_JUDGE
    use var_potential
    use var_io, only : iopen_hdl, cfile_ff
@@ -10,6 +11,7 @@ subroutine read_force_field(stat)
 
    logical, intent(out) :: stat
   
+   integer :: i
    integer :: istat
    integer :: hdl
    logical :: flg_angl
@@ -48,6 +50,11 @@ subroutine read_force_field(stat)
    call get_value(table, "title", cline)
    print '(2a)', '# title: ', trim(cline)
    flush(6)
+
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !! Potential
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
    call get_value(table, "potential", group)
    if (.not. associated(group)) then
@@ -213,6 +220,41 @@ subroutine read_force_field(stat)
    endif
 
    call check(stat)  ! stat will be .True. if everything is ok
+
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   !! NN
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+
+   if (bp_model == 4) then
+      call get_value(table, "NN", group)
+      if (.not. associated(group)) then
+         print '(a)', 'Error: [NN] required in FF file'
+         stat = .False.
+         return
+      endif
+
+      print '(a)', '# NN parameters:'
+
+      allocate(NN_dG(NNT%MAX))
+      NN_dG(:) = INVALID_VALUE
+
+      do i = 1, NNT%MAX
+         call get_value(group, nnt2char(i), NN_dG(i))
+      enddo
+
+      ! Check
+      do i = 1, NNT%MAX
+         if (NN_dG(i) > INVALID_JUDGE) then
+            print '(a)', 'Error: invalid NN parameter value for ' // nnt2char(i) // ' in FF file.'
+            stat = .False.
+            return
+         else
+            print '(a3, a5, 2x, f6.3)', '#  ', nnt2char(i), NN_dG(i)
+         endif
+      enddo
+   endif
+
 
    if (stat) then
       print '(a)', 'Done: reading force-field file'
