@@ -75,7 +75,7 @@ title = 'SIS force field file template'
 
 [NN]
     # Nearest neighbor parameters taken from
-    # J Zuber, S.J. Schroeder, H. Sun, D.H. Turner, and D.H. Mathews (2022) Nucl. Acids Res. 50, 5251–5262
+    # J Zuber, S.J. Schroeder, H. Sun, D.H. Turner, and D.H. Mathews (2022) Nucl. Acids Res. 50, 5251-5262
     #
     # NN format XY_WZ indicates that one strand is 5'-XY-3' and the other is 3'-WZ-5'.
     #
