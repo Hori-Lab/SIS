@@ -39,7 +39,7 @@ subroutine force()
    if (max_bp_per_nt < 1) then
       call force_bp(forces_t(1,1,tn))
    else
-      if (bp_model == 4) then
+      if (bp_model == 4 .or. bp_model == 5) then
          call force_bp_limit_triplet(forces_t(1,1,tn))
       else
          call force_bp_limit(forces_t(1,1,tn))

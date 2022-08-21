@@ -24,7 +24,7 @@ subroutine energy()
    if (max_bp_per_nt < 1) then
       call energy_bp(energies(ENE%BP))
    else
-      if (bp_model == 4) then
+      if (bp_model == 4 .or. bp_model == 5) then
          call energy_bp_limit_triplet(energies(ENE%BP))
       else
          call energy_bp_limit(energies(ENE%BP))
