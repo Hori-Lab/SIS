@@ -5,6 +5,7 @@ add_executable(${SIS_EXE}
     mt19937-64.F90 rnd_boxmuller.F90
     dcd.F90
     pbc.F90 progress.F90
+    var_parallel.F90
     var_top.F90 var_state.F90 var_potential.F90 var_io.F90
     read_force_field.F90 read_input.F90 read_pdb.F90 read_xyz.F90 read_fasta.F90
     read_anneal.F90

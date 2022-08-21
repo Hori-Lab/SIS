@@ -5,12 +5,11 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, JOBT
    use var_potential, only : flg_ele
-   use var_state, only : restarted, xyz, tempK, kT, job, nthreads, rng_seed, &
-                         opt_anneal, anneal_tempK, tempK
+   use var_state, only : restarted, xyz, tempK, kT, job, rng_seed, opt_anneal, anneal_tempK
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_prefix, cfile_out, hdl_rst
+   use var_parallel, only : init_parallel
    use mt19937_64, only : init_genrand64
-!$ use omp_lib
 
    implicit none
 
@@ -21,9 +20,8 @@ program sis
    logical :: stat
 
    call init_const()
-
-   nthreads = 1
-!$  nthreads = omp_get_max_threads()
+   
+   call init_parallel()
 
    call print_program_info()
 
@@ -179,6 +177,8 @@ contains
 
    subroutine print_program_info()
 
+      use var_parallel, only : myrank, nprocs, nthreads, ncores
+
       character(len=40) :: githash, git
       character(len=8) :: date
       character(len=10) :: time
@@ -203,7 +203,12 @@ contains
       print '(2a)', 'Command: ', com(1:length)
       print '(15a)', 'Executed at ', date(1:4), '-', date(5:6), '-', date(7:8), &  ! Date
                      'T', time(1:2), ':', time(3:4), ':', time(5:6), zone(1:3), ':', zone(4:5)  ! ISO 8601 Time
+      print '(a,i6)', 'Number of cores: ', ncores
       print '(a,i6)', 'Number of OpenMP threads: ', nthreads
+      print '(a,i6)', 'Number of MPI processes: ', nprocs
+      if (nprocs > 1) then
+         print '(a,i6)', 'MPI rank: ', myrank
+      endif
       print '(a)', '#############################################'
       print *
 

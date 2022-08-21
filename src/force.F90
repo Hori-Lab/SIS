@@ -3,7 +3,8 @@ subroutine force()
 !$ use omp_lib
    use const
    use const_idx, only : ENE
-   use var_state, only : nthreads, forces
+   use var_parallel, only : nthreads
+   use var_state, only : forces
    use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, bp_model
    use var_top, only : nmp
 
