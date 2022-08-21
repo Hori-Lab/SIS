@@ -115,14 +115,14 @@ program sis
    !! Construct the sequences
    call set_sequence()
 
-   !! Construct possible combinations of basepairs
-   call set_bp_map()
-
    print '(a)', 'Temperature'
    print '(a,f7.3)', '# T(K): ', tempK
    print '(a,f7.5)', '# kT(kcal/mol): ', kT
    print *
    flush(6)
+
+   !! Construct possible combinations of basepairs
+   call set_bp_map()
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

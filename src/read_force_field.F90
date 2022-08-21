@@ -133,10 +133,17 @@ subroutine read_force_field(stat)
 
    call get_value(group, "basepair", node)
    bp_cutoff_energy = 0.01_PREC  ! Default /kcal/mol
+   coef_dG = 1.0_PREC
+   dH0 = 0.0_PREC
+   dS0 = 0.0_PREC
    if (associated(node)) then
       !call get_value(node, "min_loop", bp_min_loop)
       !call get_value(node, "cutoff", bp_cutoff_dist)
       call get_value(node, "cutoff_energy", bp_cutoff_energy)
+
+      call get_value(node, "coef_dG", coef_dG)
+      call get_value(node, "dH0", dH0)
+      call get_value(node, "dS0", dS0)
 
       ! older format
       !call get_value(node, "bond_k", bp_bond_k)
@@ -226,7 +233,7 @@ subroutine read_force_field(stat)
    !! NN
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
-   if (bp_model == 4) then
+   if (bp_model == 4 .or. bp_model == 5) then
       call get_value(table, "NN", group)
       if (.not. associated(group)) then
          print '(a)', 'Error: [NN] required in FF file'
@@ -236,23 +243,90 @@ subroutine read_force_field(stat)
 
       print '(a)', '# NN parameters:'
 
-      allocate(NN_dG(NNT%MAX))
-      NN_dG(:) = INVALID_VALUE
+      if (bp_model == 4) then
 
-      do i = 1, NNT%MAX
-         call get_value(group, nnt2char(i), NN_dG(i))
-      enddo
-
-      ! Check
-      do i = 1, NNT%MAX
-         if (NN_dG(i) > INVALID_JUDGE) then
-            print '(a)', 'Error: invalid NN parameter value for ' // nnt2char(i) // ' in FF file.'
+         call get_value(group, "dG", node)
+         if (.not. associated(group)) then
+            print '(a)', 'Error: [NN.dG] required in FF file'
             stat = .False.
             return
-         else
-            print '(a3, a5, 2x, f6.3)', '#  ', nnt2char(i), NN_dG(i)
          endif
-      enddo
+
+         allocate(NN_dG(NNT%MAX))
+         NN_dG(:) = INVALID_VALUE
+
+         do i = 1, NNT%MAX
+            call get_value(node, nnt2char(i), NN_dG(i))
+         enddo
+
+         print '(a)', '# dG:'
+         ! Check
+         do i = 1, NNT%MAX
+            if (NN_dG(i) > INVALID_JUDGE) then
+               print '(a)', 'Error: invalid NN.dG value for ' // nnt2char(i) // ' in FF file.'
+               stat = .False.
+               return
+            else
+               print '(a3, a5, 2x, f7.3)', '#  ', nnt2char(i), NN_dG(i)
+            endif
+         enddo
+
+      else if (bp_model == 5) then
+
+         call get_value(group, "dH", node)
+         if (.not. associated(group)) then
+            print '(a)', 'Error: [NN.dH] required in FF file'
+            stat = .False.
+            return
+         endif
+
+         allocate(NN_dH(NNT%MAX))
+         NN_dH(:) = INVALID_VALUE
+
+         do i = 1, NNT%MAX
+            call get_value(node, nnt2char(i), NN_dH(i))
+         enddo
+
+         print '(a)', '# dH:'
+         ! Check
+         do i = 1, NNT%MAX
+            if (NN_dH(i) > INVALID_JUDGE) then
+               print '(a)', 'Error: invalid NN.dG value for ' // nnt2char(i) // ' in FF file.'
+               stat = .False.
+               return
+            else
+               print '(a3, a5, 2x, f7.3)', '#  ', nnt2char(i), NN_dH(i)
+            endif
+         enddo
+
+         call get_value(group, "dS", node)
+         if (.not. associated(group)) then
+            print '(a)', 'Error: [NN.dS] required in FF file'
+            stat = .False.
+            return
+         endif
+
+         allocate(NN_dS(NNT%MAX))
+         NN_dS(:) = INVALID_VALUE
+
+         do i = 1, NNT%MAX
+            call get_value(node, nnt2char(i), NN_dS(i))
+         enddo
+
+         print '(a)', '# dS:'
+         ! Check
+         do i = 1, NNT%MAX
+            if (NN_dS(i) > INVALID_JUDGE) then
+               print '(a)', 'Error: invalid NN.dS value for ' // nnt2char(i) // ' in FF file.'
+               stat = .False.
+               return
+            else
+               print '(a3, a5, 2x, f7.3)', '#  ', nnt2char(i), NN_dS(i)
+            endif
+         enddo
+
+      endif
+
    endif
 
 
@@ -444,6 +518,9 @@ contains
       !   print '(a)', "# bp_cutoff: ", bp_cutoff_dist
       !endif
       print '(a,g15.8)', '# bp_cutoff_energy: ', bp_cutoff_energy
+      print '(a,g15.8)', '# coef_dG: ', coef_dG
+      print '(a,g15.8)', '# dH0: ', dH0
+      print '(a,g15.8)', '# dS0: ', dS0
 
 !      if (bp_seqdep == 0) then
 !         if (bp_U0_GC > INVALID_JUDGE) then

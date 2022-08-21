@@ -5,7 +5,8 @@ subroutine set_bp_map()
    use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
-   use var_potential, only : bp_model, bp_map, bp_min_loop, bp_map_dG, NN_dG
+   use var_potential, only : bp_model, bp_map, bp_min_loop, bp_map_dG, NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG
+   use var_state, only : tempK
 
    implicit none
 
@@ -13,13 +14,13 @@ subroutine set_bp_map()
    integer :: i, j, ichain, jchain
    integer :: l, n, idummy
    integer :: istat, hdl
-   real(PREC) :: dG
+   real(PREC) :: dG, dH, dS
    character(len=1) :: nt
 
    allocate(bp_map(nmp, nmp))
    bp_map(:,:) = 0
 
-   if (bp_model == 4) then
+   if (bp_model == 4 .or. bp_model == 5) then
       allocate(bp_map_dG(nmp, nmp))
       bp_map_dG(:,:) = 0.0_PREC
    endif
@@ -27,7 +28,7 @@ subroutine set_bp_map()
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! All pairwise
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   if (bp_model == 1 .or. bp_model == 3 .or. bp_model == 4) then
+   if (bp_model == 1 .or. bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
 
       do imp = 1, nmp-1
          i = lmp_mp(imp)
@@ -46,7 +47,7 @@ subroutine set_bp_map()
             ! Minimum loop length
             if (ichain == jchain .and. i + bp_min_loop >= j) cycle
 
-            if (bp_model == 3 .or. bp_model == 4) then
+            if (bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
                ! Isolated base pair not allowed
                if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
                    .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
@@ -70,8 +71,8 @@ subroutine set_bp_map()
                bp_map(jmp, imp) = BPT%GU
             endif
 
-            if (bp_model == 4) then
-               if (bp_map(imp, jmp) > 0) then
+            if (bp_map(imp, jmp) > 0) then
+               if (bp_model == 4) then
                    
                   dG = 0.0_PREC
                   if (i == 2 .or. j+1 == nmp_chain(jchain)) then
@@ -92,6 +93,34 @@ subroutine set_bp_map()
                      !print '(i5,1x,i5,3x,7a1,3x,f6.3)', imp, jmp, &
                      !          seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
                      !          seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
+                  endif
+
+               else if (bp_model == 5) then
+
+                  dH = 0.0_PREC
+                  dS = 0.0_PREC
+                  if (i == 2 .or. j+1 == nmp_chain(jchain)) then
+                     continue
+                  else if (is_complement(seq(i-1, ichain), seq(j+1, jchain))) then
+                     dH = 0.5 * (NN_dH(seqt2nnt(seq(i-1, ichain), seq(i, ichain), seq(j+1, jchain), seq(j, jchain))) - dH0)
+                     dS = 0.5 * (NN_dS(seqt2nnt(seq(i-1, ichain), seq(i, ichain), seq(j+1, jchain), seq(j, jchain))) - dS0)
+                  endif
+
+                  if (i+1 == nmp_chain(ichain) .or. j == 2) then
+                     continue
+                  else if (is_complement(seq(i+1, ichain), seq(j-1, jchain))) then
+                     dH = dH + 0.5 * (NN_dH(seqt2nnt(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain))) - dH0) 
+                     dS = dS + 0.5 * (NN_dS(seqt2nnt(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain))) - dS0)
+                  endif
+
+                  dG = coef_dG * (dH - tempK * 1.0e-3_PREC * dS)
+
+                  if (dG < 0.0_PREC) then
+                     bp_map_dG(imp, jmp) = dG
+                     bp_map_dG(jmp, imp) = dG
+                     print '(i5,1x,i5,3x,7a1,3x,f8.3)', imp, jmp, &
+                               seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
+                               seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
                   endif
                endif
             endif

@@ -278,6 +278,11 @@ subroutine job_md()
 
       call force()
 
+      if (maxval(forces(:,:)) > 100.0) then
+         print *, 'istep, force ', istep, maxval(forces)
+         flush(6)
+      endif
+
       do imp= 1, nmp
          do i = 1, 3
             rnd_bm(i, imp) = rnd_boxmuller()
