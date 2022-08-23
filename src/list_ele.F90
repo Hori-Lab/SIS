@@ -3,6 +3,7 @@ subroutine list_ele()
    use const
    use var_top, only : nmp_chain, imp_chain, nchains, has_charge
    use var_potential, only : nele, ele_mp
+   use var_replica, only : nrep_proc
 
    implicit none
 
@@ -43,8 +44,8 @@ subroutine list_ele()
                   iele = iele + 1
 
                   if (n == 2) then
-                     ele_mp(1,iele) = imp
-                     ele_mp(2,iele) = jmp
+                     ele_mp(1,iele,1:nrep_proc) = imp
+                     ele_mp(2,iele,1:nrep_proc) = jmp
                   endif
 
                enddo
@@ -54,11 +55,13 @@ subroutine list_ele()
       enddo
 
       if (n == 1) then
-         nele = iele
-         allocate(ele_mp(2, nele))
+         allocate(nele(nrep_proc))
+         allocate(ele_mp(2, iele, nrep_proc))
+         nele(:) = iele
+         ele_mp(:,:,:) = 0
       endif
    enddo
 
-   write(*,*) '#nele: ', nele
+   print '(a,i8)', '# nele: ', nele(1)
 
 end subroutine list_ele

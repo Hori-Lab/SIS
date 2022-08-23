@@ -1,4 +1,4 @@
-subroutine energy_dih_cos(Edih)
+subroutine energy_dih_cos(irep, Edih)
    
    use const
    use pbc, only : pbc_vec_d
@@ -7,6 +7,7 @@ subroutine energy_dih_cos(Edih)
 
    implicit none
 
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: Edih
   
    integer :: idih, imp1, imp2, imp3, imp4
@@ -20,9 +21,9 @@ subroutine energy_dih_cos(Edih)
       imp3 = dih_mp(3, idih)
       imp4 = dih_mp(4, idih)
 
-      v12(:)= pbc_vec_d(xyz(:, imp2), xyz(:, imp1))
-      v23(:)= pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
-      v34(:)= pbc_vec_d(xyz(:, imp4), xyz(:, imp3))
+      v12(:)= pbc_vec_d(xyz(:, imp2, irep), xyz(:, imp1, irep))
+      v23(:)= pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp2, irep))
+      v34(:)= pbc_vec_d(xyz(:, imp4, irep), xyz(:, imp3, irep))
 
       c1(1) = v12(2)*v23(3) - v12(3)*v23(2)
       c1(2) = v12(3)*v23(1) - v12(1)*v23(3)

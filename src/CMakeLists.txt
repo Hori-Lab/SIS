@@ -5,12 +5,13 @@ add_executable(${SIS_EXE}
     mt19937-64.F90 rnd_boxmuller.F90
     dcd.F90
     pbc.F90 progress.F90
-    var_parallel.F90
+    var_parallel.F90 var_replica.F90
     var_top.F90 var_state.F90 var_potential.F90 var_io.F90
     read_force_field.F90 read_input.F90 read_pdb.F90 read_xyz.F90 read_fasta.F90
     read_anneal.F90
     write_rst.F90 read_rst.F90
-    list_local.F90 list_bp.F90 list_bp2.F90
+    init_out_files.F90 init_replica.F90 init_ele.F90
+    list_local.F90 list_bp.F90
     list_exv.F90 list_ele.F90
     set_sequence.F90 init_bp.F90 set_bp_map.F90
     set_ele.F90

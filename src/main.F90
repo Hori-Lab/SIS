@@ -1,22 +1,24 @@
 program sis
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end, compiler_version, compiler_options
-   use const, only : CHAR_FILE_PATH, init_const
+   use, intrinsic :: iso_fortran_env, only : iostat_end, compiler_version, compiler_options, output_unit
+   use const, only : CHAR_FILE_PATH, init_const, PREC, FILENAME_DIGIT_REPLICA
    use const_phys, only : BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, JOBT
+   use const_idx, only : ENE, JOBT, REPT
    use var_potential, only : flg_ele
    use var_state, only : restarted, xyz, tempK, kT, job, rng_seed, opt_anneal, anneal_tempK
-   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
-                      cfile_prefix, cfile_out, hdl_rst
+   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
+                      hdl_out, hdl_bp, hdl_bpall, hdl_bpe
    use var_parallel, only : init_parallel
+   use var_replica, only : nrep_proc
    use mt19937_64, only : init_genrand64
 
    implicit none
 
-   character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_bp, cfile_rst
+   character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_rst
 
    integer :: nargs
    integer :: istat
+   integer :: irep
    logical :: stat
 
    call init_const()
@@ -39,9 +41,13 @@ program sis
 
    if (.not. stat) then
       print '(a)', 'Error in reading input file'
-      flush(6)
+      flush(output_unit)
       error stop
    endif
+
+
+   !! Initialise replicas
+   call init_replica()
 
 
    !! Open restart file if given
@@ -50,7 +56,7 @@ program sis
    if (nargs == 2) then
       call get_command_argument(2, cfile_rst)
 
-      open(hdl_rst, file=cfile_rst, status='old', action='read', iostat=istat, form='unformatted', access='stream')
+      open(hdl_in_rst, file=cfile_rst, status='old', action='read', iostat=istat, form='unformatted', access='stream')
 
       if (istat > 0) then
          print '(2a)', 'Error: cannot open the restart file ', trim(cfile_rst)
@@ -68,7 +74,7 @@ program sis
    call read_force_field(stat)
    if (.not. stat) then
       print *, 'Error in reading force field file'
-      flush(6)
+      flush(output_unit)
       stop (2)
    endif
 
@@ -84,34 +90,10 @@ program sis
       tempK = anneal_tempK(1)
    endif
 
+   
+   !! Prepare output files
+   call init_out_files()
 
-   !! Open output files
-   cfile_out = trim(cfile_prefix) // '.out'
-
-   if (job == JOBT%CHECK_FORCE) then
-      flg_out_bp = .False.
-      flg_out_bpall = .False.
-      flg_out_bpe = .False.
-   endif
-
-   if (flg_out_bp) then
-      cfile_bp = trim(cfile_prefix) // '.bp'
-      open(hdl_bp, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
-      write(hdl_bp) int(KIND_OUT_BP,kind=4)
-      write(hdl_bp) int(KIND_OUT_BPE,kind=4)
-   endif
-
-   if (flg_out_bpall) then
-      cfile_bp = trim(cfile_prefix) // '.bpall'
-      open(hdl_bpall, file=cfile_bp, status='replace', action='write', form='unformatted',access='stream')
-      write(hdl_bpall) int(KIND_OUT_BP,kind=4)
-      write(hdl_bpall) int(KIND_OUT_BPE,kind=4)
-   endif
-
-   if (flg_out_bpe) then
-      cfile_bp = trim(cfile_prefix) // '.bpe'
-      open(hdl_bpe, file=cfile_bp, status='replace', action='write', form='formatted')
-   endif
 
    !! Construct the sequences
    call set_sequence()
@@ -120,16 +102,18 @@ program sis
    print '(a,f7.3)', '# T(K): ', tempK
    print '(a,f7.5)', '# kT(kcal/mol): ', kT
    print *
-   flush(6)
+   flush(output_unit)
 
    !! Construct possible combinations of basepairs
    call init_bp()
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !! Allocation and initialisation of electrostatics
+   if (flg_ele) call init_ele()
 
-   if (flg_ele) call set_ele()
-
+   !! Construct pair lists of local potentials
    call list_local()
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    if (job == JOBT%MD) then
       ! Will use neighbor list
@@ -161,16 +145,20 @@ program sis
 
    endif
 
-   if (flg_out_bp) then
-      close(hdl_bp)
-   endif
-   if (flg_out_bpe) then
-      close(hdl_bpe)
-   endif
+   do irep = 1, nrep_proc
+      if (flg_out_bp) close(hdl_bp(irep))
+      if (flg_out_bpe) close(hdl_bpe(irep))
+      if (flg_out_bpall) close(hdl_bpall(irep))
+   enddo
 
    deallocate(xyz)
 
-   flush(6)
+   do irep = 1, nrep_proc
+      close(hdl_out(irep))
+   enddo
+   deallocate(hdl_out)
+
+   flush(output_unit)
    stop
 
 contains

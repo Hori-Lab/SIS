@@ -3,50 +3,54 @@ subroutine job_md()
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, SEQT, RSTBLK, BPT
+   use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
    use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
    use var_state, only : restarted, flg_bp_energy, &
-                         viscosity_Pas, xyz,  energies, forces, dt, velos, accels, tempK, &
+                         viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, stop_wall_time_sec, fix_com_origin, &
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, ele_cutoff, ele_nl_cut2, bp_paras, &
-                             bp_cutoff_energy, bp_cutoff_dist
-   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
+   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_pdb_ini, cfile_xyz_ini, cfile_dcd
+   use var_replica, only : nrep_proc, flg_replica, rep2val
+   use var_potential, only : wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   integer :: i, imp
+   integer :: i, irep, imp
+   real(PREC) :: tK
    real(PREC) :: dxyz(3)
-   real(PREC) :: xyz_move(3, nmp)
-   !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
-   type(file_dcd) :: fdcd
+   real(PREC) :: xyz_move(3, nmp, nrep_proc)
+   type(file_dcd) :: fdcd(nrep_proc)
    real(PREC) :: fric(nmp), radius
    real(PREC) :: v, c1, c2, md_coef(4, nmp)
    real(PREC) :: rnd_bm(3, nmp)
    real(PREC) :: accels_pre(3)
    real(PREC) :: d2, d2max, d2max_2nd
-   character(CHAR_FILE_PATH), save :: cfile_dcd_out
+   real(PREC), allocatable :: forces(:, :)
    logical :: flg_stop
 
    ! Function
    real(PREC) :: rnd_boxmuller
 
    allocate(mass(nmp))
-   allocate(xyz(3, nmp))
+   allocate(xyz(3, nmp, nrep_proc))
+   allocate(accels(3, nmp, nrep_proc))
+   allocate(velos(3, nmp, nrep_proc))
    allocate(forces(3, nmp))
-   allocate(accels(3, nmp))
-   allocate(velos(3, nmp))
+   allocate(energies(0:ENE%MAX, nrep_proc))
+   allocate(Ekinetic(nrep_proc))
 
    ! set PBC box
    if (flg_pbc) then
-      fdcd%flg_unitcell = .True.
-      fdcd%box(:) = pbc_box(:)
+      do irep = 1, nrep_proc
+         fdcd(irep)%flg_unitcell = .True.
+         fdcd(irep)%box(:) = pbc_box(:)
+      enddo
    endif
 
    !! Set up variables for dynamics
@@ -66,7 +70,8 @@ subroutine job_md()
    print '(a)', 'mass(C) = 304.182'
    print '(a)', 'mass(U) = 305.164'
    print *
-           
+   flush(6)
+
    do imp = 1, nmp
       ! Mass hard coded
       select case (seq(lmp_mp(imp), ichain_mp(imp)))
@@ -96,35 +101,42 @@ subroutine job_md()
    else
       ! Load initial coordinates from PDB or XYZ
       if (len(cfile_pdb_ini) > 0) then
-         call read_pdb(cfile_pdb_ini, nmp, xyz)
+         call read_pdb(cfile_pdb_ini, nmp, xyz(:,:,1))
 
       else if (len(cfile_xyz_ini) > 0) then
-         call read_xyz(cfile_xyz_ini, nmp, xyz)
+         call read_xyz(cfile_xyz_ini, nmp, xyz(:,:,1))
 
       else
          error stop 'Initial structure not found in job_md'
       endif
 
-      ! Set up initial velocities by Maxwell–Boltzmann distribution
-      do imp = 1, nmp
-         c1 = sqrt(tempK * BOLTZ_KCAL_MOL / mass(imp))
-         do i = 1, 3
-            velos(i, imp) = c1 * rnd_boxmuller()
-         enddo
+      do irep = 2, nrep_proc
+         xyz(:,:,irep) = xyz(:,:,1)
       enddo
 
-      ! Set up initial accerelations
-      do imp = 1, nmp
-         do i = 1, 3
-            accels(i, imp) = md_coef(1, imp) * rnd_boxmuller()
+      ! Set up initial velocities by Maxwell–Boltzmann distribution
+      do irep = 1, nrep_proc
+         if (flg_replica) then
+            tK = rep2val(irep, REPT%TEMP)
+         else
+            tK = tempK
+         endif
+         do imp = 1, nmp
+            c1 = sqrt(tK * BOLTZ_KCAL_MOL / mass(imp))
+            do i = 1, 3
+               velos(i, imp, irep) = c1 * rnd_boxmuller()
+            enddo
          enddo
-      end do
+
+         ! Set up initial accerelations
+         do imp = 1, nmp
+            do i = 1, 3
+               accels(i, imp, irep) = md_coef(1, imp) * rnd_boxmuller()
+            enddo
+         end do
+      enddo
    endif
 
-   ! Neighbor list
-   wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
-   bp_nl_cut2 = (bp_cutoff_dist + nl_margin) ** 2
-   ele_nl_cut2 = (ele_cutoff + nl_margin) ** 2
 
    print '(a)', 'Potential and neighbor list cutoffs'
    print '(a,f10.3)', 'bp_cutoff_energy = ', bp_cutoff_energy
@@ -133,12 +145,13 @@ subroutine job_md()
    print '(a,f10.3)', 'bp_cutoff_ddist(GU) = ', bp_paras(BPT%GU)%cutoff_ddist
    print '(a,f10.3)', 'bp_cutoff_dist(for neighbor list) = ', bp_cutoff_dist
    print '(a,f10.3)', 'wca_sigma = ', wca_sigma
-   print '(a,f10.3)', 'ele_cutoff = ', ele_cutoff
    print '(a,f10.3)', 'nl_margin = ', nl_margin
    print *
 
-   call neighbor_list()
-   xyz_move(:,:) = 0.0e0_PREC
+   do irep = 1, nrep_proc
+      call neighbor_list(irep)
+   enddo
+   xyz_move(:,:,:) = 0.0e0_PREC
 
    if (restarted) then
       call read_rst(RSTBLK%STEP)
@@ -170,39 +183,45 @@ subroutine job_md()
    endif
 
    ! Initial energies
-   flg_bp_energy = .False.
-   call energy()
-   call energy_kinetic()
+   do irep = 1, nrep_proc
 
-   ! Open DCD file and write the header
-   cfile_dcd_out = trim(cfile_prefix) // '.dcd'
-   print '(2a)', '# Opening dcd file to write: ', trim(cfile_dcd_out)
-   fdcd = file_dcd(hdl_dcd, cfile_dcd_out, DCD_OPEN_MODE%WRITE)
+      flg_bp_energy = .False.
+      call energy(irep, energies(0:ENE%MAX, irep))
+      call energy_kinetic(irep, Ekinetic(irep))
 
-   call fdcd%write_header(nmp)
+      ! Open DCD file and write the header
+      print '(a,i5,2a)', '# Opening dcd file for irep = ', irep, ', ', trim(cfile_dcd(irep))
+      fdcd(irep) = file_dcd(hdl_dcd(irep), cfile_dcd(irep), DCD_OPEN_MODE%WRITE)
 
-   ! Open .out file
-   open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
-   write(hdl_out, '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Edih      '
-                                       !1234567890 123456 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123'
-   write(hdl_out, '(a)') ' (8)Ebp        (9)Eexv       (10)Eele'
-                         ! 1234567890123 1234567890123 1234567890123
+      call fdcd(irep)%write_header(nmp)
 
-   ! Output initial structure
-   if (restarted) then
-      ! Only STDOUT if restarted. No DCD output.
-      print '(a)', '##### Energies at the beginning'
-      print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
-      print '(i10, 1x, f6.2, 2(1x,g13.6))', istep, tempK, Ekinetic, energies(0)
-      print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele'
-      print '(6(1x,g13.6))', (energies(i), i=1, ENE%MAX)
-      print *
+      ! Open .out file
+      write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
+                                                !1234567890 123456 1234567890123 1234567890123 1234567890123'
+      write(hdl_out(irep), '(a)', advance='no') ' (6)Eangl      (7)Edih      '
+                                                ! 1234567890123 1234567890123'
+      write(hdl_out(irep), '(a)') ' (8)Ebp        (9)Eexv       (10)Eele'
+                                  ! 1234567890123 1234567890123 1234567890123
 
-   else
-      ! At istep = 0 (not restarted), write both .out and DCD
-      write(hdl_out, '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
-      call fdcd%write_onestep(nmp, xyz, fix_com_origin)
-   endif
+      ! Output initial structure
+      if (restarted) then
+         ! Only STDOUT if restarted. No DCD output.
+         print '(a)', '##### Energies at the beginning'
+         print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
+         print '(i10, 1x, f6.2, 2(1x,g13.6))', istep, tempK, Ekinetic, energies(0, irep)
+         print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele'
+         print '(6(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
+         print *
+
+      else
+         ! At istep = 0 (not restarted), write both .out and DCD
+         write(hdl_out(irep), '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, &
+                             Ekinetic(irep), (energies(i, irep), i=0,ENE%MAX)
+         call fdcd(irep)%write_onestep(nmp, xyz, fix_com_origin)
+      endif
+   enddo
+   print *
+   flush(6)
 
    if (flg_progress) then
       call progress_init(istep)
@@ -217,79 +236,86 @@ subroutine job_md()
 
       istep = istep + 1
 
-      d2max = 0.0e0_PREC
-      d2max_2nd = 0.0e0_PREC
-      do imp = 1, nmp
-         d2 = dot_product(xyz_move(1:3,imp), xyz_move(1:3,imp))
-         if (d2 > d2max) then
-            d2max_2nd = d2max
-            d2max = d2
-         else if (d2 > d2max_2nd) then
-            d2max_2nd = d2
-         endif
-      enddo
+      do irep = 1, nrep_proc
 
-      if (sqrt(d2max) + sqrt(d2max_2nd) > nl_margin) then
-         call neighbor_list()
-         xyz_move(:,:) = 0.0e0_PREC
-      endif
-
-      call force()
-
-      if (maxval(forces(:,:)) > 100.0) then
-         print *, 'istep, force ', istep, maxval(forces)
-         flush(6)
-      endif
-
-      do imp= 1, nmp
-         do i = 1, 3
-            rnd_bm(i, imp) = rnd_boxmuller()
+         d2max = 0.0e0_PREC
+         d2max_2nd = 0.0e0_PREC
+         do imp = 1, nmp
+            d2 = dot_product(xyz_move(1:3, imp, irep), xyz_move(1:3, imp, irep))
+            if (d2 > d2max) then
+               d2max_2nd = d2max
+               d2max = d2
+            else if (d2 > d2max_2nd) then
+               d2max_2nd = d2
+            endif
          enddo
-      enddo
 
-      !$omp parallel do private(accels_pre, dxyz)
-      do imp = 1, nmp
-         !if(fix_mp(imp)) cycle
+         if (sqrt(d2max) + sqrt(d2max_2nd) > nl_margin) then
+            call neighbor_list(irep)
+            xyz_move(:, :, irep) = 0.0e0_PREC
+         endif
 
-         !! a = (1 - gamma h / 2m) / (1 + gamma h / 2m)
-         !! b = 1 / (1 + gamma h / 2m)
+         call force(irep, forces(:,:))
 
-         ! beta(t + h) with the associated coefficient
-         accels_pre(1:3) = md_coef(1, imp) * rnd_bm(1:3, imp)
-         ! md_coef(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
+         if (maxval(forces(:,:)) > 100.0) then
+            print *, 'irep, istep, force ', irep, istep, maxval(forces)
+            flush(6)
+         endif
 
-         ! v(t + 1/2h) update the half-step velocity
-         velos(1:3, imp) =  md_coef(2, imp) * velos(1:3, imp)  &
-                          + md_coef(3, imp) * forces(1:3, imp) &
-                          + (accels(1:3, imp) + accels_pre(1:3))
-         ! md_coef(2) = a
-         ! md_coef(3) = sqrt(b) h / m
+         do imp= 1, nmp
+            do i = 1, 3
+               rnd_bm(i, imp) = rnd_boxmuller()
+            enddo
+         enddo
 
-         ! beta(t) <= beta(t+h) (incluing the coefficient) save for the next iteration
-         accels(1:3, imp) = accels_pre(1:3)
+         !$omp parallel do private(accels_pre, dxyz)
+         do imp = 1, nmp
+            !if(fix_mp(imp)) cycle
 
-         dxyz(1:3) =  md_coef(4, imp) * velos(1:3, imp)
-         ! md_coef(4) = sqrt(b) h
+            !! a = (1 - gamma h / 2m) / (1 + gamma h / 2m)
+            !! b = 1 / (1 + gamma h / 2m)
 
-         xyz(1:3, imp) = xyz(1:3, imp) + dxyz(1:3)
-         xyz_move(1:3,imp) = xyz_move(1:3,imp) + dxyz(1:3)
-      end do
-      !$omp end parallel do
+            ! beta(t + h) with the associated coefficient
+            accels_pre(1:3) = md_coef(1, imp) * rnd_bm(1:3, imp)
+            ! md_coef(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
+
+            ! v(t + 1/2h) update the half-step velocity
+            velos(1:3, imp, irep) =  md_coef(2, imp) * velos(1:3, imp, irep)  &
+                             + md_coef(3, imp) * forces(1:3, imp) &
+                             + (accels(1:3, imp, irep) + accels_pre(1:3))
+            ! md_coef(2) = a
+            ! md_coef(3) = sqrt(b) h / m
+
+            ! beta(t) <= beta(t+h) (incluing the coefficient) save for the next iteration
+            accels(1:3, imp, irep) = accels_pre(1:3)
+
+            dxyz(1:3) =  md_coef(4, imp) * velos(1:3, imp, irep)
+            ! md_coef(4) = sqrt(b) h
+
+            xyz(1:3, imp, irep) = xyz(1:3, imp, irep) + dxyz(1:3)
+            xyz_move(1:3, imp, irep) = xyz_move(1:3, imp, irep) + dxyz(1:3)
+         end do
+         !$omp end parallel do
+
+      enddo ! irep
 
       if (mod(istep, nstep_save) == 0) then
-         call energy()
-         call energy_kinetic()
-         write(hdl_out, '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
-         call fdcd%write_onestep(nmp, xyz, fix_com_origin)
+         do irep = 1, nrep_proc
+            call energy(irep, energies(0:ENE%MAX, irep))
+            call energy_kinetic(irep, Ekinetic(irep))
+            write(hdl_out(irep), '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, &
+                                 Ekinetic(irep), (energies(i, irep), i=0,ENE%MAX)
+            call fdcd(irep)%write_onestep(nmp, xyz, fix_com_origin)
+         enddo
       endif
 
       if (flg_variable_box) then
          if (mod(istep, variable_box_step) == 0) then
             call set_pbc_size(pbc_box(:) + variable_box_change(:))
-            fdcd%box(:) = pbc_box(:)
+            fdcd(irep)%box(:) = pbc_box(:)
 
-            call neighbor_list()
-            xyz_move(:,:) = 0.0e0_PREC
+            call neighbor_list(irep)
+            xyz_move(:,:,irep) = 0.0e0_PREC
 
             print '(a,i10,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
          endif
@@ -325,11 +351,12 @@ subroutine job_md()
       endif
 
       if (flg_stop) exit
+
    enddo
 
-   call fdcd%close()
-
-   close(hdl_out)
+   do irep = 1, nrep_proc
+      call fdcd(irep)%close()
+   enddo
 
 contains
 

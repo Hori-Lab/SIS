@@ -1,4 +1,4 @@
-subroutine force_ele_DH(forces)
+subroutine force_ele_DH(irep, forces)
 
   use const, only : PREC
   use pbc, only : pbc_vec_d
@@ -8,6 +8,7 @@ subroutine force_ele_DH(forces)
 
   implicit none
 
+  integer, intent(in) :: irep
   real(PREC), intent(inout) :: forces(3, nmp)
 
   integer :: iele, imp1, imp2
@@ -18,15 +19,15 @@ subroutine force_ele_DH(forces)
 
   ! --------------------------------------------------------------------
 
-  cutoff2 = ele_cutoff ** 2
-  rcdist = 1.0_PREC / lambdaD
+  cutoff2 = ele_cutoff(irep) ** 2
+  rcdist = 1.0_PREC / lambdaD(irep)
 
   !$omp do private(imp1,imp2,v21,dist2,dist1,rdist1,dvdw_dr,for)
-  do iele = 1, nele
-     imp1 = ele_mp(1, iele)
-     imp2 = ele_mp(2, iele)
+  do iele = 1, nele(irep)
+     imp1 = ele_mp(1, iele, irep)
+     imp2 = ele_mp(2, iele, irep)
 
-     v21(:) = pbc_vec_d(xyz(:,imp2), xyz(:,imp1))
+     v21(:) = pbc_vec_d(xyz(:, imp2, irep), xyz(:, imp1, irep))
 
      dist2 = dot_product(v21,v21)
 
@@ -36,7 +37,7 @@ subroutine force_ele_DH(forces)
      dist1 = sqrt(dist2)
      rdist1 = 1.0 / dist1
 
-     dvdw_dr = ele_coef * rdist1 * rdist1 &
+     dvdw_dr = ele_coef(irep) * rdist1 * rdist1 &
               * (rdist1 + rcdist) * exp(-dist1 * rcdist)
 
      

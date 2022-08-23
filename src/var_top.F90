@@ -6,21 +6,21 @@ module var_top
    implicit none
   
    ! ----------------------------------------------------------------
-   integer, save :: nrepeat
+   integer :: nrepeat
 
-   integer, save :: nunit
-   integer, save :: nmp
-   integer, save :: nchains
-   integer, allocatable, save :: nmp_chain(:)  ! Number of mp in each chain
-   integer, allocatable, save :: imp_chain(:, :)   ! imp of the x-th particle of the y-th chain = imp_chain(x,y)
-   integer, allocatable, save :: ichain_mp(:)      ! ichain of imp
-   integer, allocatable, save :: lmp_mp(:)        ! local imp (in each chain) of imp
+   integer :: nunit
+   integer :: nmp
+   integer :: nchains
+   integer, allocatable :: nmp_chain(:)  ! Number of mp in each chain
+   integer, allocatable :: imp_chain(:, :)   ! imp of the x-th particle of the y-th chain = imp_chain(x,y)
+   integer, allocatable :: ichain_mp(:)      ! ichain of imp
+   integer, allocatable :: lmp_mp(:)        ! local imp (in each chain) of imp
 
-   integer, allocatable, save :: seq(:,:)
-   real(PREC), allocatable, save :: mass(:)
+   integer, allocatable :: seq(:,:)
+   real(PREC), allocatable :: mass(:)
 
-   integer, allocatable, save :: inp_no_charge(:)
-   logical, allocatable, save :: has_charge(:)
-   real(PREC), allocatable, save :: charge(:)
+   integer, allocatable :: inp_no_charge(:)
+   logical, allocatable :: has_charge(:)
+   !real(PREC), allocatable :: charge(:,:)  ! (nmp, nrep_all)
 
 end module var_top

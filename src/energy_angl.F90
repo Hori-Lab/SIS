@@ -1,24 +1,37 @@
-subroutine energy_angl(Eangl)
+subroutine energy_angl(irep, Eangl)
 
    use const
    use pbc, only : pbc_vec_d
    use var_state, only : xyz
-   use var_potential, only : nangl, angl_mp, angl_k, angl_t0 !angl_para
+   use var_potential, only : nangl, angl_mp, angl_k, angl_t0
 
    implicit none
   
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: Eangl
 
    integer :: ibd, imp1, imp2, imp3
    !real(PREC) :: k, t0
    real(PREC) :: t
+   real(PREC) :: v12(3), v32(3)
 
    do ibd = 1, nangl
       imp1 = angl_mp(1, ibd)
       imp2 = angl_mp(2, ibd)
       imp3 = angl_mp(3, ibd)
 
-      t = xyz_angle(xyz(:,imp1), xyz(:,imp2), xyz(:,imp3))
+      v12(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
+      v32(:) = pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp2, irep))
+
+      t = dot_product(v32, v12) / sqrt(dot_product(v12,v12) * dot_product(v32,v32))
+
+      if(t > 1.0e0_PREC) then
+         t = 1.0e0_PREC
+      else if(t < -1.0e0_PREC) then
+         t = -1.0e0_PREC
+      end if
+
+      t = acos(t)
       
       !k = angl_para(1, ibd)
       !t0 = angl_para(2, ibd)
@@ -27,27 +40,4 @@ subroutine energy_angl(Eangl)
       Eangl = Eangl + 0.5 * angl_k * (t - angl_t0) ** 2
    enddo
   
-contains
-
-   real(PREC) function xyz_angle(x1, x2, x3) result (angle)
-
-      real(PREC), intent(in) :: x1(3), x2(3), x3(3)
-      real(PREC) :: v12(3), v32(3)
-      real(PREC) :: co
-
-      v12(:) = pbc_vec_d(x1(:), x2(:))
-      v32(:) = pbc_vec_d(x3(:), x2(:))
-
-      co = dot_product(v32, v12) / sqrt(dot_product(v12,v12) * dot_product(v32,v32))
-
-      if(co > 1.0e0_PREC) then
-         co = 1.0e0_PREC
-      else if(co < -1.0e0_PREC) then
-         co = -1.0e0_PREC
-      end if
-
-      angle = acos(co)
-
-   endfunction xyz_angle
-
 end subroutine energy_angl

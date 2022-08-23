@@ -1,4 +1,4 @@
-subroutine energy_wca(Ewca)
+subroutine energy_wca(irep, Ewca)
 
    use const
    use pbc, only : pbc_vec_d
@@ -6,7 +6,8 @@ subroutine energy_wca(Ewca)
    use var_potential, only : wca_sigma, wca_eps, wca_mp, nwca
 
    implicit none
-  
+
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: Ewca
 
    integer :: iwca, imp1, imp2
@@ -16,12 +17,12 @@ subroutine energy_wca(Ewca)
    e_wca = 0.0e0_PREC
 
    !$omp parallel do private(imp1,imp2,d) reduction(+:e_wca)
-   do iwca = 1, nwca
+   do iwca = 1, nwca(irep)
 
-      imp1 = wca_mp(1, iwca)
-      imp2 = wca_mp(2, iwca)
+      imp1 = wca_mp(1, iwca, irep)
+      imp2 = wca_mp(2, iwca, irep)
       
-      d = norm2( pbc_vec_d(xyz(:,imp1), xyz(:, imp2)) )
+      d = norm2( pbc_vec_d(xyz(:,imp1,irep), xyz(:, imp2,irep)) )
 
       if (d >= wca_sigma) cycle
 

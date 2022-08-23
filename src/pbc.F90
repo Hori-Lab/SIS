@@ -73,7 +73,7 @@ contains
 
    end function pbc_vec
 
-   subroutine pbc_wrap()
+   subroutine pbc_wrap(irep)
       
       use const
       use var_top, only : nmp
@@ -81,6 +81,8 @@ contains
 
       implicit none
   
+      integer, intent(in) :: irep
+
       integer :: imp, i
       real(PREC) :: box_max(3), box_min(3)
       real(PREC) :: x
@@ -92,11 +94,11 @@ contains
   
       do imp = 1, nmp
          do i = 1, 3
-            x = xyz(i, imp)
+            x = xyz(i, imp, irep)
             if(x > box_max(i)) then
-               xyz(i, imp) = x - pbc_box(i) * (int((x - box_max(i))/pbc_box(i)) + 1)
+               xyz(i, imp, irep) = x - pbc_box(i) * (int((x - box_max(i))/pbc_box(i)) + 1)
             else if(x < box_min(i)) then
-               xyz(i, imp) = x + pbc_box(i) * (int((box_min(i) - x)/pbc_box(i)) + 1)
+               xyz(i, imp, irep) = x + pbc_box(i) * (int((box_min(i) - x)/pbc_box(i)) + 1)
             endif
          enddo
       enddo

@@ -1,4 +1,4 @@
-subroutine energy_angl_ReB(Eangl)
+subroutine energy_angl_ReB(irep, Eangl)
 
    use const
    use pbc, only : pbc_vec_d
@@ -7,6 +7,7 @@ subroutine energy_angl_ReB(Eangl)
 
    implicit none
 
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: Eangl
 
    integer :: ibd, imp1, imp2, imp3
@@ -19,8 +20,8 @@ subroutine energy_angl_ReB(Eangl)
       imp2 = angl_mp(2, ibd)
       imp3 = angl_mp(3, ibd)
 
-      v12(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
-      v32(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
+      v12(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
+      v32(:) = pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp2, irep))
 
       co = dot_product(v32,v12) / sqrt(dot_product(v12,v12) * dot_product(v32,v32))
 

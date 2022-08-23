@@ -1,4 +1,4 @@
-subroutine force_bp_limit(forces)
+subroutine force_bp_limit(irep, forces)
 
    use mt19937_64, only : genrand64_real1, genrand64_real3
    use const, only : PREC
@@ -9,13 +9,14 @@ subroutine force_bp_limit(forces)
 
    implicit none
 
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
 
    integer :: i, ibp, jbp, ibp_delete, nt_delete
    integer :: imp1, imp2, imp3, imp4, imp5, imp6
    integer :: i_save, i_swap
    integer :: nbp_seq
-   integer :: bp_seq(nbp)
+   integer :: bp_seq(nbp(irep))
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
    type(basepair_parameters) :: bpp
@@ -41,10 +42,10 @@ subroutine force_bp_limit(forces)
    beta = 1.0_PREC / kT
 
    !$omp master
-   bp_status(1:nbp) = .False.
+   bp_status(1:nbp(irep), irep) = .False.
    nt_bp_excess(1:nmp) = -max_bp_per_nt
-   ene_bp(1:nbp) = 0.0_PREC
-   for_bp(1:3,1:6,1:nbp) = 0.0_PREC
+   ene_bp(1:nbp(irep)) = 0.0_PREC
+   for_bp(1:3,1:6,1:nbp(irep)) = 0.0_PREC
    !$omp end master
 
    ! Wait until the master initializes the arrays
@@ -54,13 +55,13 @@ subroutine force_bp_limit(forces)
    !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
    !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
    !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212)
-   do ibp = 1, nbp
+   do ibp = 1, nbp(irep)
 
-      imp1 = bp_mp(1, ibp)
-      imp2 = bp_mp(2, ibp)
-      bpp = bp_paras(bp_mp(3, ibp))
+      imp1 = bp_mp(1, ibp, irep)
+      imp2 = bp_mp(2, ibp, irep)
+      bpp = bp_paras(bp_mp(3, ibp, irep))
 
-      v12(:) = pbc_vec_d(xyz(:,imp1), xyz(:,imp2))
+      v12(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
       d1212 = dot_product(v12,v12)
       a12 = sqrt(d1212)
       d = a12 - bpp%bond_r
@@ -80,10 +81,10 @@ subroutine force_bp_limit(forces)
       for_bp(:, 1, ibp) = + f_i(:)
       for_bp(:, 2, ibp) = - f_i(:)
 
-      v13(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp3))
-      v15(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp5))
-      v42(:) = pbc_vec_d(xyz(:, imp4), xyz(:, imp2))
-      v62(:) = pbc_vec_d(xyz(:, imp6), xyz(:, imp2))
+      v13(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp3, irep))
+      v15(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp5, irep))
+      v42(:) = pbc_vec_d(xyz(:, imp4, irep), xyz(:, imp2, irep))
+      v62(:) = pbc_vec_d(xyz(:, imp6, irep), xyz(:, imp2, irep))
  
       d1313 = dot_product(v13, v13)
       d4242 = dot_product(v42, v42)
@@ -200,7 +201,7 @@ subroutine force_bp_limit(forces)
       ene = bpp%U0 * exp(-u)
 
       if (ene <= bp_cutoff_energy) then
-         bp_status(ibp) = .True.
+         bp_status(ibp, irep) = .True.
          ene_bp(ibp) = ene
 
          for_bp(:, :, ibp) = ene * for_bp(:, :, ibp)
@@ -236,10 +237,10 @@ subroutine force_bp_limit(forces)
       ! Generate a sequence of nucleotides that form basepairs involving nt_delete
       nbp_seq = 0
       bp_seq(:) = 0
-      do ibp = 1, nbp
-         if (bp_status(ibp)) then
-            imp1 = bp_mp(1, ibp)
-            imp2 = bp_mp(2, ibp)
+      do ibp = 1, nbp(irep)
+         if (bp_status(ibp, irep)) then
+            imp1 = bp_mp(1, ibp, irep)
+            imp2 = bp_mp(2, ibp, irep)
             if (imp1 == nt_delete .or. imp2 == nt_delete) then
                nbp_seq = nbp_seq + 1
                bp_seq(nbp_seq) = ibp
@@ -270,15 +271,15 @@ subroutine force_bp_limit(forces)
       enddo
 
       ! Delete
-      bp_status(ibp_delete) = .False.
+      bp_status(ibp_delete, irep) = .False.
       !ene_bp(ibp_delete) = 0.0_PREC
       !! This line is commented out because ene_bp has to be kept for CHECK_FORCE.
       !! In normal run, ene_bp will never be refered when bp_status is False,
       !! thus it does not have to be zero cleared.
 
       ! Update nt_bp_excess
-      nt_bp_excess(bp_mp(1, ibp_delete)) = nt_bp_excess(bp_mp(1, ibp_delete)) - 1
-      nt_bp_excess(bp_mp(2, ibp_delete)) = nt_bp_excess(bp_mp(2, ibp_delete)) - 1
+      nt_bp_excess(bp_mp(1, ibp_delete, irep)) = nt_bp_excess(bp_mp(1, ibp_delete, irep)) - 1
+      nt_bp_excess(bp_mp(2, ibp_delete, irep)) = nt_bp_excess(bp_mp(2, ibp_delete, irep)) - 1
    enddo
 
    !$omp end master
@@ -287,12 +288,12 @@ subroutine force_bp_limit(forces)
    !$omp barrier
 
    !$omp do private(imp1, imp2, imp3, imp4, imp5, imp6)
-   do ibp = 1, nbp
+   do ibp = 1, nbp(irep)
 
-      if (.not. bp_status(ibp)) cycle
+      if (.not. bp_status(ibp, irep)) cycle
 
-      imp1 = bp_mp(1, ibp)
-      imp2 = bp_mp(2, ibp)
+      imp1 = bp_mp(1, ibp, irep)
+      imp2 = bp_mp(2, ibp, irep)
       imp3 = imp1 - 1
       imp4 = imp2 - 1
       imp5 = imp1 + 1

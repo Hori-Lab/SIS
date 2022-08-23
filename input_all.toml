@@ -37,6 +37,25 @@ type = "MD"
       types = ["bp", "bpe", "bpall"]
       prefix = "./test"
 
+[replica]
+n_replica_temp = 8
+
+nstep_exchange = 10
+nstep_save = 100
+
+## Perform exchange? (true (default) or false)
+exchange = true
+
+   [replica.temperature]
+   1 = 293.15
+   2 = 303.15
+   3 = 313.15
+   4 = 323.15
+   5 = 333.15
+   6 = 343.15
+   7 = 353.15
+   8 = 363.15
+
 [condition]
 tempK = 310.15
    # Specify the simulation temperature in Kelvin.

@@ -1,14 +1,17 @@
-subroutine force()
+subroutine force(irep, forces)
 
 !$ use omp_lib
    use const
    use const_idx, only : ENE
    use var_parallel, only : nthreads
-   use var_state, only : forces
+   !use var_state, only : forces
    use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, bp_model
    use var_top, only : nmp
 
    implicit none
+
+   integer, intent(in) :: irep
+   real(PREC), intent(out) :: forces(3, nmp)
 
    integer :: tn
    !logical, save :: flg_first = .True.
@@ -25,37 +28,37 @@ subroutine force()
 !$ tn = omp_get_thread_num()
    forces_t(:,:,tn) = 0.0e0_PREC
 
-   call force_bond(forces_t(1,1,tn))
+   call force_bond(irep, forces_t(1,1,tn))
 
    if (flg_angl_ReB) then
-      call force_angl_ReB(forces_t(1, 1, tn))
+      call force_angl_ReB(irep, forces_t(1, 1, tn))
    else
-      call force_angl(forces_t(1,1,tn))
+      call force_angl(irep, forces_t(1,1,tn))
    endif
 
-   if (flg_dih_cos) call force_dih_cos(forces_t(1, 1, tn))
+   if (flg_dih_cos) call force_dih_cos(irep, forces_t(1, 1, tn))
 
-   if (flg_dih_exp) call force_dih_exp(forces_t(1, 1, tn))
+   if (flg_dih_exp) call force_dih_exp(irep, forces_t(1, 1, tn))
    
    if (max_bp_per_nt < 1) then
-      call force_bp(forces_t(1,1,tn))
+      call force_bp(irep, forces_t(1,1,tn))
    else
       if (bp_model == 4 .or. bp_model == 5) then
-         call force_bp_limit_triplet(forces_t(1,1,tn))
+         call force_bp_limit_triplet(irep, forces_t(1,1,tn))
       else
-         call force_bp_limit(forces_t(1,1,tn))
+         call force_bp_limit(irep, forces_t(1,1,tn))
       endif
    endif
 
-   call force_wca(forces_t(1,1,tn))
+   call force_wca(irep, forces_t(1,1,tn))
 
-   if (flg_ele) call force_ele_DH(forces_t(1,1,tn))
+   if (flg_ele) call force_ele_DH(irep, forces_t(1,1,tn))
 
 !$omp end parallel
 
-   forces(:,:) = forces_t(:,:,0)
    do tn = 1, nthreads-1
-      forces(:,:) = forces(:,:) + forces_t(:,:,tn)
+      forces_t(:,:,0) = forces_t(:,:,0) + forces_t(:,:,tn)
    enddo
+   forces(:,:) = forces_t(:,:,0)
 
 end subroutine force

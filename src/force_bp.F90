@@ -1,4 +1,4 @@
-subroutine force_bp(forces)
+subroutine force_bp(irep, forces)
 
    use const, only : PREC
    use pbc, only : pbc_vec_d
@@ -8,6 +8,7 @@ subroutine force_bp(forces)
 
    implicit none
 
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
 
    integer :: ibp
@@ -33,14 +34,14 @@ subroutine force_bp(forces)
    !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
    !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
    !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212, f_bp)
-   do ibp = 1, nbp
+   do ibp = 1, nbp(irep)
 
-      imp1 = bp_mp(1, ibp)
-      imp2 = bp_mp(2, ibp)
-      bpp = bp_paras(bp_mp(3, ibp))
+      imp1 = bp_mp(1, ibp, irep)
+      imp2 = bp_mp(2, ibp, irep)
+      bpp = bp_paras(bp_mp(3, ibp, irep))
 
-      v12(:) = pbc_vec_d(xyz(:,imp1), xyz(:,imp2))
-      d1212 = dot_product(v12,v12)
+      v12(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
+      d1212 = dot_product(v12, v12)
       a12 = sqrt(d1212)
       d = a12 - bpp%bond_r
 
@@ -57,10 +58,10 @@ subroutine force_bp(forces)
       f_bp(:, 1) = + f_i(:)
       f_bp(:, 2) = - f_i(:)
 
-      v13(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp3))
-      v15(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp5))
-      v42(:) = pbc_vec_d(xyz(:, imp4), xyz(:, imp2))
-      v62(:) = pbc_vec_d(xyz(:, imp6), xyz(:, imp2))
+      v13(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp3, irep))
+      v15(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp5, irep))
+      v42(:) = pbc_vec_d(xyz(:, imp4, irep), xyz(:, imp2, irep))
+      v62(:) = pbc_vec_d(xyz(:, imp6, irep), xyz(:, imp2, irep))
  
       d1313 = dot_product(v13, v13)
       d4242 = dot_product(v42, v42)

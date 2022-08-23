@@ -4,7 +4,7 @@ subroutine read_input(cfilepath, stat)
 
    use const
    use const_phys
-   use const_idx, only : JOBT, INTGRT
+   use const_idx, only : JOBT, INTGRT, REPT
    use pbc, only : flg_pbc, pbc_box, set_pbc_size
    use var_io, only : iopen_hdl, &
                       flg_progress, step_progress, &
@@ -21,6 +21,8 @@ subroutine read_input(cfilepath, stat)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
                              bp_min_loop, max_bp_per_nt, bp_model
    use var_top, only : nrepeat, nchains, inp_no_charge
+   use var_replica, only : n_replica_temp, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
+                           replica_values, flg_replica
   
    implicit none
 
@@ -40,6 +42,7 @@ subroutine read_input(cfilepath, stat)
    integer(INT64) :: idummy
    real(PREC) :: rdummy, v(3)
    character(len=:), allocatable :: cline
+   character(len=5) :: cquery
 
    stat = .False.
 
@@ -165,6 +168,50 @@ subroutine read_input(cfilepath, stat)
    else
       print '(a)', 'Error in input file: no files.out.'
       return
+   endif
+
+   !################# Replica #################
+   flg_replica = .False.
+   call get_value(table, "replica", group, requested=.False.)
+
+   if (associated(group)) then
+
+      flg_replica = .True.
+
+      n_replica_temp = 0
+      call get_value(group, "n_replica_temp", n_replica_temp)
+      call get_value(group, "nstep_exchange", nstep_rep_exchange)
+      call get_value(group, "nstep_save", nstep_rep_save)
+
+      flg_exchange = .True.
+      call get_value(group, "exchange", flg_exchange)
+
+      print '(a,i16)', '# Replica, n_replica: ', n_replica_temp
+      print '(a,i16)', '# Replica, nstep_exchange: ', nstep_rep_exchange
+      print '(a,i16)', '# Replica, nstep_save: ', nstep_rep_save
+      if (flg_exchange) then
+         print '(a)', '# Replica, exchange: True'
+      else
+         print '(a)', '# Replica, exchange: False'
+      endif
+      print '(a)', '#'
+
+      if (n_replica_temp > 0) then
+         call get_value(group, "temperature", node, requested=.False.)
+         if (associated(node)) then
+            do i = 1, n_replica_temp
+               write(cquery, '(i0)') i
+               call get_value(node, cquery, replica_values(i, REPT%TEMP))
+            enddo
+         else
+            print '(a)', 'Error in input file: [replcia.temperature] is needed.'
+            return
+         endif
+      endif
+
+   else
+      n_replica_temp = 1
+      flg_exchange = .False.
    endif
 
    !################# Condition #################

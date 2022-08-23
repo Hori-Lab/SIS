@@ -36,11 +36,12 @@ module var_potential
    integer,    save :: max_bp_per_nt
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
    integer,    save :: bp_model
-   integer, allocatable, save :: bp_map_0(:,:)
-   integer, allocatable, save :: bp_map(:,:)
-   real(PREC), allocatable, save :: bp_map_dG(:,:)
-   real(PREC), save :: bp_cutoff_dist
-   real(PREC), save :: bp_cutoff_energy  ! 0.01 kcal/mol
+
+   integer, allocatable :: bp_map_0(:,:)
+   integer, allocatable :: bp_map(:,:)
+   real(PREC), allocatable :: bp_map_dG(:,:,:)   ! (nmp, nmp, nrep_proc)
+   real(PREC) :: bp_cutoff_energy  ! 0.01 kcal/mol
+   real(PREC) :: bp_cutoff_dist
    integer,    save :: bp_seqdep
       ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.
       ! = 1: Sequence dependent parameters. All possible combinations of trinucleotide-dimer are required.
@@ -69,35 +70,31 @@ module var_potential
    integer, save :: bp_type2nhb(1:3) = (/ 3, 2, 2/)
 
    ! Basepair list
-   integer, save :: nbp
+   integer, allocatable :: nbp(:)
    integer, save :: nbp_max  ! This defines the size of neighbor list
-   integer, allocatable, save :: bp_mp(:,:)  ! 1: imp1, 2: imp2, 3: bp type
-   real(PREC), save :: bp_nl_cut2
+   integer, allocatable, save :: bp_mp(:,:,:)  ! (3, nbp, nrep_proc) 1: imp1, 2: imp2, 3: bp type
 
    ! WCA parameters
    real(PREC), save :: wca_sigma  ! = 10.0
    real(PREC), save :: wca_eps    ! = 2.0
-   real(PREC), save :: wca_nl_cut2 ! = (wca_sigma + nl_margin) ** 2
 
    ! WCA list
-   integer, save :: nwca
+   integer, allocatable :: nwca(:)
    integer, save :: nwca_max  ! This defines the size of neighbor list
-   integer, allocatable, save :: wca_mp(:,:)  ! (2, nwca) or (2, nwca_max), 1:imp1, 2:imp2
+   integer, allocatable, save :: wca_mp(:,:,:)  ! (1:2, nwca, nrep_proc) or (1:2, nwca_max, nrep_proc),
+                                                ! 1:imp1, 2:imp2
 
    ! Electrostatic parameters
    logical, save :: flg_ele
    integer, save :: ele_cutoff_type
    real(PREC), save :: ele_cutoff_inp
-   real(PREC), save :: ele_cutoff
-   real(PREC), save :: ele_coef
-   real(PREC), save :: ele_coef_QQ
+   real(PREC), allocatable :: ele_cutoff(:)  ! (nrep_proc)
+   real(PREC), allocatable :: ele_coef(:)  ! (nrep_proc)
 
    ! Electrostatic list
-   integer, save :: nele
+   integer, allocatable :: nele(:)
    integer, save :: nele_max
-   integer, allocatable, save :: ele_mp(:, :)
-
-   real(PREC), save :: ele_nl_cut2
+   integer, allocatable, save :: ele_mp(:, :, :)  ! (2, nele_max, nrep_proc)
 
 
 end module var_potential

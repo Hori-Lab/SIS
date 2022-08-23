@@ -1,4 +1,4 @@
-subroutine force_bond(forces)
+subroutine force_bond(irep, forces)
       
    use const
    use pbc, only : pbc_vec_d
@@ -8,6 +8,7 @@ subroutine force_bond(forces)
   
    implicit none
   
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
 
    integer :: ibd, imp1, imp2
@@ -18,7 +19,7 @@ subroutine force_bond(forces)
       imp1 = bond_mp(1, ibd)
       imp2 = bond_mp(2, ibd)
 
-      v = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
+      v = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
       d = norm2(v)
       delta = d - bond_r0
       f(:) = bond_k * delta / d * v(:)

@@ -1,82 +1,100 @@
 subroutine write_rst()
 
    use const_idx, only : RSTBLK
-   use var_io,    only : cfile_prefix, iopen_hdl
+   use var_io,    only : hdl_rst, cfile_rst
    use var_top, only : nmp
    use var_state, only : istep, &
                          opt_anneal, ianneal, &
                          xyz, velos, accels
+   use var_replica, only : nrep_proc, nrep_all, rep2lab, irep2grep
+   use var_parallel, only : myrank
 
    implicit none
 
-   integer :: i, imp
+   integer :: i, imp, irep
    integer :: istep_sim
    integer :: grep
    integer :: lunout
    integer :: istat
    integer :: nblock_size
 
-   ! Open
-   lunout = iopen_hdl
-   iopen_hdl = iopen_hdl + 1
-   open(lunout, file=trim(cfile_prefix)//'.rst', status='replace', action='write', &
-        iostat=istat, form = 'unformatted', access = 'stream')
+   do irep = 1, nrep_proc
 
-   if(istat > 0) then
-      print '(3a)', 'Error: cannot open the file: ', trim(cfile_prefix), '.rst'
-      error stop
-   end if
+      grep = irep2grep(irep)
 
-   grep = 1   ! Reserved for replica later
-   istep_sim = 1   ! Unused but reserved
+      ! Open
+      lunout = hdl_rst(irep)
+      open(lunout, file=trim(cfile_rst(irep)), status='replace', action='write', &
+           iostat=istat, form = 'unformatted', access = 'stream')
 
-   ! Step 
-   write(lunout) RSTBLK%STEP 
-   nblock_size = calc_size(1, 1, 0, 0)
-   write(lunout) nblock_size
-   write(lunout) istep_sim    ! M_INT
-   write(lunout) istep        ! L_INT
+      if(istat > 0) then
+         print '(2a)', 'Error: cannot open the file: ', trim(cfile_rst(irep))
+         error stop
+      end if
 
-   ! Annealing
-   if (opt_anneal > 0) then
-      write(lunout) RSTBLK%ANNEAL
-      nblock_size = calc_size(1, 0, 0, 0)
+      istep_sim = 1   ! Unused but reserved
+
+      ! replica
+      if (myrank == 0 .and. irep == 1) then
+         if (nrep_all > 1) then
+            write(lunout) RSTBLK%REPLICA
+            nblock_size = calc_size(1+2*nrep_all, 0, 0, 0)
+            write(lunout) nblock_size
+            write(lunout) nrep_all  ! M_INT
+            do i = 1, nrep_all
+               write(lunout) i, rep2lab(i)  ! M_INT
+            enddo
+         endif
+      endif
+
+      ! Step 
+      write(lunout) RSTBLK%STEP 
+      nblock_size = calc_size(1, 1, 0, 0)
       write(lunout) nblock_size
-      write(lunout) ianneal      ! M_INT
-   endif
+      write(lunout) istep_sim    ! M_INT
+      write(lunout) istep        ! L_INT
 
-   ! Coordinate
-   write(lunout) RSTBLK%XYZ
-   nblock_size = calc_size(2, 0, nmp*3, 0)
-   write(lunout) nblock_size
-   write(lunout) grep     ! M_INT
-   write(lunout) nmp      ! M_INT
-   do imp = 1, nmp
-      write(lunout) (xyz(i,imp),i=1,3)   ! PREC
+      ! Annealing
+      if (opt_anneal > 0) then
+         write(lunout) RSTBLK%ANNEAL
+         nblock_size = calc_size(1, 0, 0, 0)
+         write(lunout) nblock_size
+         write(lunout) ianneal      ! M_INT
+      endif
+
+      ! Coordinate
+      write(lunout) RSTBLK%XYZ
+      nblock_size = calc_size(2, 0, nmp*3, 0)
+      write(lunout) nblock_size
+      write(lunout) grep     ! M_INT
+      write(lunout) nmp      ! M_INT
+      do imp = 1, nmp
+         write(lunout) (xyz(i,imp,irep),i=1,3)   ! PREC
+      enddo
+
+      ! Velocity
+      write(lunout) RSTBLK%VELO
+      nblock_size = calc_size(2, 0, nmp*3, 0)
+      write(lunout) nblock_size
+      write(lunout) grep    ! M_INT
+      write(lunout) nmp     ! M_INT
+      do imp = 1, nmp
+         write(lunout) (velos(i,imp,irep),i=1,3)  ! PREC
+      enddo
+
+      ! Acceleration
+      write(lunout) RSTBLK%ACCEL
+      nblock_size = calc_size(2, 0, nmp*3, 0)
+      write(lunout) nblock_size
+      write(lunout) grep    ! M_INT
+      write(lunout) nmp     ! M_INT
+      do imp = 1, nmp
+         write(lunout) (accels(i,imp,irep),i=1,3) ! PREC
+      enddo
+
+      close(lunout)
+
    enddo
-
-   ! Velocity
-   write(lunout) RSTBLK%VELO
-   nblock_size = calc_size(2, 0, nmp*3, 0)
-   write(lunout) nblock_size
-   write(lunout) grep    ! M_INT
-   write(lunout) nmp     ! M_INT
-   do imp = 1, nmp
-      write(lunout) (velos(i,imp),i=1,3)  ! PREC
-   enddo
-
-   ! Acceleration
-   write(lunout) RSTBLK%ACCEL
-   nblock_size = calc_size(2, 0, nmp*3, 0)
-   write(lunout) nblock_size
-   write(lunout) grep    ! M_INT
-   write(lunout) nmp     ! M_INT
-   do imp = 1, nmp
-      write(lunout) (accels(i,imp),i=1,3) ! PREC
-   enddo
-
-   close(lunout)
-   iopen_hdl = iopen_hdl - 1
 
 contains
    integer function calc_size(mi, li, dr, lo)

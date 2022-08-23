@@ -60,8 +60,15 @@ module const_idx
       integer :: XYZ
       integer :: VELO
       integer :: ACCEL
+      integer :: REPLICA
    endtype rst_block
-   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5)
+   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6)
+
+   type replica_type
+      integer :: TEMP
+      integer :: MAX
+   endtype replica_type
+   type(replica_type), parameter :: REPT = replica_type(1,1)
 
    type nn_types
       integer :: GC_CG

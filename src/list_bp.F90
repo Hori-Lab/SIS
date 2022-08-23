@@ -5,6 +5,7 @@ subroutine list_bp()
    use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp
    use var_state, only : bp_status, ene_bp, for_bp, nt_bp_excess
    use var_potential, only : nbp, bp_mp, bp_min_loop
+   use var_replica, only : nrep_proc
 
    implicit none
   
@@ -40,9 +41,9 @@ subroutine list_bp()
                      ibp = ibp + 1
 
                      if (n == 2) then
-                        bp_mp(1,ibp) = imp
-                        bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%GC
+                        bp_mp(1, ibp, 1:nrep_proc) = imp
+                        bp_mp(2, ibp, 1:nrep_proc) = jmp
+                        bp_mp(3, ibp, 1:nrep_proc) = BPT%GC
                         !bp_U0(ibp) = bp_U0_GC
                      endif
     
@@ -52,9 +53,9 @@ subroutine list_bp()
                      ibp = ibp + 1
 
                      if (n == 2) then
-                        bp_mp(1,ibp) = imp
-                        bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%AU
+                        bp_mp(1, ibp, 1:nrep_proc) = imp
+                        bp_mp(2, ibp, 1:nrep_proc) = jmp
+                        bp_mp(3, ibp, 1:nrep_proc) = BPT%AU
                         !bp_U0(ibp) = bp_U0_AU
                      endif
     
@@ -64,9 +65,9 @@ subroutine list_bp()
                      ibp = ibp + 1
 
                      if (n == 2) then
-                        bp_mp(1,ibp) = imp
-                        bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%GU
+                        bp_mp(1, ibp, 1:nrep_proc) = imp
+                        bp_mp(2, ibp, 1:nrep_proc) = jmp
+                        bp_mp(3, ibp, 1:nrep_proc) = BPT%GU
                         !bp_U0(ibp) = bp_U0_GU
                      endif
 
@@ -79,23 +80,24 @@ subroutine list_bp()
       enddo
 
       if (n == 1) then
-         nbp = ibp
-         allocate(bp_mp(3, nbp))
+         allocate(nbp(nrep_proc))
+         allocate(bp_mp(3, ibp, nrep_proc))
          !allocate(bp_U0(nbp))
-         allocate(bp_status(nbp))
-         allocate(ene_bp(nbp))
-         allocate(for_bp(3, 6, nbp))
+         allocate(bp_status(ibp, nrep_proc))
+         allocate(ene_bp(ibp))
+         allocate(for_bp(3, 6, ibp))
          allocate(nt_bp_excess(nmp))
 
-         bp_mp(:,:) = 0
+         nbp(:) = ibp
+         bp_mp(:,:,:) = 0
          !bp_U0(:) = 0.0_PREC
-         bp_status(:) = .False.
+         bp_status(:,:) = .False.
          ene_bp(:) = 0.0_PREC
          for_bp(:,:,:) = 0.0_PREC
          nt_bp_excess(:) = 0
       endif
    enddo
 
-   write(*,*) '#nbp: ', nbp
+   print '(a,i8)', '# nbp: ', nbp(1)
 
 end subroutine list_bp

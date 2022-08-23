@@ -2,21 +2,23 @@ subroutine init_bp()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const
-   use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
+   use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt, REPT
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl, cfile_prefix
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
    use var_potential, only : bp_model, bp_map_0, bp_map, bp_min_loop, bp_map_dG, &
                              NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG, &
                              bp_paras, bp_cutoff_energy, bp_cutoff_dist
    use var_state, only : tempK, temp_independent
+   use var_replica, only : nrep_proc, irep2grep, flg_replica, rep2val
 
    implicit none
 
    integer :: imp, jmp, bptype
+   integer :: irep, grep
    integer :: i, j, ichain, jchain
    integer :: l, n, idummy
    integer :: istat, hdl
-   real(PREC) :: dG, dH, dS
+   real(PREC) :: dG, dH, dS, tK
    real(PREC) :: bp_bond_r
    character(len=1) :: nt
 
@@ -26,8 +28,8 @@ subroutine init_bp()
    bp_map_0(:,:) = 0
 
    if (bp_model == 4 .or. bp_model == 5) then
-      allocate(bp_map_dG(nmp, nmp))
-      bp_map_dG(:,:) = 0.0_PREC
+      allocate(bp_map_dG(nmp, nmp, nrep_proc))
+      bp_map_dG(:,:,:) = 0.0_PREC
    endif
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -102,8 +104,8 @@ subroutine init_bp()
                   endif
 
                   if (dG < 0.0_PREC) then
-                     bp_map_dG(imp, jmp) = dG
-                     bp_map_dG(jmp, imp) = dG
+                     bp_map_dG(imp, jmp, :) = dG
+                     bp_map_dG(jmp, imp, :) = dG
                      write(hdl, '(i5,1x,i5,3x,7a1,3x,f6.3)') imp, jmp, &
                                seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
                                seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
@@ -132,25 +134,34 @@ subroutine init_bp()
                      dS = dS + 0.5 * (NN_dS(seqt2nnt(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain))) - dS0)
                   endif
 
-                  ! Default
-                  if (temp_independent == 0) then
-                     dG = coef_dG * (dH - tempK * 1.0e-3_PREC * dS)
-                  else
-                     dG = coef_dG * dH
-                  endif
+                  do irep = 1, nrep_proc
+                     if (flg_replica) then
+                        grep = irep2grep(irep)
+                        tK = rep2val(grep, REPT%TEMP)
+                     else
+                        tK = tempK
+                     endif
 
-                  if (dG < 0.0_PREC) then
-                     bp_map_dG(imp, jmp) = dG
-                     bp_map_dG(jmp, imp) = dG
-                     write(hdl, '(i5,1x,i5,3x,7a1,3x,f8.3)') imp, jmp, &
-                               seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
-                               seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
+                     ! Default
+                     if (temp_independent == 0) then
+                        dG = coef_dG * (dH - tK * 1.0e-3_PREC * dS)
+                     else
+                        dG = coef_dG * dH
+                     endif
 
-                  else
-                     bp_map(imp, jmp) = 0
-                     bp_map(jmp, imp) = 0
+                     if (dG < 0.0_PREC) then
+                        bp_map_dG(imp, jmp, irep) = dG
+                        bp_map_dG(jmp, imp, irep) = dG
+                        write(hdl, '(i5,1x,i5,3x,7a1,3x,f8.3)') imp, jmp, &
+                                  seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
+                                  seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
 
-                  endif
+                     endif
+                     ! Because this procedure depends on the temperature, bp_map is not reset to zero,
+                     ! as bp_map is not replica-wise.
+                     ! The pair will be calculated but bp_map_dG = 0.0 so it never forms.
+
+                  enddo
                endif
             endif
          enddo

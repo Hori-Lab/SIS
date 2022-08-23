@@ -16,18 +16,18 @@ module var_state
    real(PREC), save :: kT
    integer(INT64), save :: rng_seed
 
-   real(PREC), allocatable, save :: xyz(:,:)
-   real(PREC), allocatable, save :: velos(:,:)
-   real(PREC), allocatable, save :: accels(:,:)
-   real(PREC), allocatable, save :: forces(:,:)
+   real(PREC), allocatable :: xyz(:,:,:)     ! (3, nmp, nrep_proc)
+   real(PREC), allocatable :: velos(:,:,:)   ! (3, nmp, nrep_proc)
+   real(PREC), allocatable :: accels(:,:,:)  ! (3, nmp, nrep_proc)
+   !real(PREC), allocatable :: forces(:,:,:)  ! (3, nmp, nrep_proc)
 
    ! Energies
-   real(PREC), save :: energies(0:ENE%MAX)
-   real(PREC), save :: Ekinetic
+   real(PREC), allocatable :: energies(:,:)  ! (0:ENE%MAX, nrep_proc)
+   real(PREC), allocatable :: Ekinetic(:)    ! (nrep_proc)
 
    ! Base pairs
    logical, save :: flg_bp_energy
-   logical, allocatable, save :: bp_status(:)
+   logical, allocatable, save :: bp_status(:,:)  ! (nbp_max, nrep_proc)
    integer, allocatable, save :: nt_bp_excess(:)
    real(PREC), allocatable, save :: ene_bp(:)
    real(PREC), allocatable, save :: for_bp(:,:,:)
@@ -46,10 +46,10 @@ module var_state
    integer(INT64) :: istep
 
    ! Electrostatic
-   real(PREC), save :: ionic_strength
-   real(PREC), save :: length_per_charge
-   real(PREC), save :: lambdaD
-   real(PREC), save :: diele
+   real(PREC), allocatable :: ionic_strength
+   real(PREC), allocatable :: length_per_charge
+   real(PREC), allocatable :: lambdaD(:)           ! (nrep)
+   real(PREC), allocatable :: diele(:)             ! (nrep)
 
    ! Annealing
    integer, save :: opt_anneal
@@ -60,9 +60,9 @@ module var_state
    integer(INT64) :: istep_anneal_next
 
    ! Temperature independent potential
-   integer, save :: temp_independent
-   real(PREC), save :: temp_ref
-   real(PREC), save :: diele_dTcoef
+   integer :: temp_independent
+   real(PREC) :: temp_ref
+   real(PREC), allocatable :: diele_dTcoef(:)
 
    ! variable box
    logical, save :: flg_variable_box

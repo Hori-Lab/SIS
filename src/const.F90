@@ -16,7 +16,9 @@ module const
 
    integer, parameter :: CHAR_FILE_PATH = 1000
    integer, parameter :: CHAR_FILE_LINE = 500
+   integer, parameter :: FILENAME_DIGIT_REPLICA = 4
 
+   integer, parameter :: MAX_REPLICA = 8
 contains
 
    subroutine init_const()

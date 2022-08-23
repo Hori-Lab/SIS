@@ -1,4 +1,4 @@
-subroutine energy_bp(Ebp)
+subroutine energy_bp(irep, Ebp)
 
    use :: ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
 
@@ -7,29 +7,31 @@ subroutine energy_bp(Ebp)
    use pbc, only : pbc_vec_d
    use var_state, only : xyz, kT
    use var_potential, only : bp_paras, nbp, bp_mp, bp_type2nhb, basepair_parameters
-   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
+   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, &
+                      KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
   
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: Ebp
 
    integer :: ibp, imp, jmp, nhb
    type(basepair_parameters) :: bpp
    real(PREC) :: u
    real(PREC) :: d, theta, phi
-   real(PREC) :: e_bp(nbp)
+   real(PREC) :: e_bp(nbp(irep))
    logical :: halt_mode
 
    e_bp(:) = 0.0e0_PREC
 
    !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp)
-   do ibp = 1, nbp
+   do ibp = 1, nbp(irep)
 
-      imp = bp_mp(1, ibp)
-      jmp = bp_mp(2, ibp)
-      bpp = bp_paras(bp_mp(3, ibp))
+      imp = bp_mp(1, ibp, irep)
+      jmp = bp_mp(2, ibp, irep)
+      bpp = bp_paras(bp_mp(3, ibp, irep))
       
-      d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp))) - bpp%bond_r
+      d = norm2(pbc_vec_d(xyz(:,imp,irep), xyz(:, jmp,irep))) - bpp%bond_r
 
       if (abs(d) > bpp%cutoff_ddist) cycle
 
@@ -65,18 +67,20 @@ subroutine energy_bp(Ebp)
       call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
 
-      do ibp = 1, nbp
+      do ibp = 1, nbp(irep)
 
-         nhb = bp_type2nhb(bp_mp(3, ibp))
+         nhb = bp_type2nhb(bp_mp(3, ibp, irep))
 
          if (e_bp(ibp) < - nhb * kT) then
-            imp = bp_mp(1, ibp)
-            jmp = bp_mp(2, ibp)
-            write(hdl_bp) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), real(e_bp(ibp), kind=KIND_OUT_BPE)
+            imp = bp_mp(1, ibp, irep)
+            jmp = bp_mp(2, ibp, irep)
+            write(hdl_bp(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
+                                real(e_bp(ibp), kind=KIND_OUT_BPE)
          endif
       enddo
 
-      write(hdl_bp) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
+      write(hdl_bp(irep)) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), &
+                          real(0.0, kind=KIND_OUT_BPE)
 
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
    endif
@@ -86,16 +90,18 @@ subroutine energy_bp(Ebp)
       call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
 
-      do ibp = 1, nbp
+      do ibp = 1, nbp(irep)
 
          if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
-            imp = bp_mp(1, ibp)
-            jmp = bp_mp(2, ibp)
-            write(hdl_bpall) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), real(e_bp(ibp), kind=KIND_OUT_BPE)
+            imp = bp_mp(1, ibp, irep)
+            jmp = bp_mp(2, ibp, irep)
+            write(hdl_bpall(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
+                                   real(e_bp(ibp), kind=KIND_OUT_BPE)
          endif
       enddo
 
-      write(hdl_bpall) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), real(0.0, kind=KIND_OUT_BPE)
+      write(hdl_bpall(irep)) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), &
+                             real(0.0, kind=KIND_OUT_BPE)
 
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
    endif
@@ -103,19 +109,19 @@ subroutine energy_bp(Ebp)
 
    if (flg_out_bpe) then
 
-      do ibp = 1, nbp
+      do ibp = 1, nbp(irep)
 
-         !nhb = bp_type2nhb(bp_mp(3, ibp))
+         !nhb = bp_type2nhb(bp_mp(3, ibp, irep))
 
          if (e_bp(ibp) < -ZERO_JUDGE) then  ! To output all
          !if (e_bp(ibp) < - nhb * kT) then
-            imp = bp_mp(1, ibp)
-            jmp = bp_mp(2, ibp)
-            write(hdl_bpe, '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, e_bp(ibp)
+            imp = bp_mp(1, ibp, irep)
+            jmp = bp_mp(2, ibp, irep)
+            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, e_bp(ibp)
          endif
       enddo
 
-      write(hdl_bpe, '(a)') ''
+      write(hdl_bpe(irep), '(a)') ''
    endif
 
 contains
@@ -127,8 +133,8 @@ contains
       real(PREC) :: v12(3), v32(3)
       real(PREC) :: co
 
-      v12(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
-      v32(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
+      v12(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
+      v32(:) = pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp2, irep))
 
       co = dot_product(v32, v12) / sqrt(dot_product(v12,v12) * dot_product(v32,v32))
 
@@ -148,9 +154,9 @@ contains
       integer, intent(in) :: imp1, imp2, imp3, imp4
       real(PREC) :: v12(3), v32(3), v34(3), m(3), n(3)
 
-      v12(:) =  pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
-      v32(:) =  pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
-      v34(:) =  pbc_vec_d(xyz(:, imp3), xyz(:, imp4))
+      v12(:) =  pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
+      v32(:) =  pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp2, irep))
+      v34(:) =  pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp4, irep))
 
       m(1) = v12(2)*v32(3) - v12(3)*v32(2)
       m(2) = v12(3)*v32(1) - v12(1)*v32(3)

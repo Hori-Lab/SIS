@@ -1,4 +1,4 @@
-subroutine force_dih_exp(forces)
+subroutine force_dih_exp(irep, forces)
 
    use const
    use pbc, only : pbc_vec_d
@@ -8,6 +8,7 @@ subroutine force_dih_exp(forces)
 
    implicit none
 
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
 
    integer :: idih, imp1, imp2, imp3, imp4
@@ -27,9 +28,9 @@ subroutine force_dih_exp(forces)
       imp3 = dih_mp(3, idih)
       imp4 = dih_mp(4, idih)
 
-      vij(:) = pbc_vec_d(xyz(:, imp1), xyz(:, imp2))
-      vkj(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp2))
-      vkl(:) = pbc_vec_d(xyz(:, imp3), xyz(:, imp4))
+      vij(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
+      vkj(:) = pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp2, irep))
+      vkl(:) = pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp4, irep))
 
       ! m = rij x rkj
       m(1) = vij(2)*vkj(3) - vij(3)*vkj(2)

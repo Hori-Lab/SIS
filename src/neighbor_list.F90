@@ -1,59 +1,82 @@
-subroutine neighbor_list()
+subroutine neighbor_list(irep)
   
    use const, only : PREC
    use const_idx, only : SEQT, BPT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
    use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge
-   use var_state, only : xyz, bp_status, ene_bp, for_bp, nt_bp_excess
-   use var_potential, only : wca_nl_cut2, nwca, nwca_max, wca_mp, &
-                             bp_nl_cut2, bp_mp, nbp, nbp_max, &
-                             nele, nele_max, ele_mp, ele_nl_cut2, flg_ele, &
-                             bp_map
+   use var_state, only : xyz, bp_status, ene_bp, for_bp, nt_bp_excess, nl_margin, lambdaD
+   use var_potential, only : wca_sigma, nwca, nwca_max, wca_mp, &
+                             bp_cutoff_dist, bp_mp, nbp, nbp_max, bp_map, &
+                             ele_cutoff_type, ele_cutoff, ele_cutoff_inp, &
+                             nele, nele_max, ele_mp, flg_ele
+   use var_replica, only : nrep_proc
 
    implicit none
+
+   integer, intent(in) :: irep
 
    integer :: ichain, jchain, i, imp, j, jmp, j_start
    integer :: iwca, ibp, iele
    real(PREC) :: d2, v(3)
+   real(PREC) :: wca_nl_cut2, bp_nl_cut2, ele_nl_cut2
 
    if (flg_pbc) then
-      call pbc_wrap()
+      call pbc_wrap(irep)
    end if
 
    if (allocated(wca_mp)) then
-      wca_mp(:,:) = 0
+      wca_mp(:,:,irep) = 0
    else
+      allocate(nwca(nrep_proc))
       nwca_max = 5 * nmp
-      allocate(wca_mp(2, nwca_max))
-      wca_mp(:,:) = 0
+      allocate(wca_mp(2, nwca_max, nrep_proc))
+      nwca(:) = 0
+      wca_mp(:,:,:) = 0
    endif
 
-   if (.not. allocated(bp_mp)) then
+   if (allocated(bp_mp)) then
+      bp_mp(:,:,irep) = 0
+   else
+      allocate(nbp(nrep_proc))
       nbp_max = nmp / 2
-      allocate(bp_mp(3, nbp_max))
-      allocate(bp_status(nbp_max))
+      allocate(bp_mp(3, nbp_max, nrep_proc))
+      allocate(bp_status(nbp_max, nrep_proc))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
       allocate(nt_bp_excess(nmp))
+      nbp(:) = 0
+      bp_mp(:,:,:) = 0
+      bp_status(:,:) = .False.
+      ene_bp(:) = 0.0_PREC
+      for_bp(:,:,:) = 0.0_PREC
+      nt_bp_excess(:) = 0
    endif
-   bp_mp(:,:) = 0
-   bp_status(:) = .False.
-   ene_bp(:) = 0.0_PREC
-   for_bp(:,:,:) = 0.0_PREC
-   nt_bp_excess(:) = 0
 
+   ele_nl_cut2 = 0.0_PREC
    if (flg_ele) then
       if (allocated(ele_mp)) then
-         ele_mp(:,:) = 0
+         ele_mp(:,:,irep) = 0
          !ele_coef(:) = 0.0_PREC
       else
+         allocate(nele(nrep_proc))
          nele_max = 5 * nmp
-         allocate(ele_mp(2, nele_max))
-         ele_mp(:,:) = 0
+         allocate(ele_mp(2, nele_max, nrep_proc))
+         nele(:) = 0
+         ele_mp(:,:,:) = 0
          !allocate(ele_coef(nele_max))
          !ele_coef(:) = 0.0_PREC
       endif
+
+      if (ele_cutoff_type == 2) then
+         ele_cutoff(irep) = ele_cutoff_inp * lambdaD(irep)
+      endif
+      ! Cutoff
+      ele_nl_cut2 = (ele_cutoff(irep) + nl_margin) ** 2
    endif
+
+   ! Cutoff
+   wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
+   bp_nl_cut2 = (bp_cutoff_dist + nl_margin) ** 2
 
    iwca = 0
    ibp = 0
@@ -77,7 +100,7 @@ subroutine neighbor_list()
                
                jmp = imp_chain(j, jchain)
    
-               v(:) = pbc_vec_d(xyz(:,imp), xyz(:,jmp))
+               v(:) = pbc_vec_d(xyz(:,imp,irep), xyz(:,jmp,irep))
                d2 = dot_product(v,v)
 
                ! WCA
@@ -89,8 +112,8 @@ subroutine neighbor_list()
                         call reallocate_wca_mp()
                      endif
 
-                     wca_mp(1,iwca) = imp
-                     wca_mp(2,iwca) = jmp
+                     wca_mp(1, iwca, irep) = imp
+                     wca_mp(2, iwca, irep) = jmp
                   endif
                endif
 
@@ -104,8 +127,8 @@ subroutine neighbor_list()
                         call reallocate_ele_mp()
                      endif
 
-                     ele_mp(1,iele) = imp
-                     ele_mp(2,iele) = jmp
+                     ele_mp(1, iele, irep) = imp
+                     ele_mp(2, iele, irep) = jmp
                      !ele_coef(iele) = charge(i) * charge(j)
                   endif
                endif
@@ -118,9 +141,9 @@ subroutine neighbor_list()
                      !write(*,*) 'Error: ibp > nbp_max. ibp =', ibp, 'nbp_max = ', nbp_max
                      call reallocate_bp_mp()
                   endif
-                  bp_mp(1, ibp) = imp
-                  bp_mp(2, ibp) = jmp
-                  bp_mp(3, ibp) = bp_map(imp, jmp)
+                  bp_mp(1, ibp, irep) = imp
+                  bp_mp(2, ibp, irep) = jmp
+                  bp_mp(3, ibp, irep) = bp_map(imp, jmp)
 
                endif
    
@@ -130,39 +153,39 @@ subroutine neighbor_list()
       enddo
    enddo
 
-   nwca = iwca
-   nbp = ibp
-   nele = iele
+   nwca(irep) = iwca
+   nbp(irep) = ibp
+   if (flg_ele) nele(irep) = iele
 
 contains
    
    subroutine reallocate_wca_mp()
       
       integer :: old_max
-      integer :: tmp(2, nwca_max)
+      integer :: tmp(2, nwca_max, nrep_proc)
 
       old_max = nwca_max   
-      tmp(1:2, 1:old_max) = wca_mp(1:2, 1:old_max)
+      tmp(1:2, 1:old_max, 1:nrep_proc) = wca_mp(1:2, 1:old_max, 1:nrep_proc)
 
       deallocate(wca_mp)
 
       nwca_max = int(nwca_max * 1.2)
 
-      allocate(wca_mp(2, nwca_max))
+      allocate(wca_mp(2, nwca_max, nrep_proc))
 
-      wca_mp(:, :) = 0
-      wca_mp(1:2, 1:old_max) = tmp(1:2, 1:old_max)
+      wca_mp(:, :, :) = 0
+      wca_mp(1:2, 1:old_max, 1:nrep_proc) = tmp(1:2, 1:old_max, 1:nrep_proc)
 
    endsubroutine reallocate_wca_mp
 
    subroutine reallocate_ele_mp()
 
       integer :: old_max
-      integer :: tmp(2, nele_max)
+      integer :: tmp(2, nele_max, nrep_proc)
       !real(PREC) :: tmp2(nele_max)
 
       old_max = nele_max   
-      tmp(1:2, 1:old_max) = ele_mp(1:2, 1:old_max)
+      tmp(1:2, 1:old_max, 1:nrep_proc) = ele_mp(1:2, 1:old_max, 1:nrep_proc)
       !tmp2(1:old_max) = ele_coef(1:old_max)
 
       deallocate(ele_mp)
@@ -170,11 +193,11 @@ contains
 
       nele_max = int(nele_max * 1.2)
 
-      allocate(ele_mp(2, nele_max))
+      allocate(ele_mp(2, nele_max, nrep_proc))
       !allocate(ele_coef(nele_max))
 
-      ele_mp(:, :) = 0
-      ele_mp(1:2, 1:old_max) = tmp(1:2, 1:old_max)
+      ele_mp(:, :, :) = 0
+      ele_mp(1:2, 1:old_max, 1:nrep_proc) = tmp(1:2, 1:old_max, 1:nrep_proc)
 
       !ele_coef(:) = 0.0_PREC
       !ele_coef(1:old_max) = tmp2(1:old_max)
@@ -184,10 +207,10 @@ contains
    subroutine reallocate_bp_mp()
       
       integer :: old_max
-      integer :: tmp(3, nbp_max)
+      integer :: tmp(3, nbp_max, nrep_proc)
 
       old_max = nbp_max   
-      tmp(1:3, 1:old_max) = bp_mp(1:3, 1:old_max)
+      tmp(1:3, 1:old_max, 1:nrep_proc) = bp_mp(1:3, 1:old_max, 1:nrep_proc)
 
       deallocate(bp_mp)
       deallocate(bp_status)
@@ -196,15 +219,15 @@ contains
 
       nbp_max = int(nbp_max * 1.2)
 
-      allocate(bp_mp(3, nbp_max))
-      allocate(bp_status(nbp_max))
+      allocate(bp_mp(3, nbp_max, nrep_proc))
+      allocate(bp_status(nbp_max, nrep_proc))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
 
-      bp_mp(:, :) = 0
-      bp_mp(1:3, 1:old_max) = tmp(1:3, 1:old_max)
+      bp_mp(:, :, :) = 0
+      bp_mp(1:3, 1:old_max, 1:nrep_proc) = tmp(1:3, 1:old_max, 1:nrep_proc)
 
-      bp_status(:) = .False.
+      bp_status(:,:) = .False.
       ene_bp(:) = 0.0_PREC
       for_bp(:,:,:) = 0.0_PREC
 

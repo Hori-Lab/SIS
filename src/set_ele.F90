@@ -1,20 +1,22 @@
-subroutine set_ele()
+subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
 
    use const
    use const_phys, only : PI, EPS0, BOLTZ_J, N_AVO, ELE, JOUL2KCAL_MOL
-   use var_state, only : ionic_strength, lambdaD, diele, length_per_charge, &
-                         tempK, temp_independent, diele_dTcoef, temp_ref
-   use var_potential, only : ele_coef, ele_cutoff_type, ele_cutoff_inp, ele_cutoff
-   use var_top, only : nmp, inp_no_charge, has_charge, charge
+   use var_state, only : lambdaD, diele, length_per_charge, &
+                         temp_independent, diele_dTcoef, temp_ref
+   use var_potential, only : ele_coef
 
    implicit none
 
-   integer :: imp, i
+   integer, intent(in) :: irep
+   real(PREC), intent(in) :: tempk
+   real(PREC), intent(in) :: ionic_strength
+   real(PREC), intent(out), optional :: out_lb
+   real(PREC), intent(out), optional :: out_Zp
+
    real(PREC) :: Tc, lb, Zp
    real(PREC), parameter ::  MM_A=87.740e0_PREC, MM_B=-0.4008e0_PREC
    real(PREC), parameter ::  MM_C=9.398e-4_PREC, MM_D=-1.410e-6_PREC
-
-   logical, save :: flg_first = .True.
 
 #ifdef _HTN_CONSISTENT
    real(PREC) :: temp_kT, lb_kT, kappaD, rho
@@ -27,10 +29,10 @@ subroutine set_ele()
 #ifdef _HTN_CONSISTENT
    !To be consistent with Hung's code
    temp_kT = tempk * BOLTZ_J * JOUL2KCAL_MOL
-   diele = 296.0736276 - 619.2813716 * temp_kT + 531.2826741 * temp_kT**2 - 180.0369914 * temp_kT**3
+   diele(irep) = 296.0736276 - 619.2813716 * temp_kT + 531.2826741 * temp_kT**2 - 180.0369914 * temp_kT**3
 
    ! Bjerrum length
-   lb_kT = 332.0637 / diele
+   lb_kT = 332.0637 / diele(irep)
    lb = lb_kT / temp_kT
    Zp = length_per_charge / lb
 
@@ -44,17 +46,17 @@ subroutine set_ele()
    ! Default
    if (temp_independent == 0) then
       Tc = tempk - 273.15_PREC
-      diele =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
+      diele(irep) =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
 
    else
       Tc = temp_ref - 273.15_PREC
-      diele =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
-      diele_dTcoef = 1.0_PREC + temp_ref / diele &
-                    * (MM_B + 2.0_PREC*MM_C*Tc + 3.0_PREC*MM_D*Tc*Tc)
+      diele(irep) =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
+      diele_dTcoef(irep) = 1.0_PREC + temp_ref / diele(irep) &
+                          * (MM_B + 2.0_PREC*MM_C*Tc + 3.0_PREC*MM_D*Tc*Tc)
    endif
 
    ! Bjerrum length
-   lb = ELE * ELE / (4.0e0_PREC * PI * EPS0 * diele * BOLTZ_J * tempk) * 1.0e10_PREC
+   lb = ELE * ELE / (4.0e0_PREC * PI * EPS0 * diele(irep) * BOLTZ_J * tempk) * 1.0e10_PREC
 
    ! Calculate phosphate charge taking into account monovalent salt condensation
    !xi = lb / length_per_charge
@@ -62,36 +64,26 @@ subroutine set_ele()
    Zp = length_per_charge / lb
 #endif
 
-   allocate(has_charge(nmp))
-   allocate(charge(nmp))
-
-   has_charge(:) = .True.
-   if (allocated(inp_no_charge)) then
-      do i = 1, size(inp_no_charge)
-         has_charge(inp_no_charge(i)) = .False.
-      enddo
-   endif
-
-   charge(:) = 0.0_PREC
+   !charge(:,irep) = 0.0_PREC
 
    ! Reflect Zp
-   do imp = 1, nmp
-      if (.not. has_charge(imp)) cycle
-      charge(imp) = -Zp
-   enddo
+   !do imp = 1, nmp
+   !   if (.not. has_charge(imp)) cycle
+   !   charge(imp, irep) = -Zp
+   !enddo
 
    ! ----------------------------------------------------------------------
    ! coef: j_kcal * eq**2 / (4.0e0_PREC * PI * e0 * ek * rij)
    !   =  332.063713019 / ek
 #ifdef _HTN_CONSISTENT
-   ele_coef = lb_kT
+   ele_coef(irep) = lb_kT
 #else
-   ele_coef = JOUL2KCAL_MOL * 1.0e10_PREC * ELE**2 / (4.0e0_PREC * PI * EPS0 * diele)
+   ele_coef(irep) = JOUL2KCAL_MOL * 1.0e10_PREC * ELE**2 / (4.0e0_PREC * PI * EPS0 * diele(irep))
 #endif
 
    ! Currently, all charges are phosphate with the same value of charge (-Zp).
    ! Therefore it can be included in coef.
-   ele_coef = ele_coef * Zp**2
+   ele_coef(irep) = ele_coef(irep) * Zp**2
 
    ! Kd: sqrt(e0 * ek * RT / 2 * NA**2 * eq**2 * I)
    !   = sqrt(1.0e-3 * e0 * ek * kb / 2 * NA * eq**2) * sqrt(T(K) / I(M))
@@ -99,32 +91,14 @@ subroutine set_ele()
 #ifdef _HTN_CONSISTENT
    rho = 2 * ionic_strength * 6.022e-4_PREC
    kappaD = sqrt(4 * 3.14159 * lb_kT * rho / temp_kT)
-   lambdaD = 1.0_PREC / kappaD
+   lambdaD(irep) = 1.0_PREC / kappaD
 #else
-   lambdaD = 1.0e10_PREC * sqrt( (1.0e-3_PREC * EPS0 * diele * BOLTZ_J) &
+   lambdaD(irep) = 1.0e10_PREC * sqrt( (1.0e-3_PREC * EPS0 * diele(irep) * BOLTZ_J) &
                                   / (2.0_PREC * N_AVO * ELE**2)  )     &
                                 * sqrt(tempk / ionic_strength)
 #endif
 
-   ! Set cutoff
-   if (ele_cutoff_type == 1) then
-      ele_cutoff = ele_cutoff_inp
-   else if (ele_cutoff_type == 2) then
-      ele_cutoff = ele_cutoff_inp * lambdaD
-   else
-      error stop "Error: Invalid ele_cutoff_type value in set_ele."
-   endif
-
-   if (flg_first) then
-      write(6, '(a)') 'Set electrostaic parameters'
-      write(6, '(a,g15.8)') '# Dielectric constant (H2O): ', diele
-      write(6, '(a,g15.8)') '# coef: ', ele_coef / (Zp**2)
-      write(6, '(a,g15.8)') '# Bjerrum length: ', lb
-      write(6, '(a,g15.8)') '# Debye length (lambdaD): ', lambdaD
-      write(6, '(a,g15.8)') '# Reduced charge on each phosphate: ', -Zp
-      write(6, *)
-
-      flg_first = .False.
-   endif
+   out_lb = lb
+   out_Zp = Zp
 
 end subroutine set_ele

@@ -1,4 +1,4 @@
-subroutine force_wca(forces)
+subroutine force_wca(irep, forces)
 
    use const, only : PREC
    use pbc, only : pbc_vec_d
@@ -8,6 +8,7 @@ subroutine force_wca(forces)
 
    implicit none
 
+   integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3,nmp)
   
    integer :: iwca, imp1, imp2
@@ -18,12 +19,12 @@ subroutine force_wca(forces)
    coef = 12.0e0_PREC * wca_eps / wca_sigma_2
 
    !$omp do private(imp1,imp2,v12,d2,for)
-   do iwca = 1, nwca
+   do iwca = 1, nwca(irep)
 
-      imp1 = wca_mp(1, iwca)
-      imp2 = wca_mp(2, iwca)
+      imp1 = wca_mp(1, iwca, irep)
+      imp2 = wca_mp(2, iwca, irep)
 
-      v12(:) = pbc_vec_d(xyz(:,imp1), xyz(:,imp2))
+      v12(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
       
       d2 = dot_product(v12, v12)
 
