@@ -37,13 +37,7 @@ program sis
 
    !! Read input file
    call get_command_argument(1, cfile_inp)
-   call read_input(cfile_inp, stat)
-
-   if (.not. stat) then
-      print '(a)', 'Error in reading input file'
-      flush(output_unit)
-      error stop
-   endif
+   call read_input(cfile_inp)
 
 
    !! Initialise replicas
