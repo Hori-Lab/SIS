@@ -1,14 +1,15 @@
-subroutine set_sequence()
+subroutine init_sequence()
 
    use const_idx, only : SEQT, seqt2char
-   use var_io, only : cfile_fasta_in
+   use var_io, only : flg_in_fasta
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, nrepeat, lmp_mp
+   use var_parallel
 
    implicit none
 
    integer :: i, j, k, imp
 
-   if (allocated(cfile_fasta_in)) then
+   if (flg_in_fasta) then
 
       call read_fasta()
 
@@ -45,8 +46,7 @@ subroutine set_sequence()
 
    else
       print *,'Error: either FASTA or [repeat] is required.'
-      stop (2)
-
+      call sis_abort()
    endif
 
    print '(a)', '############ System ############'
@@ -71,4 +71,4 @@ subroutine set_sequence()
    print '(a)', '################################'
    print *
 
-endsubroutine set_sequence
+endsubroutine init_sequence

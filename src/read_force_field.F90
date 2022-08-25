@@ -485,7 +485,7 @@ subroutine read_force_field()
    if (myrank == 0) then
       print '(a)', 'Done: reading force-field file'
    else
-      print '(a)', 'Done: receiving force-field file'
+      print '(a)', 'Done: receiving force-field data'
    endif
    print *
    flush(OUTPUT_UNIT)

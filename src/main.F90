@@ -3,12 +3,13 @@ program sis
    use, intrinsic :: iso_fortran_env, only : iostat_end, compiler_version, compiler_options, output_unit
    use const, only : CHAR_FILE_PATH, init_const, PREC, FILENAME_DIGIT_REPLICA
    use const_phys, only : BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, JOBT, REPT
+   use const_idx, only : ENE, JOBT, REPT, RSTBLK
    use var_potential, only : flg_ele
    use var_state, only : restarted, xyz, tempK, kT, job, rng_seed, opt_anneal, anneal_tempK
+   use var_top, only : nmp
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
                       hdl_out, hdl_bp, hdl_bpall, hdl_bpe
-   use var_parallel, only : init_parallel
+   use var_parallel, only : init_parallel, end_parallel
    use var_replica, only : nrep_proc
    use mt19937_64, only : init_genrand64
 
@@ -85,7 +86,19 @@ program sis
 
 
    !! Construct the sequences
-   call set_sequence()
+   call init_sequence()
+
+   !! Read coordinates (xyz)
+   if (job /= JOBT%DCD) then
+
+      allocate(xyz(3, nmp, nrep_proc))
+
+      if (restarted) then
+         call read_rst(RSTBLK%XYZ)
+      else
+         call init_structure()
+      endif
+   endif
 
    print '(a)', 'Temperature'
    print '(a,f7.3)', '# T(K): ', tempK
@@ -148,6 +161,9 @@ program sis
    deallocate(hdl_out)
 
    flush(output_unit)
+
+   call end_parallel()
+
    stop
 
 contains

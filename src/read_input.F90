@@ -10,7 +10,7 @@ subroutine read_input(cfilepath)
    use var_io, only : iopen_hdl, &
                       flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
-                      flg_in_ct, flg_in_bpseq, &
+                      flg_in_ct, flg_in_bpseq, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
                       cfile_ct_in, cfile_bpseq_in
@@ -118,6 +118,9 @@ subroutine read_input(cfilepath)
          call sis_abort()
       endif
 
+      if (allocated(cfile_fasta_in)) flg_in_fasta = .True.
+      if (allocated(cfile_xyz_ini)) flg_in_xyz = .True.
+      if (allocated(cfile_pdb_ini)) flg_in_pdb = .True.
       if (allocated(cfile_ct_in)) flg_in_ct = .True.
       if (allocated(cfile_bpseq_in)) flg_in_bpseq = .True.
 
@@ -127,11 +130,11 @@ subroutine read_input(cfilepath)
       endif
 
       if (job == JOBT%MD .or. job == JOBT%DCD) then
-         if (len(cfile_pdb_ini) < 1 .and. len(cfile_xyz_ini) < 1) then
+         if (.not. flg_in_pdb .and. .not. flg_in_xyz) then
             print '(a)', 'Error: Initial structure is not specified. Either XYZ or PDB is required.'
             call sis_abort()
 
-         else if (len(cfile_pdb_ini) > 0 .and. len(cfile_xyz_ini) > 0) then
+         else if (flg_in_pdb .and. flg_in_xyz) then
             print '(a)', 'Error: Both XYZ and PDB are specified for the initial structure. Please use only one of them.'
             call sis_abort()
 
@@ -169,6 +172,9 @@ subroutine read_input(cfilepath)
 
       !################# Replica #################
       flg_replica = .False.
+      replica_values(:,:) = INVALID_VALUE
+      n_replica_temp = -1
+
       call get_value(table, "replica", group, requested=.False.)
 
       if (associated(group)) then
@@ -191,10 +197,21 @@ subroutine read_input(cfilepath)
                   call get_value(node, cquery, replica_values(i, REPT%TEMP))
                enddo
             else
-               print '(a)', 'Error in input file: [replcia.temperature] is needed.'
+               print '(a)', 'Error in input file: [replica.temperature] is needed.'
                call sis_abort()
             endif
+
+         else
+            print '(a)', 'Error in input file: n_replica_temp has to be more than zero in [replica].'
+            call sis_abort()
          endif
+
+         do i = 1, n_replica_temp
+            if (replica_values(i, REPT%TEMP) > INVALID_JUDGE) then
+               print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [replica.temperature].'
+               call sis_abort()
+            endif
+         enddo
 
       else
          n_replica_temp = 1
@@ -483,6 +500,9 @@ subroutine read_input(cfilepath)
    !! File names (cfile_ff, cfile_dcd_in, cfile_pdb_ini, cfile_xyz_ini, cfile_fast_in, cfile_ct_in,
    !! cfile_bpseq_in, cfile_anneal_in) do not need to be sent becuase it will be read by myrank = 0
 
+   call MPI_BCAST(flg_in_fasta, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_in_pdb, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_in_xyz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
@@ -662,7 +682,12 @@ subroutine read_input(cfilepath)
       print '(a)', '#'
    endif
 
-   print '(a)', 'Done: reading input file'
+
+   if (myrank == 0) then
+      print '(a)', 'Done: reading input file'
+   else
+      print '(a)', 'Done: receiving input data'
+   endif
    print *
    flush(OUTPUT_UNIT)
 

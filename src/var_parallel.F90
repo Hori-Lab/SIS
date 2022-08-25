@@ -34,9 +34,9 @@ contains
          call sis_abort()
       endif
 
-      call mpi_init(ierr)
-      call mpi_comm_size(MPI_COMM_WORLD, nprocs, ierr)
-      call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
+      call MPI_INIT(ierr)
+      call MPI_COMM_SIZE(MPI_COMM_WORLD, nprocs, ierr)
+      call MPI_COMM_RANK(MPI_COMM_WORLD, myrank, ierr)
 #else
       myrank = 0
       nprocs = 1
@@ -50,16 +50,13 @@ contains
    end subroutine init_parallel
 
 
-   subroutine sis_abort()
-      use,intrinsic :: ISO_FORTRAN_ENV, only: output_unit
-      integer :: ierr
-
-      flush(output_unit)
+   subroutine end_parallel()
 #ifdef PAR_MPI
-      call MPI_ABORT(MPI_COMM_WORLD, 2, ierr)
-      call MPI_FINALIZE(ierr)
+      integer :: ierr
 #endif
-      error stop
-   endsubroutine sis_abort
+
+      call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+      call MPI_FINALIZE(ierr)
+   endsubroutine end_parallel
 
 end module var_parallel

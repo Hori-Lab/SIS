@@ -6,7 +6,7 @@ subroutine job_check_force()
    use pbc, only : flg_pbc, pbc_wrap
    use var_top, only : nmp
    use var_state, only : xyz, energies, flg_bp_energy
-   use var_io, only : hdl_out, cfile_pdb_ini, cfile_xyz_ini
+   use var_io, only : hdl_out
    use mt19937_64
 
    implicit none
@@ -21,18 +21,7 @@ subroutine job_check_force()
    print '(a)', 'Starting job_check_force'
 
    allocate(forces(3, nmp))
-   allocate(xyz(3, nmp, IREP))
    allocate(energies(0:ENE%MAX, IREP))
-
-   if (len(cfile_pdb_ini) > 0) then
-      call read_pdb(cfile_pdb_ini, nmp, xyz)
-
-   else if (len(cfile_xyz_ini) > 0) then
-      call read_xyz(cfile_xyz_ini, nmp, xyz)
-
-   else
-      error stop 'Initial structure not found in job_check_force.'
-   endif
 
    if (flg_pbc) then
       call pbc_wrap(IREP)

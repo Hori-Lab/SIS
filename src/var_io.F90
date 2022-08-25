@@ -11,6 +11,9 @@ module var_io
 
    logical :: flg_in_bpseq = .False.
    logical :: flg_in_ct = .False.
+   logical :: flg_in_fasta = .False.
+   logical :: flg_in_xyz = .False.
+   logical :: flg_in_pdb = .False.
 
    integer, parameter :: KIND_OUT_BP  = 2  ! Defines the format of bp output file.
    integer, parameter :: KIND_OUT_BPE = 4  ! Defines the format of bp output file.

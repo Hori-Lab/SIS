@@ -14,9 +14,9 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_pdb_ini, cfile_xyz_ini, cfile_dcd
-   use var_replica, only : nrep_proc, flg_replica, rep2val
+   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd
    use var_potential, only : wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist
+   use var_replica, only : nrep_proc, flg_replica, rep2val, irep2grep
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
@@ -27,7 +27,7 @@ subroutine job_md()
    real(PREC) :: xyz_move(3, nmp, nrep_proc)
    type(file_dcd) :: fdcd(nrep_proc)
    real(PREC) :: fric(nmp), radius
-   real(PREC) :: v, c1, c2, md_coef(4, nmp)
+   real(PREC) :: v, c1, c2, md_coef(3, nmp), md_coef_rep(1, nmp, nrep_proc)
    real(PREC) :: rnd_bm(3, nmp)
    real(PREC) :: accels_pre(3)
    real(PREC) :: d2, d2max, d2max_2nd
@@ -38,7 +38,6 @@ subroutine job_md()
    real(PREC) :: rnd_boxmuller
 
    allocate(mass(nmp))
-   allocate(xyz(3, nmp, nrep_proc))
    allocate(accels(3, nmp, nrep_proc))
    allocate(velos(3, nmp, nrep_proc))
    allocate(forces(3, nmp))
@@ -71,7 +70,8 @@ subroutine job_md()
    print '(a)', 'mass(U) = 305.164'
    print *
    flush(6)
-
+           
+   ! Coefficients that do not depend on replicas
    do imp = 1, nmp
       ! Mass hard coded
       select case (seq(lmp_mp(imp), ichain_mp(imp)))
@@ -85,7 +85,7 @@ subroutine job_md()
             mass(imp) = 305.164
          case default
             write(*,*) 'Error: Unknown seq type, ', seq(lmp_mp(imp), ichain_mp(imp)), ' imp=',imp
-            stop (2)
+            call sis_abort()
       endselect
    enddo
 
@@ -94,30 +94,15 @@ subroutine job_md()
 
    !! Set up the initial state
    if (restarted) then
-      call read_rst(RSTBLK%XYZ)
       call read_rst(RSTBLK%VELO)
       call read_rst(RSTBLK%ACCEL)
 
    else
-      ! Load initial coordinates from PDB or XYZ
-      if (len(cfile_pdb_ini) > 0) then
-         call read_pdb(cfile_pdb_ini, nmp, xyz(:,:,1))
-
-      else if (len(cfile_xyz_ini) > 0) then
-         call read_xyz(cfile_xyz_ini, nmp, xyz(:,:,1))
-
-      else
-         error stop 'Initial structure not found in job_md'
-      endif
-
-      do irep = 2, nrep_proc
-         xyz(:,:,irep) = xyz(:,:,1)
-      enddo
 
       ! Set up initial velocities by Maxwell–Boltzmann distribution
       do irep = 1, nrep_proc
          if (flg_replica) then
-            tK = rep2val(irep, REPT%TEMP)
+            tK = rep2val(irep2grep(irep), REPT%TEMP)
          else
             tK = tempK
          endif
@@ -131,7 +116,7 @@ subroutine job_md()
          ! Set up initial accerelations
          do imp = 1, nmp
             do i = 1, 3
-               accels(i, imp, irep) = md_coef(1, imp) * rnd_boxmuller()
+               accels(i, imp, irep) = md_coef_rep(1, imp, irep) * rnd_boxmuller()
             enddo
          end do
       enddo
@@ -196,28 +181,34 @@ subroutine job_md()
       call fdcd(irep)%write_header(nmp)
 
       ! Open .out file
-      write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
-                                                !1234567890 123456 1234567890123 1234567890123 1234567890123'
-      write(hdl_out(irep), '(a)', advance='no') ' (6)Eangl      (7)Edih      '
+      write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
+                                                !1234567890 1234 123456 1234567890123 1234567890123 1234567890123'
+      write(hdl_out(irep), '(a)', advance='no') ' (7)Eangl      (8)Edih      '
                                                 ! 1234567890123 1234567890123'
-      write(hdl_out(irep), '(a)') ' (8)Ebp        (9)Eexv       (10)Eele'
+      write(hdl_out(irep), '(a)') ' (9)Ebp        (10)Eexv      (11)Eele'
                                   ! 1234567890123 1234567890123 1234567890123
+
+      if (flg_replica) then
+         tK = rep2val(irep2grep(irep), REPT%TEMP)
+      else
+         tK = tempK
+      endif
 
       ! Output initial structure
       if (restarted) then
          ! Only STDOUT if restarted. No DCD output.
          print '(a)', '##### Energies at the beginning'
-         print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
-         print '(i10, 1x, f6.2, 2(1x,g13.6))', istep, tempK, Ekinetic, energies(0, irep)
-         print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele'
+         print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
+         print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, irep2grep(irep), tK, Ekinetic, energies(0, irep)
+         print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele'
          print '(6(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          print *
 
       else
          ! At istep = 0 (not restarted), write both .out and DCD
-         write(hdl_out(irep), '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, &
+         write(hdl_out(irep), '(i10, 1x, i4, 1x, f6.2, 8(1x,g13.6))') istep, irep2grep(irep), tK, &
                              Ekinetic(irep), (energies(i, irep), i=0,ENE%MAX)
-         call fdcd(irep)%write_onestep(nmp, xyz, fix_com_origin)
+         call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
       endif
    enddo
    print *
@@ -276,21 +267,21 @@ subroutine job_md()
             !! b = 1 / (1 + gamma h / 2m)
 
             ! beta(t + h) with the associated coefficient
-            accels_pre(1:3) = md_coef(1, imp) * rnd_bm(1:3, imp)
-            ! md_coef(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
+            accels_pre(1:3) = md_coef_rep(1, imp, irep) * rnd_bm(1:3, imp)
+            ! md_coef_rep(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
 
             ! v(t + 1/2h) update the half-step velocity
-            velos(1:3, imp, irep) =  md_coef(2, imp) * velos(1:3, imp, irep)  &
-                             + md_coef(3, imp) * forces(1:3, imp) &
+            velos(1:3, imp, irep) =  md_coef(1, imp) * velos(1:3, imp, irep)  &
+                             + md_coef(2, imp) * forces(1:3, imp) &
                              + (accels(1:3, imp, irep) + accels_pre(1:3))
-            ! md_coef(2) = a
-            ! md_coef(3) = sqrt(b) h / m
+            ! md_coef(1) = a
+            ! md_coef(2) = sqrt(b) h / m
 
             ! beta(t) <= beta(t+h) (incluing the coefficient) save for the next iteration
             accels(1:3, imp, irep) = accels_pre(1:3)
 
-            dxyz(1:3) =  md_coef(4, imp) * velos(1:3, imp, irep)
-            ! md_coef(4) = sqrt(b) h
+            dxyz(1:3) =  md_coef(3, imp) * velos(1:3, imp, irep)
+            ! md_coef(3) = sqrt(b) h
 
             xyz(1:3, imp, irep) = xyz(1:3, imp, irep) + dxyz(1:3)
             xyz_move(1:3, imp, irep) = xyz_move(1:3, imp, irep) + dxyz(1:3)
@@ -301,11 +292,16 @@ subroutine job_md()
 
       if (mod(istep, nstep_save) == 0) then
          do irep = 1, nrep_proc
+            if (flg_replica) then
+               tK = rep2val(irep2grep(irep), REPT%TEMP)
+            else
+               tK = tempK
+            endif
             call energy(irep, energies(0:ENE%MAX, irep))
             call energy_kinetic(irep, Ekinetic(irep))
-            write(hdl_out(irep), '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, &
+            write(hdl_out(irep), '(i10, 1x, i4, 1x, f6.2, 8(1x,g13.6))') istep, irep2grep(irep), tK, &
                                  Ekinetic(irep), (energies(i, irep), i=0,ENE%MAX)
-            call fdcd(irep)%write_onestep(nmp, xyz, fix_com_origin)
+            call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
          enddo
       endif
 
@@ -361,6 +357,8 @@ subroutine job_md()
 contains
 
    subroutine set_md_coef()
+
+      ! Coefficients that do not depend on replicas
       do imp = 1, nmp
          !fric(imp) = v * mass(imp)
          !if (imp == 1) then
@@ -371,15 +369,29 @@ contains
          c1 = 0.5 * dt * fric(imp) / mass(imp)
          c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
 
-         ! md_coef(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
-         md_coef(1, imp) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric(imp) * BOLTZ_KCAL_MOL * tempK * dt)
-         ! md_coef(2) = a
-         md_coef(2, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
-         ! md_coef(3) = sqrt(b) h / m
-         md_coef(3, imp) = c2 * dt / mass(imp)
-         ! md_coef(4) = sqrt(b) h
-         md_coef(4, imp) = c2 * dt
+         ! md_coef(1) = a
+         md_coef(1, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
+         ! md_coef(2) = sqrt(b) h / m
+         md_coef(2, imp) = c2 * dt / mass(imp)
+         ! md_coef(3) = sqrt(b) h
+         md_coef(3, imp) = c2 * dt
       enddo
+
+      ! Coefficients depending on replicas
+      do irep = 1, nrep_proc
+         do imp = 1, nmp
+            c1 = 0.5 * dt * fric(imp) / mass(imp)
+            c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
+            if (flg_replica) then
+               tK = rep2val(irep2grep(irep), REPT%TEMP)
+            else
+               tK = tempK
+            endif
+            ! md_coef_rep(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
+            md_coef_rep(1, imp, irep) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric(imp) * BOLTZ_KCAL_MOL * tK * dt)
+         enddo
+      enddo
+
    endsubroutine set_md_coef
 
 endsubroutine job_md
