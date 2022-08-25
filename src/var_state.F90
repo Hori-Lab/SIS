@@ -46,8 +46,8 @@ module var_state
    integer(INT64) :: istep
 
    ! Electrostatic
-   real(PREC), allocatable :: ionic_strength
-   real(PREC), allocatable :: length_per_charge
+   real(PREC) :: ionic_strength
+   real(PREC) :: length_per_charge
    real(PREC), allocatable :: lambdaD(:)           ! (nrep)
    real(PREC), allocatable :: diele(:)             ! (nrep)
 

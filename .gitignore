@@ -1,3 +1,7 @@
 *.o
 *.mod
 build/
+build_mpi/
+sis
+sis.mpi
+.DS_Store

@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 enable_language(Fortran)
 project(sis Fortran)
 
+option(BUILD_MPI "Build with MPI" OFF)
 
 #ifort
 if (CMAKE_Fortran_COMPILER_ID MATCHES Intel)
@@ -18,6 +19,22 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
     set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -march=native -ffree-line-length-none")
     set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "-O3 -g -march=native -ffree-line-length-none")
 endif()
+
+#gfortran MPI
+if (BUILD_MPI)
+    find_package(MPI REQUIRED)
+    if(NOT MPI_Fortran_FOUND)
+        message(FATAL_ERROR "Could not find Fortran MPI.  Please set MPI_Fortran_COMPILER to point to the mpifort wrapper.")
+    endif()
+    add_definitions(${MPI_Fortran_COMPILE_FLAGS})
+    include_directories(${MPI_Fortran_INCLUDE_PATH})
+    link_directories(${MPI_Fortran_LIBRARIES})
+    #target_link_libraries(${exe_name} ${MPI_Fortran_LIBRARIES})
+    set(CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -DPAR_MPI")
+    set(CMAKE_Fortran_FLAGS_RELEASE   "${CMAKE_Fortran_FLAGS_RELEASE} -DPAR_MPI")
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO   "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DPAR_MPI")
+endif (BUILD_MPI)
+
 
 
 find_package(OpenMP)

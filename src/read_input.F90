@@ -1,7 +1,7 @@
 subroutine read_input(cfilepath)
 
+   use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT
    use tomlf
-   use,intrinsic :: ISO_FORTRAN_ENV, only: output_unit
 
    use const, only : PREC, L_INT, CHAR_FILE_PATH
    use const_phys, only : BOLTZ_KCAL_MOL, INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
@@ -55,7 +55,7 @@ subroutine read_input(cfilepath)
 
       if (istat /= 0) then
          print '(2a)', 'Error: failed to open the input file. ', trim(cfilepath)
-         call read_input_abort()
+         call sis_abort()
       endif
 
       call toml_parse(table, hdl)
@@ -65,7 +65,7 @@ subroutine read_input(cfilepath)
 
       if (.not. allocated(table)) then
          print '(2a)', 'Error: could not obtain data from the toml input file.'
-         call read_input_abort()
+         call sis_abort()
       endif
 
       call get_value(table, "title", cline)
@@ -87,7 +87,7 @@ subroutine read_input(cfilepath)
 
       else
          print '(2a)', 'Error: Unknown job type, ', trim(cline)
-         call read_input_abort()
+         call sis_abort()
       endif
 
       !################# input files #################
@@ -95,7 +95,7 @@ subroutine read_input(cfilepath)
 
       if (.not. associated(group)) then
          print '(a)', 'Error in input file: no files gorup in input.'
-         call read_input_abort()
+         call sis_abort()
       endif
 
       call get_value(group, "in", node)
@@ -115,7 +115,7 @@ subroutine read_input(cfilepath)
 
       else
          print '(a)', 'Error in input file: no files.in.'
-         call read_input_abort()
+         call sis_abort()
       endif
 
       if (allocated(cfile_ct_in)) flg_in_ct = .True.
@@ -123,17 +123,17 @@ subroutine read_input(cfilepath)
 
       if (flg_in_ct .and. flg_in_bpseq) then
          print '(a)', 'Error: only one of ct and bpseq files can be specified.'
-         call read_input_abort()
+         call sis_abort()
       endif
 
       if (job == JOBT%MD .or. job == JOBT%DCD) then
          if (len(cfile_pdb_ini) < 1 .and. len(cfile_xyz_ini) < 1) then
             print '(a)', 'Error: Initial structure is not specified. Either XYZ or PDB is required.'
-            call read_input_abort()
+            call sis_abort()
 
          else if (len(cfile_pdb_ini) > 0 .and. len(cfile_xyz_ini) > 0) then
             print '(a)', 'Error: Both XYZ and PDB are specified for the initial structure. Please use only one of them.'
-            call read_input_abort()
+            call sis_abort()
 
          endif
       endif
@@ -158,13 +158,13 @@ subroutine read_input(cfilepath)
                flg_out_bpe = .True.
             else
                print '(a)', 'Error in input file: Unknown output type, '//trim(cline)
-               call read_input_abort()
+               call sis_abort()
             endif
          enddo
 
       else
          print '(a)', 'Error in input file: no files.out.'
-         call read_input_abort()
+         call sis_abort()
       endif
 
       !################# Replica #################
@@ -192,7 +192,7 @@ subroutine read_input(cfilepath)
                enddo
             else
                print '(a)', 'Error in input file: [replcia.temperature] is needed.'
-               call read_input_abort()
+               call sis_abort()
             endif
          endif
 
@@ -211,7 +211,7 @@ subroutine read_input(cfilepath)
 
       if (opt_anneal > 0 .and. .not. allocated(cfile_anneal_in)) then
          print '(a)', 'Error: opt_anneal requires anneal in [files.in].'
-         call read_input_abort()
+         call sis_abort()
       endif
 
       tempK = -1.0
@@ -219,7 +219,7 @@ subroutine read_input(cfilepath)
 
       if (opt_anneal == 0 .and. tempK < 0.0) then
          print '(a)', 'Error: tempK is invalid or undefined in [condition].'
-         call read_input_abort()
+         call sis_abort()
       endif
 
       temp_independent = 0
@@ -247,7 +247,7 @@ subroutine read_input(cfilepath)
 
          if (.not. associated(group)) then 
             print '(a)', 'Error: [MD] field required.'
-            call read_input_abort()
+            call sis_abort()
          endif
 
          !###### integrator #######
@@ -255,14 +255,14 @@ subroutine read_input(cfilepath)
 
          if (.not. allocated(cline)) then
             print '(a)', 'Error: integrator is required in [MD].'
-            call read_input_abort()
+            call sis_abort()
 
          else if (cline == 'GJF-2GJ') then
             integrator = INTGRT%LD_GJF2GJ
 
          else
             print '(2a)', 'Error: Unknown integrator type, ', trim(cline)
-            call read_input_abort()
+            call sis_abort()
          endif
 
          !###### dt #######
@@ -270,7 +270,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "dt", dt, stat=istat)
          if (istat /= 0 .or. dt < 0.0) then
             print '(a)', 'Error: invalid value for dt in [MD].'
-            call read_input_abort()
+            call sis_abort()
          endif
 
          !###### nstep #######
@@ -278,7 +278,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "nstep", nstep, stat=istat)
          if (istat /= 0 .or. nstep < 0) then
             print '(a)', 'Error: invalid value for nstep in [MD].'
-            call read_input_abort()
+            call sis_abort()
          endif
 
          !###### nstep_save #######
@@ -286,7 +286,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "nstep_save", nstep_save, stat=istat)
          if (istat /= 0 .or. nstep_save < 0) then
             print '(a)', 'Error: invalid value for nstep_save in [MD].'
-            call read_input_abort()
+            call sis_abort()
          endif
 
          !###### nstep_save_rst #######
@@ -294,7 +294,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "nstep_save_rst", nstep_save_rst, stat=istat)
          if (istat /= 0) then
             print '(a)', 'Error: invalid value for nstep_save_rst in [MD].'
-            call read_input_abort()
+            call sis_abort()
          endif
 
          !###### neighbor_list_margin ######
@@ -302,7 +302,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "neighbor_list_margin", nl_margin, stat=istat)
          if (istat /= 0) then
             print '(a)', 'Error: invalid value for neighbor_list_margin in [MD].'
-            call read_input_abort()
+            call sis_abort()
          else if (nl_margin < 0.0) then
             nl_margin = 10.0_PREC
             print '(a)', 'Warning: neighbor_list_margin is not specified in [MD] field. The default value will be used.'
@@ -313,7 +313,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "viscosity_Pas", viscosity_Pas, stat=istat)
          if (istat /= 0) then
             print '(a)', 'Error: invalid value for viscosity_Pas in [MD].'
-            call read_input_abort()
+            call sis_abort()
          else if (viscosity_Pas < 0.0) then
             viscosity_Pas = 0.00001_PREC
             print '(a)', 'Warning: viscosity_Pas is not specified in [MD] field. The default value will be used.'
@@ -329,7 +329,7 @@ subroutine read_input(cfilepath)
 
             if (istat /= 0) then
                print '(a)', 'Error: invalid value for stop_wall_time_hour in [MD].'
-               call read_input_abort()
+               call sis_abort()
             endif
 
             rdummy = real(idummy, kind=PREC)
@@ -347,7 +347,7 @@ subroutine read_input(cfilepath)
 
          if (istat /= 0) then
             print '(a)', 'Error: invalid value for fix_com_origin in [MD].'
-            call read_input_abort()
+            call sis_abort()
          endif
 
       endif
@@ -403,7 +403,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "ionic_strength", ionic_strength)
          if (ionic_strength > INVALID_JUDGE) then
             print '(a)', "Error: Invalid value for ionic_strength in [Electrostatic]."
-            call read_input_abort()
+            call sis_abort()
          endif
 
          ! cutoff type   1: distance-based (default) 
@@ -412,7 +412,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "cutoff_type", ele_cutoff_type)
          if (ele_cutoff_type /= 1 .and. ele_cutoff_type /= 2) then
             print '(a)', "Error: Invalid values for cutoff_type in [Electrostatic]."
-            call read_input_abort()
+            call sis_abort()
          endif
 
          ! cutoff
@@ -420,7 +420,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "cutoff", ele_cutoff_inp)
          if (ele_cutoff_inp > INVALID_JUDGE) then
             print '(a)', "Error: Invalid values or absence of cutoff in [Electrostatic]."
-            call read_input_abort()
+            call sis_abort()
          endif
 
          ! length_per_charge
@@ -428,7 +428,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "length_per_charge", length_per_charge)
          if (length_per_charge > INVALID_JUDGE) then
             print '(a)', "Error: Invalid value for length_per_charge in [Electrostatic]."
-            call read_input_abort()
+            call sis_abort()
          endif
 
          ! (optional) No charge particles
@@ -478,57 +478,57 @@ subroutine read_input(cfilepath)
 
 #ifdef PAR_MPI
 
-   call MPI_BCAST(job, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(job, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
    !! File names (cfile_ff, cfile_dcd_in, cfile_pdb_ini, cfile_xyz_ini, cfile_fast_in, cfile_ct_in,
    !! cfile_bpseq_in, cfile_anneal_in) do not need to be sent becuase it will be read by myrank = 0
 
-   call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(flg_in_bqseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_in_bpseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(cfile_prefix, CHAR_FILE_PATH, MPI_CHARACTER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(flg_out_bp, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(flg_out_bpe, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(flg_out_bpall, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(cfile_prefix, CHAR_FILE_PATH, MPI_CHARACTER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_out_bp, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_out_bpe, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_out_bpall, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(flg_replica, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(n_replica_temp, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(nstep_rep_exchange, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(nstep_rep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(flg_exchange, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(flg_replica, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(n_replica_temp, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nstep_rep_exchange, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nstep_rep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_exchange, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(replica_values, n_replica_temp, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(replica_values, n_replica_temp, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(rng_seed, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(opt_anneal, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(tempK, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(temp_independent, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(temp_ref, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(rng_seed, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(opt_anneal, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(tempK, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(temp_independent, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(temp_ref, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(n_repeat, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(n_chain, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(nrepeat, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nchains, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(integrator 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(dt, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(nstep, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, ierr
-   call MPI_BCAST(nstep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(nstep_save_rst, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(stop_wall_time_sec, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, ierr
+   call MPI_BCAST(integrator, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(dt, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nstep, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nstep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nstep_save_rst, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(stop_wall_time_sec, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(nl_margin, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(viscosity_Pas, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(nl_margin, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(viscosity_Pas, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(fix_com_origin, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(fix_com_origin, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(model, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(max_bp_per_nt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(bp_min_loop, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(bp_model, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(max_bp_per_nt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(bp_min_loop, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(flg_ele, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(ionic_strength, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(cutoff_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(cutoff, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(length_per_charge, 1, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(flg_ele, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(ionic_strength, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(ele_cutoff_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(ele_cutoff_inp, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(length_per_charge, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    if (myrank == 0) then
       i = 0
@@ -536,28 +536,29 @@ subroutine read_input(cfilepath)
          i = size(inp_no_charge)
       endif
    endif
-   call MPI_BCAST(i, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(i, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
-   if (n > 0) then
+   if (i > 0) then
       if (myrank /= 0) then
-         allocate(inp_no_charge(n))
+         allocate(inp_no_charge(i))
       endif
-      call MPI_BCAST(inp_no_charge, n, MPI_INTEGER, 0 MPI_COMM_WORLD, ierr)
+      call MPI_BCAST(inp_no_charge, i, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    endif
 
-   call MPI_BCAST(flg_pbc, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(boxsize, 3, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(flg_pbc, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(boxsize, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(flg_variable_box, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(variable_box_step, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(variable_box_change, 3, PREC_MPI, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(flg_variable_box, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(variable_box_step, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(variable_box_change, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(flg_progress, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-   call MPI_BCAST(step_progress, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+   call MPI_BCAST(flg_progress, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(step_progress, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
 #endif
 
    kT = BOLTZ_KCAL_MOL * tempK
+
 
    if (flg_pbc) call set_pbc_size(boxsize)
 
@@ -565,7 +566,13 @@ subroutine read_input(cfilepath)
       print '(a)', "Input data received via MPI."
    endif
 
-   print '(3a,i3,a)', '# job type: ', trim(cline), ' (job=', job,')'
+   if (job == JOBT%DCD) then
+      print '(a,i3,a)', '# job type: DCD (job = ', job,')'
+   else if (job == JOBT%CHECK_FORCE) then
+      print '(a,i3,a)', '# job type: CHECK_FORCE (job = ', job,')'
+   else if (job == JOBT%MD) then
+      print '(a,i3,a)', '# job type: MD (job = ', job,')'
+   endif
 
    if (flg_replica) then
       print '(a,i16)', '# Replica, n_replica: ', n_replica_temp
@@ -593,7 +600,9 @@ subroutine read_input(cfilepath)
       print '(a)', '#'
    endif
 
-   print '(2a)', '# MD integrator: ', trim(cline)
+   if (integrator == INTGRT%LD_GJF2GJ) then
+      print '(a)', '# MD integrator: GJF-2GJ'
+   endif
    print '(a,g15.8)', '# MD dt: ', dt
    print '(a,i16)', '# MD nstep: ', nstep
    print '(a,i16)', '# MD nstep_save: ', nstep_save
@@ -655,20 +664,6 @@ subroutine read_input(cfilepath)
 
    print '(a)', 'Done: reading input file'
    print *
-   flush(6)
-
-contains
-
-   subroutine read_input_abort()
-
-      flush(output_unit)
-#ifdef PAR_MPI
-      call MPI_ABORT(MPI_COMM_WORLD, 2, ierr)
-      call MPI_FINALIZE(ierr)
-#endif
-
-      error stop
-
-   endsubroutine read_input_abort
+   flush(OUTPUT_UNIT)
 
 end subroutine read_input
