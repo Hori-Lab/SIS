@@ -11,6 +11,8 @@ subroutine init_replica
 
    if (flg_replica) then
 
+      print '(a)', 'Initializing replicas'
+
       nrep_all = n_replica_temp
       nrep_proc = n_replica_temp
 
@@ -19,7 +21,7 @@ subroutine init_replica
          rep2lab(irep) = irep
          lab2rep(irep) = irep
          lab2val(irep, REPT%TEMP) = replica_values(irep, REPT%TEMP)
-         print *, 'replica', irep, ', temp = ', lab2val(irep, REPT%TEMP)
+         print '(a,i5,a,f8.3)', '# Replica', irep, ', temp = ', lab2val(irep, REPT%TEMP)
       enddo
 
    else
@@ -30,6 +32,7 @@ subroutine init_replica
 
    endif
 
+   print *
    flush(output_unit)
 
 

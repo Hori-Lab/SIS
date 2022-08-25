@@ -65,12 +65,7 @@ program sis
    call init_genrand64(rng_seed)
 
    !! Load force field
-   call read_force_field(stat)
-   if (.not. stat) then
-      print *, 'Error in reading force field file'
-      flush(output_unit)
-      stop (2)
-   endif
+   call read_force_field()
 
 
    !! Read annealing file
