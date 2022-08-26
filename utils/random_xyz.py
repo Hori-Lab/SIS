@@ -5,9 +5,9 @@ import argparse
 
 ## Parameters
 Nback = 10   # Number of particles removed backward when new bead causes clash.
-BL = 5.9     # Bond length
-BA = 2.618   # Bond angle
-EV = 15.0    # Radius for excluded volume
+BL = 5.84    # Bond length
+BA = 2.643   # Bond angle
+EV = 12.0    # Excluded-volume distance
 EV2 = EV * EV
 
 # Arguments parser
@@ -68,7 +68,7 @@ def NeRF(A, B, C, bond, angl, dihd):
 xyz = []
 xyz.append(np.array([0., 0., 0.]))
 xyz.append(np.array([BL, 0., 0.]))
-xyz.append(np.array([BL*(1.+np.cos(np.pi-BA)), BL*np.cos(np.pi-BA), 0.]))
+xyz.append(np.array([BL*(1.+np.cos(np.pi-BA)), BL*np.sin(np.pi-BA), 0.]))
 i = 3
 
 # Main loop
