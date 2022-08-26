@@ -15,6 +15,8 @@ module var_io
    logical :: flg_in_xyz = .False.
    logical :: flg_in_pdb = .False.
 
+   logical :: flg_gen_init_struct = .False.
+
    integer, parameter :: KIND_OUT_BP  = 2  ! Defines the format of bp output file.
    integer, parameter :: KIND_OUT_BPE = 4  ! Defines the format of bp output file.
 
@@ -27,14 +29,14 @@ module var_io
    integer, allocatable :: hdl_bpall(:)
    integer, allocatable :: hdl_bpe(:)
 
-   integer, save :: iopen_hdl = 15
+   integer :: iopen_hdl = 15
 
-   logical, save :: flg_progress
-   integer, save :: step_progress
+   logical :: flg_progress
+   integer :: step_progress
 
    !character(len=CHAR_FILE_PATH) :: cfile_out
-   character(len=CHAR_FILE_PATH), allocatable :: cfile_rst(:)
-   character(len=CHAR_FILE_PATH), allocatable :: cfile_dcd(:)
+   character(len=CHAR_FILE_PATH), allocatable :: cfile_rst(:)  ! (nrep_proc)
+   character(len=CHAR_FILE_PATH), allocatable :: cfile_dcd(:)  ! (nrep_proc)
    character(len=CHAR_FILE_PATH) :: cfile_prefix
    character(len=:), allocatable :: cfile_ff, cfile_dcd_in, cfile_pdb_ini, &
                                     cfile_fasta_in, cfile_ct_in, cfile_bpseq_in, &

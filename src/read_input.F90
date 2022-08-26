@@ -7,7 +7,7 @@ subroutine read_input(cfilepath)
    use const_phys, only : BOLTZ_KCAL_MOL, INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
    use const_idx, only : JOBT, INTGRT, REPT
    use pbc, only : flg_pbc, set_pbc_size
-   use var_io, only : iopen_hdl, &
+   use var_io, only : iopen_hdl, flg_gen_init_struct, &
                       flg_progress, step_progress, &
                       flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       flg_in_ct, flg_in_bpseq, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
@@ -131,8 +131,8 @@ subroutine read_input(cfilepath)
 
       if (job == JOBT%MD .or. job == JOBT%CHECK_FORCE) then
          if (.not. flg_in_pdb .and. .not. flg_in_xyz) then
-            print '(a)', 'Error: Initial structure is not specified. Either XYZ or PDB is required.'
-            call sis_abort()
+            flg_gen_init_struct = .True.
+            print '(a)', 'Initial structure is not specified by XYZ or PDB. Random coil structure will be generated.'
 
          else if (flg_in_pdb .and. flg_in_xyz) then
             print '(a)', 'Error: Both XYZ and PDB are specified for the initial structure. Please use only one of them.'
@@ -501,6 +501,7 @@ subroutine read_input(cfilepath)
    !! cfile_bpseq_in, cfile_anneal_in) do not need to be sent becuase it will be read by myrank = 0
 
    call MPI_BCAST(flg_in_fasta, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_gen_init_struct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_pdb, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_xyz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
