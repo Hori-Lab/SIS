@@ -129,7 +129,7 @@ subroutine read_input(cfilepath)
          call sis_abort()
       endif
 
-      if (job == JOBT%MD .or. job == JOBT%DCD) then
+      if (job == JOBT%MD .or. job == JOBT%CHECK_FORCE) then
          if (.not. flg_in_pdb .and. .not. flg_in_xyz) then
             print '(a)', 'Error: Initial structure is not specified. Either XYZ or PDB is required.'
             call sis_abort()
