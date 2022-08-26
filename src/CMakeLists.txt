@@ -33,8 +33,11 @@ add_executable(${SIS_EXE}
 )
 
 add_dependencies(${SIS_EXE} toml-f-lib)
+add_dependencies(${SIS_EXE} mt_stream-lib)
+
 target_link_libraries(${SIS_EXE} toml-f-lib) 
 target_link_libraries(${SIS_EXE} githash)
+target_link_libraries(${SIS_EXE} mt_stream-lib)
 
 add_executable(show_rst
     const.F90 const_idx.F90
