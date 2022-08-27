@@ -12,10 +12,12 @@ subroutine read_force_field()
    implicit none
 
    integer :: i
-   integer :: sz
    integer :: istat
    integer :: hdl
    logical :: flg_angl
+#ifdef PAR_MPI
+   integer :: sz
+#endif
 
    character(len=:), allocatable :: cline, csource
 

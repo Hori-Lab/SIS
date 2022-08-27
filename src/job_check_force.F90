@@ -5,9 +5,10 @@ subroutine job_check_force()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_wrap
    use var_top, only : nmp
-   use var_state, only : xyz, energies, flg_bp_energy
+   use var_state, only : xyz, energies, flg_bp_energy, mts
    use var_io, only : hdl_out
-   use mt19937_64
+   !use mt19937_64
+   use mt_stream
 
    implicit none
 
@@ -30,7 +31,8 @@ subroutine job_check_force()
    ! Slightly shift the structure to make sure it's not at the energy minimum
    do imp = 1, nmp
       do ixyz = 1, 3
-         xyz(ixyz, imp, IREP) = xyz(ixyz, imp, IREP) + small * genrand64_real3()
+         !xyz(ixyz, imp, IREP) = xyz(ixyz, imp, IREP) + small * genrand64_real3()
+         xyz(ixyz, imp, IREP) = xyz(ixyz, imp, IREP) + small * genrand_double3(mts(0))
       enddo
    enddo
 

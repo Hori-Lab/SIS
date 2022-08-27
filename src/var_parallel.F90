@@ -53,10 +53,10 @@ contains
    subroutine end_parallel()
 #ifdef PAR_MPI
       integer :: ierr
-#endif
 
       call MPI_BARRIER(MPI_COMM_WORLD, ierr)
       call MPI_FINALIZE(ierr)
+#endif
    endsubroutine end_parallel
 
 end module var_parallel

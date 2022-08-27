@@ -5,13 +5,13 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, JOBT, REPT, RSTBLK
    use var_potential, only : flg_ele
-   use var_state, only : restarted, xyz, tempK, kT, job, rng_seed, opt_anneal, anneal_tempK
+   use var_state, only : restarted, xyz, tempK, kT, job, opt_anneal, anneal_tempK
    use var_top, only : nmp
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
                       hdl_out, hdl_bp, hdl_bpall, hdl_bpe
    use var_parallel, only : init_parallel, end_parallel
    use var_replica, only : nrep_proc
-   use mt19937_64, only : init_genrand64
+   !use mt19937_64, only : init_genrand64
 
    implicit none
 
@@ -62,8 +62,9 @@ program sis
    end if
 
 
-   !! Set RNG
-   call init_genrand64(rng_seed)
+   !! Initialize the random number generator
+   !call init_genrand64(rng_seed)
+   call init_mts()
 
    !! Load force field
    call read_force_field()

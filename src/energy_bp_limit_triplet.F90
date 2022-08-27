@@ -2,12 +2,13 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
 
    use :: ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
 
-   use mt19937_64, only : genrand64_real1, genrand64_real3
+   !use mt19937_64, only : genrand64_real1, genrand64_real3
+   use mt_stream
    use const, only : PREC
    use const_idx, only : REPT
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
-   use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy
+   use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy, mts
    use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, bp_paras, &
                              basepair_parameters, bp_map_dG
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
@@ -111,7 +112,8 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
          if (nnt_bp_excess == 0) exit
 
          ! Randomely choose one nucleotide (nt) that has more than one base pair
-         rnd = genrand64_real3()    ! (0,1)-real-interval
+         !rnd = genrand64_real3()    ! (0,1)-real-interval
+         rnd = genrand_double3(mts(irep))    ! (0,1)-real-interval
 
          nt_delete = ntlist_excess( ceiling(rnd * nnt_bp_excess) )
          !  1 <= nt_delete <= nnt_bp_excess
@@ -132,7 +134,8 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
 
          ! Shuffle
          do i = 1, nbp_seq
-            rnd = genrand64_real3()   ! (0,1)-real-interval
+            !rnd = genrand64_real3()   ! (0,1)-real-interval
+            rnd = genrand_double3(mts(irep))   ! (0,1)-real-interval
             i_swap = ceiling(rnd*nbp_seq)
             i_save = bp_seq(i)
             bp_seq(i) = bp_seq(i_swap)
@@ -145,7 +148,8 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
             jbp = bp_seq(i)
 
             ratio = exp( (ene_bp(jbp) - ene_bp(ibp_delete)) * beta )
-            rnd = genrand64_real1()  ! [0,1]-real-interval
+            !rnd = genrand64_real1()  ! [0,1]-real-interval
+            rnd = genrand_double1(mts(irep))  ! [0,1]-real-interval
 
             if (rnd < ratio) then
                ibp_delete = jbp

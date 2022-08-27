@@ -4,7 +4,9 @@ subroutine sis_abort()
 
    use var_parallel
 
+#ifdef PAR_MPI
    integer :: ierr
+#endif
 
    flush(output_unit)
 

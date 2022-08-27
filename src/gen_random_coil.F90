@@ -1,8 +1,10 @@
 subroutine gen_random_coil(nmp, xyz, origin)
 
-   use mt19937_64
+   !use mt19937_64
+   use mt_stream
    use const, only : PREC
    use const_phys, only : PI
+   use var_state, only : mts
 
    implicit none
 
@@ -33,7 +35,8 @@ subroutine gen_random_coil(nmp, xyz, origin)
       print *, imp
       flush(6)
       ! Generate a dihedral angle at random
-      dih = -PI + genrand64_real1() * 2 * PI
+      !dih = -PI + genrand64_real1() * 2 * PI
+      dih = -PI + genrand_double1(mts(0)) * 2 * PI
 
       ! Derive a new coordinate by NeRF
       call NeRF(xyz(:, imp-3), xyz(:, imp-2), xyz(:, imp-1), BL, BA, dih, trial)

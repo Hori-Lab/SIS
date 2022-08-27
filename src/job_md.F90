@@ -109,14 +109,14 @@ subroutine job_md()
          do imp = 1, nmp
             c1 = sqrt(tK * BOLTZ_KCAL_MOL / mass(imp))
             do i = 1, 3
-               velos(i, imp, irep) = c1 * rnd_boxmuller()
+               velos(i, imp, irep) = c1 * rnd_boxmuller(irep)
             enddo
          enddo
 
          ! Set up initial accerelations
          do imp = 1, nmp
             do i = 1, 3
-               accels(i, imp, irep) = md_coef_rep(1, imp, irep) * rnd_boxmuller()
+               accels(i, imp, irep) = md_coef_rep(1, imp, irep) * rnd_boxmuller(irep)
             enddo
          end do
       enddo
@@ -255,7 +255,7 @@ subroutine job_md()
 
          do imp= 1, nmp
             do i = 1, 3
-               rnd_bm(i, imp) = rnd_boxmuller()
+               rnd_bm(i, imp) = rnd_boxmuller(irep)
             enddo
          enddo
 

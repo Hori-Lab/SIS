@@ -3,6 +3,7 @@ module var_state
    use,intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const
    use const_idx, only : ENE
+   use mt_stream, only : mt_state
 
    implicit none
   
@@ -11,10 +12,15 @@ module var_state
 
    integer, save :: job
 
+   ! PRNG Me
+   !integer(INT64) :: rng_seed
+   integer :: rng_seed
+   type(mt_state), allocatable :: mts(:)
+   type(mt_state) :: mts_rep
+
    ! Condition
    real(PREC), save :: tempK
    real(PREC), save :: kT
-   integer(INT64), save :: rng_seed
 
    real(PREC), allocatable :: xyz(:,:,:)     ! (3, nmp, nrep_proc)
    real(PREC), allocatable :: velos(:,:,:)   ! (3, nmp, nrep_proc)

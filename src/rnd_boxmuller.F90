@@ -1,10 +1,13 @@
-function rnd_boxmuller()
+function rnd_boxmuller(irep)
 
    use const, only : PREC
-   use mt19937_64
+   !use mt19937_64
+   use mt_stream
+   use var_state, only : mts
 
    implicit none
 
+   integer, intent(in) :: irep
    real(PREC) :: rnd_boxmuller
 
    logical, save :: flg_first = .true.
@@ -24,8 +27,10 @@ function rnd_boxmuller()
       flg_stored = .true.
 
       do
-         vx = 2.0e0_PREC * genrand64_real1() - 1.0e0_PREC
-         vy = 2.0e0_PREC * genrand64_real1() - 1.0e0_PREC
+         !vx = 2.0e0_PREC * genrand64_real1() - 1.0e0_PREC
+         !vy = 2.0e0_PREC * genrand64_real1() - 1.0e0_PREC
+         vx = 2.0e0_PREC * genrand_double1(mts(irep)) - 1.0e0_PREC
+         vy = 2.0e0_PREC * genrand_double1(mts(irep)) - 1.0e0_PREC
 
          r2 = vx*vx + vy*vy
          if(r2 < 1.0e0_PREC .and. r2 > 0.0e0_PREC) exit

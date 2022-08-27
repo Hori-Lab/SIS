@@ -2,7 +2,7 @@ set(SIS_EXE sis)
 
 add_executable(${SIS_EXE}
     const.F90 const_idx.F90 const_phys.F90
-    mt19937-64.F90 rnd_boxmuller.F90
+    rnd_boxmuller.F90
     dcd.F90
     pbc.F90 progress.F90
     var_parallel.F90 var_replica.F90
@@ -10,7 +10,7 @@ add_executable(${SIS_EXE}
     read_force_field.F90 read_input.F90 read_pdb.F90 read_xyz.F90 read_fasta.F90
     read_anneal.F90
     write_rst.F90 read_rst.F90
-    init_out_files.F90 init_replica.F90 init_ele.F90
+    init_mts.F90 init_out_files.F90 init_replica.F90 init_ele.F90
     init_sequence.F90 init_structure.F90 gen_random_coil.F90
     list_local.F90 list_bp.F90
     list_exv.F90 list_ele.F90
