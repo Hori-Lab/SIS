@@ -5,7 +5,8 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, JOBT
    use var_potential, only : flg_ele
-   use var_state, only : restarted, xyz, tempK, kT, job, nthreads, rng_seed, opt_anneal
+   use var_state, only : restarted, xyz, tempK, kT, job, nthreads, rng_seed, &
+                         opt_anneal, anneal_tempK, tempK
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_out, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE, &
                       cfile_prefix, cfile_out, hdl_rst
    use mt19937_64, only : init_genrand64
@@ -81,6 +82,8 @@ program sis
          print *, 'Error in reading annealing-schedule file'
          stop (2)
       endif
+
+      tempK = anneal_tempK(1)
    endif
 
 

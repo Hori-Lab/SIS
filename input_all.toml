@@ -39,6 +39,9 @@ type = "MD"
 
 [condition]
 tempK = 310.15
+   # Specify the simulation temperature in Kelvin.
+   # This line will be ignored if opt_anneal = 1.
+
 rng_seed = 123
 
 opt_anneal = 0
