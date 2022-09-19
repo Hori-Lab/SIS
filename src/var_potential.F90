@@ -36,6 +36,7 @@ module var_potential
    integer,    save :: max_bp_per_nt
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
    integer,    save :: bp_model
+   integer, allocatable, save :: bp_map_0(:,:)
    integer, allocatable, save :: bp_map(:,:)
    real(PREC), allocatable, save :: bp_map_dG(:,:)
    real(PREC), save :: bp_cutoff_energy  ! 0.01 kcal/mol

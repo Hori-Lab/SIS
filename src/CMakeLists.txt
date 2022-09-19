@@ -11,7 +11,7 @@ add_executable(${SIS_EXE}
     write_rst.F90 read_rst.F90
     list_local.F90 list_bp.F90 list_bp2.F90
     list_exv.F90 list_ele.F90
-    set_sequence.F90 set_bp_map.F90
+    set_sequence.F90 init_bp_map.F90
     set_ele.F90
     energy.F90
     energy_kinetic.F90

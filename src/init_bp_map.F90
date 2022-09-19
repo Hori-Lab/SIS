@@ -1,11 +1,12 @@
-subroutine set_bp_map()
+subroutine init_bp_map()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const
    use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
-   use var_potential, only : bp_model, bp_map, bp_min_loop, bp_map_dG, NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG
+   use var_potential, only : bp_model, bp_map_0, bp_map, bp_min_loop, bp_map_dG, &
+                             NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG
    use var_state, only : tempK
 
    implicit none
@@ -18,7 +19,9 @@ subroutine set_bp_map()
    character(len=1) :: nt
 
    allocate(bp_map(nmp, nmp))
+   allocate(bp_map_0(nmp, nmp))
    bp_map(:,:) = 0
+   bp_map_0(:,:) = 0
 
    if (bp_model == 4 .or. bp_model == 5) then
       allocate(bp_map_dG(nmp, nmp))
@@ -71,6 +74,9 @@ subroutine set_bp_map()
                bp_map(jmp, imp) = BPT%GU
             endif
 
+            bp_map_0(imp, jmp) = bp_map(imp, jmp)
+            bp_map_0(jmp, imp) = bp_map(jmp, imp)
+
             if (bp_map(imp, jmp) > 0) then
                if (bp_model == 4) then
                    
@@ -93,6 +99,11 @@ subroutine set_bp_map()
                      !print '(i5,1x,i5,3x,7a1,3x,f6.3)', imp, jmp, &
                      !          seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
                      !          seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
+
+                  else
+                     bp_map(imp, jmp) = 0
+                     bp_map(jmp, imp) = 0
+
                   endif
 
                else if (bp_model == 5) then
@@ -121,6 +132,11 @@ subroutine set_bp_map()
                      print '(i5,1x,i5,3x,7a1,3x,f8.3)', imp, jmp, &
                                seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
                                seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
+
+                  else
+                     bp_map(imp, jmp) = 0
+                     bp_map(jmp, imp) = 0
+
                   endif
                endif
             endif
@@ -265,6 +281,10 @@ subroutine set_bp_map()
                print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
 
             endif
+
+            bp_map_0(imp, jmp) = bp_map(imp, jmp)
+            bp_map_0(jmp, imp) = bp_map(jmp, imp)
+
          endif
       enddo
 
@@ -308,4 +328,4 @@ contains
 
    end function is_complement
 
-endsubroutine set_bp_map
+endsubroutine init_bp_map
