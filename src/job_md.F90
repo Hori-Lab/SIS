@@ -82,25 +82,9 @@ subroutine job_md()
             write(*,*) 'Error: Unknown seq type, ', seq(lmp_mp(imp), ichain_mp(imp)), ' imp=',imp
             stop (2)
       endselect
-
-      !fric(imp) = v * mass(imp)
-      !if (imp == 1) then
-      !   write(*,*) 'fric = ', fric(imp)
-      !endif
-
-      !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
-      c1 = 0.5 * dt * fric(imp) / mass(imp)
-      c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
-
-      ! md_coef(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
-      md_coef(1, imp) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric(imp) * BOLTZ_KCAL_MOL * tempK * dt)
-      ! md_coef(2) = a
-      md_coef(2, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
-      ! md_coef(3) = sqrt(b) h / m
-      md_coef(3, imp) = c2 * dt / mass(imp)
-      ! md_coef(4) = sqrt(b) h
-      md_coef(4, imp) = c2 * dt
    enddo
+
+   call set_md_coef()
 
 
    !! Set up the initial state
@@ -205,6 +189,9 @@ subroutine job_md()
       endif
 
       tempK = anneal_tempK(ianneal)
+
+      call set_md_coef()
+      call set_bp_map()
 
       if (ianneal < nanneal) then
          istep_anneal_next = anneal_step(ianneal+1)
@@ -341,6 +328,9 @@ subroutine job_md()
          ianneal = ianneal + 1
          tempK = anneal_tempK(ianneal)
 
+         call set_md_coef()
+         call set_bp_map()
+
          if (ianneal < nanneal) then
             istep_anneal_next = anneal_step(ianneal+1)
          else
@@ -369,5 +359,29 @@ subroutine job_md()
    call fdcd%close()
 
    close(hdl_out)
+
+contains
+
+   subroutine set_md_coef()
+      do imp = 1, nmp
+         !fric(imp) = v * mass(imp)
+         !if (imp == 1) then
+         !   write(*,*) 'fric = ', fric(imp)
+         !endif
+
+         !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
+         c1 = 0.5 * dt * fric(imp) / mass(imp)
+         c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
+
+         ! md_coef(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
+         md_coef(1, imp) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric(imp) * BOLTZ_KCAL_MOL * tempK * dt)
+         ! md_coef(2) = a
+         md_coef(2, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
+         ! md_coef(3) = sqrt(b) h / m
+         md_coef(3, imp) = c2 * dt / mass(imp)
+         ! md_coef(4) = sqrt(b) h
+         md_coef(4, imp) = c2 * dt
+      enddo
+   endsubroutine set_md_coef
 
 endsubroutine job_md
