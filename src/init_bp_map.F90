@@ -3,7 +3,7 @@ subroutine init_bp_map()
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const
    use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
-   use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
+   use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl, cfile_prefix
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
    use var_potential, only : bp_model, bp_map_0, bp_map, bp_min_loop, bp_map_dG, &
                              NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG
@@ -32,6 +32,12 @@ subroutine init_bp_map()
    ! All pairwise
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (bp_model == 1 .or. bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
+
+      if (bp_model == 4 .or. bp_model == 5) then
+         iopen_hdl = iopen_hdl + 1
+         hdl = iopen_hdl
+         open(hdl, file=trim(cfile_prefix)//'.bpcoef', status='unknown', action='write')
+      endif
 
       do imp = 1, nmp-1
          i = lmp_mp(imp)
@@ -96,9 +102,9 @@ subroutine init_bp_map()
                   if (dG < 0.0_PREC) then
                      bp_map_dG(imp, jmp) = dG
                      bp_map_dG(jmp, imp) = dG
-                     !print '(i5,1x,i5,3x,7a1,3x,f6.3)', imp, jmp, &
-                     !          seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
-                     !          seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
+                     write(hdl, '(i5,1x,i5,3x,7a1,3x,f6.3)') imp, jmp, &
+                               seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
+                               seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
 
                   else
                      bp_map(imp, jmp) = 0
@@ -129,7 +135,7 @@ subroutine init_bp_map()
                   if (dG < 0.0_PREC) then
                      bp_map_dG(imp, jmp) = dG
                      bp_map_dG(jmp, imp) = dG
-                     print '(i5,1x,i5,3x,7a1,3x,f8.3)', imp, jmp, &
+                     write(hdl, '(i5,1x,i5,3x,7a1,3x,f8.3)') imp, jmp, &
                                seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
                                seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
 
@@ -142,6 +148,11 @@ subroutine init_bp_map()
             endif
          enddo
       enddo
+
+      if (bp_model == 4 .or. bp_model == 5) then
+         close(hdl)
+         iopen_hdl = iopen_hdl - 1
+      endif
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Specific pairs given in CT file
