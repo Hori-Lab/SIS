@@ -125,7 +125,7 @@ program sis
    flush(6)
 
    !! Construct possible combinations of basepairs
-   call init_bp_map()
+   call init_bp()
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

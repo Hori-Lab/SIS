@@ -2,7 +2,8 @@ subroutine set_ele()
 
    use const
    use const_phys, only : PI, EPS0, BOLTZ_J, N_AVO, ELE, JOUL2KCAL_MOL
-   use var_state, only : ionic_strength, lambdaD, diele, length_per_charge, tempk
+   use var_state, only : ionic_strength, lambdaD, diele, length_per_charge, &
+                         tempK, temp_independent, diele_dTcoef, temp_ref
    use var_potential, only : ele_coef, ele_cutoff_type, ele_cutoff_inp, ele_cutoff
    use var_top, only : nmp, inp_no_charge, has_charge, charge
 
@@ -32,10 +33,25 @@ subroutine set_ele()
    lb_kT = 332.0637 / diele
    lb = lb_kT / temp_kT
    Zp = length_per_charge / lb
+
+   if (temp_independent /== 0) then
+      print '(a)', 'Error: temp_independnet /= 0 not implemented in _HTN_CONSISTENT (set_ele.F90)'
+      flush(6)
+      error stop
+   endif
+
 #else
    ! Default
-   Tc = tempk - 273.15_PREC
-   diele =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
+   if (temp_independent == 0) then
+      Tc = tempk - 273.15_PREC
+      diele =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
+
+   else
+      Tc = temp_ref - 273.15_PREC
+      diele =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
+      diele_dTcoef = 1.0_PREC + temp_ref / diele &
+                    * (MM_B + 2.0_PREC*MM_C*Tc + 3.0_PREC*MM_D*Tc*Tc)
+   endif
 
    ! Bjerrum length
    lb = ELE * ELE / (4.0e0_PREC * PI * EPS0 * diele * BOLTZ_J * tempk) * 1.0e10_PREC

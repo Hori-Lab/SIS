@@ -39,6 +39,7 @@ module var_potential
    integer, allocatable, save :: bp_map_0(:,:)
    integer, allocatable, save :: bp_map(:,:)
    real(PREC), allocatable, save :: bp_map_dG(:,:)
+   real(PREC), save :: bp_cutoff_dist
    real(PREC), save :: bp_cutoff_energy  ! 0.01 kcal/mol
    integer,    save :: bp_seqdep
       ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.

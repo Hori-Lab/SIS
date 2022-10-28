@@ -14,13 +14,14 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, ele_cutoff, ele_nl_cut2, bp_paras, bp_cutoff_energy
+   use var_potential, only : wca_nl_cut2, wca_sigma, bp_nl_cut2, ele_cutoff, ele_nl_cut2, bp_paras, &
+                             bp_cutoff_energy, bp_cutoff_dist
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   integer :: i, imp, bptype
+   integer :: i, imp
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
@@ -30,7 +31,6 @@ subroutine job_md()
    real(PREC) :: rnd_bm(3, nmp)
    real(PREC) :: accels_pre(3)
    real(PREC) :: d2, d2max, d2max_2nd
-   real(PREC) :: bp_bond_r, bp_cutoff_dist
    character(CHAR_FILE_PATH), save :: cfile_dcd_out
    logical :: flg_stop
 
@@ -119,35 +119,6 @@ subroutine job_md()
             accels(i, imp) = md_coef(1, imp) * rnd_boxmuller()
          enddo
       end do
-   endif
-
-   ! Calcuate BP cutoff
-   ! If bp_cutoff_energy is not specified in ff, the default value is 0.01 (kcal/mol).
-   if (abs(bp_cutoff_energy) <= epsilon(bp_cutoff_energy)) then
-      ! When bp_cutoff_energy = 0.0, treat it as in the original way Hung did.
-      bp_cutoff_dist = 18.0_PREC
-
-      do bptype = 1, BPT%MAX
-         bp_paras(bptype)%cutoff_ddist = bp_cutoff_dist - 13.8_PREC
-      enddo
-
-   else
-      bp_cutoff_dist = 0.0_PREC
-      bp_bond_r = 0.0_PREC
-
-      do bptype = 1, BPT%MAX
-         bp_paras(bptype)%cutoff_ddist = sqrt(log(abs(bp_paras(bptype)%U0 / bp_cutoff_energy)) / bp_paras(bptype)%bond_k)
-
-         ! To get the maximum bond_r and cutoff_ddist
-         if (bp_paras(bptype)%cutoff_ddist > bp_cutoff_dist) then
-            bp_cutoff_dist = bp_paras(bptype)%cutoff_ddist
-         endif
-         if (bp_paras(bptype)%bond_r > bp_bond_r) then
-            bp_bond_r = bp_paras(bptype)%bond_r
-         endif
-      enddo
-      bp_cutoff_dist = bp_bond_r + bp_cutoff_dist
-
    endif
 
    ! Neighbor list

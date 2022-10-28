@@ -61,6 +61,11 @@ module var_state
    integer :: ianneal
    integer(INT64) :: istep_anneal_next
 
+   ! Temperature independent potential
+   integer, save :: temp_independent
+   real(PREC), save :: temp_ref
+   real(PREC), save :: diele_dTcoef
+
    ! variable box
    logical, save :: flg_variable_box
    integer(INT64), save :: variable_box_step

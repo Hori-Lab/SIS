@@ -13,7 +13,7 @@ subroutine read_input(cfilepath, stat)
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
                       cfile_ct_in, cfile_bpseq_in
-   use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, &
+   use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  temp_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, stop_wall_time_sec, fix_com_origin, &
@@ -192,6 +192,13 @@ subroutine read_input(cfilepath, stat)
    print '(a,g15.8)', '# Condition, tempK: ', tempK
    print '(a,i16)', '# Condition, rng_seed: ', rng_seed
    print '(a)', '#'
+
+   temp_independent = 0
+   call get_value(group, "temp_independent", temp_independent)
+
+   if (temp_independent > 0) then
+      call get_value(group, "temp_ref", temp_ref)
+   endif
 
    !################# Repeat sequence #################
    if (.not. allocated(cfile_fasta_in)) then

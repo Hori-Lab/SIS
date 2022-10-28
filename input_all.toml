@@ -49,6 +49,13 @@ opt_anneal = 0
    # 0: No annealing (default)
    # 1: Annealing ("anneal" is required in [files.in])
 
+temp_independent = 0
+   # (optional) temperature independent potential
+   # 0: Use the original (temperature-dependent) potential. (default)
+   # 1: Use temperature-independent potential. temp_ref is required.
+
+temp_ref = 328.15
+
 [repeat]
 n_repeat = 47
 n_chain = 64

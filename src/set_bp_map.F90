@@ -6,7 +6,7 @@ subroutine set_bp_map()
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
    use var_potential, only : bp_model, bp_map, bp_map_0, bp_min_loop, bp_map_dG, &
                              NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG
-   use var_state, only : tempK
+   use var_state, only : tempK, temp_independent
 
    implicit none
 
@@ -56,7 +56,14 @@ subroutine set_bp_map()
                dS = dS + 0.5 * (NN_dS(seqt2nnt(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain))) - dS0)
             endif
 
-            dG = coef_dG * (dH - tempK * 1.0e-3_PREC * dS)
+
+            ! Default
+            if (temp_independent == 0) then
+               dG = coef_dG * (dH - tempK * 1.0e-3_PREC * dS)
+            else
+               dG = coef_dG * dH
+            endif
+
 
             if (dG < 0.0_PREC) then
                bp_map_dG(imp, jmp) = dG

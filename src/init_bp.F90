@@ -1,4 +1,4 @@
-subroutine init_bp_map()
+subroutine init_bp()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const
@@ -6,16 +6,18 @@ subroutine init_bp_map()
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl, cfile_prefix
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
    use var_potential, only : bp_model, bp_map_0, bp_map, bp_min_loop, bp_map_dG, &
-                             NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG
-   use var_state, only : tempK
+                             NN_dG, NN_dH, NN_dS, dH0, dS0, coef_dG, &
+                             bp_paras, bp_cutoff_energy, bp_cutoff_dist
+   use var_state, only : tempK, temp_independent
 
    implicit none
 
-   integer :: imp, jmp
+   integer :: imp, jmp, bptype
    integer :: i, j, ichain, jchain
    integer :: l, n, idummy
    integer :: istat, hdl
    real(PREC) :: dG, dH, dS
+   real(PREC) :: bp_bond_r
    character(len=1) :: nt
 
    allocate(bp_map(nmp, nmp))
@@ -130,7 +132,12 @@ subroutine init_bp_map()
                      dS = dS + 0.5 * (NN_dS(seqt2nnt(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain))) - dS0)
                   endif
 
-                  dG = coef_dG * (dH - tempK * 1.0e-3_PREC * dS)
+                  ! Default
+                  if (temp_independent == 0) then
+                     dG = coef_dG * (dH - tempK * 1.0e-3_PREC * dS)
+                  else
+                     dG = coef_dG * dH
+                  endif
 
                   if (dG < 0.0_PREC) then
                      bp_map_dG(imp, jmp) = dG
@@ -307,6 +314,36 @@ subroutine init_bp_map()
       flush(output_unit)
    endif
 
+
+   ! Calcuate BP cutoff
+   ! If bp_cutoff_energy is not specified in ff, the default value is 0.01 (kcal/mol).
+   if (abs(bp_cutoff_energy) <= epsilon(bp_cutoff_energy)) then
+      ! When bp_cutoff_energy = 0.0, treat it as in the original way Hung did.
+      bp_cutoff_dist = 18.0_PREC
+
+      do bptype = 1, BPT%MAX
+         bp_paras(bptype)%cutoff_ddist = bp_cutoff_dist - 13.8_PREC
+      enddo
+
+   else
+      bp_cutoff_dist = 0.0_PREC
+      bp_bond_r = 0.0_PREC
+
+      do bptype = 1, BPT%MAX
+         bp_paras(bptype)%cutoff_ddist = sqrt(log(abs(bp_paras(bptype)%U0 / bp_cutoff_energy)) / bp_paras(bptype)%bond_k)
+
+         ! To get the maximum bond_r and cutoff_ddist
+         if (bp_paras(bptype)%cutoff_ddist > bp_cutoff_dist) then
+            bp_cutoff_dist = bp_paras(bptype)%cutoff_ddist
+         endif
+         if (bp_paras(bptype)%bond_r > bp_bond_r) then
+            bp_bond_r = bp_paras(bptype)%bond_r
+         endif
+      enddo
+      bp_cutoff_dist = bp_bond_r + bp_cutoff_dist
+
+   endif
+
 contains
 
    logical function is_complement(s1, s2)
@@ -339,4 +376,4 @@ contains
 
    end function is_complement
 
-endsubroutine init_bp_map
+endsubroutine init_bp
