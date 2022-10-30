@@ -23,7 +23,6 @@ subroutine gen_random_coil(nmp, xyz, origin)
    real(PREC), parameter :: EV = 12.0_PREC    ! Excluded volume distance
    real(PREC), parameter :: EV2 = EV * EV
 
-
    ! Coordinates for the first three beads.
    xyz(:, 1) = origin(:)
    xyz(:, 2) = origin(:) + (/BL, 0.0_PREC, 0.0_PREC/)
@@ -32,8 +31,6 @@ subroutine gen_random_coil(nmp, xyz, origin)
    imp = 4
 
    do while (imp <= nmp)
-      print *, imp
-      flush(6)
       ! Generate a dihedral angle at random
       !dih = -PI + genrand64_real1() * 2 * PI
       dih = -PI + genrand_double1(mts(0)) * 2 * PI
