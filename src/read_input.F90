@@ -14,7 +14,7 @@ subroutine read_input(cfilepath)
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
                       cfile_ct_in, cfile_bpseq_in
-   use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  temp_ref, &
+   use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  tempK_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, stop_wall_time_sec, fix_com_origin, &
@@ -129,7 +129,7 @@ subroutine read_input(cfilepath)
          call sis_abort()
       endif
 
-      if (job == JOBT%MD .or. job == JOBT%CHECK_FORCE) then
+      if (job == JOBT%MD) then
          if (.not. flg_in_pdb .and. .not. flg_in_xyz) then
             flg_gen_init_struct = .True.
             print '(a)', 'Initial structure is not specified by XYZ or PDB. Random coil structure will be generated.'
@@ -243,7 +243,7 @@ subroutine read_input(cfilepath)
       call get_value(group, "temp_independent", temp_independent)
 
       if (temp_independent > 0) then
-         call get_value(group, "temp_ref", temp_ref)
+         call get_value(group, "tempK_ref", tempK_ref)
       endif
 
       !################# Repeat sequence #################
@@ -524,7 +524,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(opt_anneal, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(tempK, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(temp_independent, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(temp_ref, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(tempK_ref, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(nrepeat, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(nchains, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -611,7 +611,7 @@ subroutine read_input(cfilepath)
    print '(a,i16)', '# Condition, rng_seed: ', rng_seed
    print '(a,i16)', '# Condition, temp_independent: ', temp_independent
    if (temp_independent /= 0) then
-      print '(a,g15.8)', '# Condition, temp_ref: ', temp_ref
+      print '(a,g15.8)', '# Condition, tempK_ref: ', tempK_ref
    endif
    print '(a)', '#'
 
