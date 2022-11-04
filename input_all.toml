@@ -54,7 +54,7 @@ temp_independent = 0
    # 0: Use the original (temperature-dependent) potential. (default)
    # 1: Use temperature-independent potential. temp_ref is required.
 
-temp_ref = 328.15
+tempK_ref = 328.15
 
 [repeat]
 n_repeat = 47

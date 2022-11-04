@@ -3,7 +3,7 @@ subroutine set_ele()
    use const
    use const_phys, only : PI, EPS0, BOLTZ_J, N_AVO, ELE, JOUL2KCAL_MOL
    use var_state, only : ionic_strength, lambdaD, diele, length_per_charge, &
-                         tempK, temp_independent, diele_dTcoef, temp_ref
+                         tempK, temp_independent, diele_dTcoef, tempK_ref
    use var_potential, only : ele_coef, ele_cutoff_type, ele_cutoff_inp, ele_cutoff
    use var_top, only : nmp, inp_no_charge, has_charge, charge
 
@@ -47,9 +47,9 @@ subroutine set_ele()
       diele =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
 
    else
-      Tc = temp_ref - 273.15_PREC
+      Tc = tempK_ref - 273.15_PREC
       diele =  MM_A + MM_B*Tc + MM_C*Tc*Tc + MM_D*Tc*Tc*Tc
-      diele_dTcoef = 1.0_PREC + temp_ref / diele &
+      diele_dTcoef = 1.0_PREC + tempK_ref / diele &
                     * (MM_B + 2.0_PREC*MM_C*Tc + 3.0_PREC*MM_D*Tc*Tc)
    endif
 

@@ -63,7 +63,7 @@ module var_state
 
    ! Temperature independent potential
    integer, save :: temp_independent
-   real(PREC), save :: temp_ref
+   real(PREC), save :: tempK_ref
    real(PREC), save :: diele_dTcoef
 
    ! variable box
