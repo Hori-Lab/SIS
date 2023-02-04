@@ -136,3 +136,7 @@ step = 1000
 change_x = -1.0
 change_y = -1.0
 change_z = -1.0
+
+[stage]
+sigma = 10.0
+epsilon = 1.2

@@ -99,5 +99,10 @@ module var_potential
 
    real(PREC), save :: ele_nl_cut2
 
+   ! Stage potential parameters
+   logical, save :: flg_stage
+   real(PREC), save :: stage_sigma ! = wca_sigma = 10.0 Angstrom for now
+   real(PREC), save :: stage_eps ! = 1.2 kcal/mol
+
 
 end module var_potential
