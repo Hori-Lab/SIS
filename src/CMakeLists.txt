@@ -27,6 +27,7 @@ add_executable(${SIS_EXE}
     neighbor_list.F90
     job_md.F90 job_dcd.F90 job_check_force.F90
     main.F90
+    warning_stage.F90
 )
 
 add_dependencies(${SIS_EXE} toml-f-lib)

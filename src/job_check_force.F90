@@ -6,6 +6,7 @@ subroutine job_check_force()
    use pbc, only : flg_pbc, pbc_wrap
    use var_top, only : nmp
    use var_state, only : xyz, energies, forces, flg_bp_energy
+   use var_potential, only: flg_stage
    use var_io, only : hdl_out, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use mt19937_64
 
@@ -30,6 +31,8 @@ subroutine job_check_force()
    else
       error stop 'Initial structure not found in job_check_force.'
    endif
+   
+   if (flg_stage) call check_int_stage()
 
    if (flg_pbc) then
       call pbc_wrap()

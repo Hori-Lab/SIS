@@ -15,7 +15,7 @@ subroutine job_md()
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
    use var_potential, only : wca_nl_cut2, stage_sigma, wca_sigma, bp_nl_cut2, ele_cutoff, ele_nl_cut2, bp_paras, &
-                             bp_cutoff_energy, bp_cutoff_dist
+                             bp_cutoff_energy, bp_cutoff_dist, flg_stage
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_prefix, cfile_out, cfile_pdb_ini, cfile_xyz_ini
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -104,6 +104,8 @@ subroutine job_md()
       else
          error stop 'Initial structure not found in job_md'
       endif
+      
+      if (flg_stage) call check_int_stage()
 
       ! Set up initial velocities by Maxwell–Boltzmann distribution
       do imp = 1, nmp
