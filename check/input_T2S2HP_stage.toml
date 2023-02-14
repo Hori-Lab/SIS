@@ -1,0 +1,49 @@
+title = "sis input"
+
+[job]
+type = "MD"
+#type = "CHECK_FORCE"
+
+[files]
+      [files.in]
+      #ff = "./rna_cg1_triplet.ff"
+      ff = "./sis_dih_ReB_NN.ff"
+      fasta = "T2S2HP.fasta"
+      xyz_ini = "T2S2HP_random.xyz"
+
+      [files.out]
+      types = ["bpe", ]
+      prefix = "./test_T2S2HP_stage"
+
+[condition]
+      #tempK = 348.15
+      tempK = 300.00
+      rng_seed = 123
+
+[MD]
+integrator = "GJF-2GJ"
+dt = 0.05
+nstep = 500000
+#nstep = 1000000000
+nstep_save = 1000
+neighbor_list_margin = 10.0
+viscosity_Pas = 0.00001
+
+[Electrostatic]
+ionic_strength = 0.15
+cutoff_type = 2
+cutoff = 10.0
+#no_charge = [1, 27]
+length_per_charge = 4.38178046
+
+[Basepair]
+model = 5
+min_loop = 3
+max_bp_per_nt = 1
+
+[Progress]
+step = 1000
+
+[stage]
+sigma = 10.0
+epsilon = 1.2
