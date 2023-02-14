@@ -1,5 +1,5 @@
-set term postscript color 20 lw 4 solid
-set out 'stage.ps'
+set term pdfcairo color solid font "Arial, 12" lw 2
+set out 'stage.pdf'
 
 set grid
 set xr [5:20]
