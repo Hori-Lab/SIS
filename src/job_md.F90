@@ -21,7 +21,7 @@ subroutine job_md()
 
    implicit none
 
-   integer :: i, imp
+   integer :: i, imp, icol
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp)
    !real(PREC) :: velo(3, nmp), accel1(3, nmp), accel2(3, nmp)
@@ -33,9 +33,13 @@ subroutine job_md()
    real(PREC) :: d2, d2max, d2max_2nd
    character(CHAR_FILE_PATH), save :: cfile_dcd_out
    logical :: flg_stop
+   character(len=29) :: out_fmt
 
    ! Function
    real(PREC) :: rnd_boxmuller
+
+   ! Format in .out file
+   write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%MAX+1, '(1x, g13.6))'
 
    allocate(mass(nmp))
    allocate(xyz(3, nmp))
@@ -186,10 +190,18 @@ subroutine job_md()
 
    ! Open .out file
    open(hdl_out, file = cfile_out, status = 'replace', action = 'write', form='formatted')
+   ! Write header to .out file
    write(hdl_out, '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond      (6)Eangl      (7)Edih      '
                                        !1234567890 123456 1234567890123 1234567890123 1234567890123 1234567890123 1234567890123'
-   write(hdl_out, '(a)') ' (8)Ebp        (9)Eexv       (10)Eele      (11)Estage'
-                         ! 1234567890123 1234567890123 1234567890123 1234567890123
+   write(hdl_out, '(a)', advance='no') ' (8)Ebp        (9)Eexv       (10)Eele     '
+                                       ! 1234567890123 1234567890123 1234567890123 1234567890123
+   icol = 10
+   if (flg_stage) then
+      icol = icol + 1
+      write(hdl_out, '(a,i2,a)', advance='no') ' (', icol, ')Estage   '
+                                               ! 1   23     4567890123
+   endif
+   write(hdl_out, *) ''
 
    ! Output initial structure
    if (restarted) then
@@ -203,7 +215,12 @@ subroutine job_md()
 
    else
       ! At istep = 0 (not restarted), write both .out and DCD
-      write(hdl_out, '(i10, 1x, f6.2, 9(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+      write(hdl_out, out_fmt, advance='no') istep, tempK, Ekinetic, (energies(i), i=0,ENE%ELE)
+      if (flg_stage) then
+         write(hdl_out, '(1x, g13.6)', advance='no') energies(ENE%STAGE)
+      endif
+      write(hdl_out, *) ''
+
       call fdcd%write_onestep(nmp, xyz, fix_com_origin)
    endif
 
@@ -282,7 +299,12 @@ subroutine job_md()
       if (mod(istep, nstep_save) == 0) then
          call energy()
          call energy_kinetic()
-         write(hdl_out, '(i10, 1x, f6.2, 8(1x,g13.6))') istep, tempK, Ekinetic, (energies(i), i=0,ENE%MAX)
+         write(hdl_out, out_fmt, advance='no') istep, tempK, Ekinetic, (energies(i), i=0,ENE%ELE)
+         if (flg_stage) then
+            write(hdl_out, '(1x, g13.6)', advance='no') energies(ENE%STAGE)
+         endif
+         write(hdl_out, *) ''
+
          call fdcd%write_onestep(nmp, xyz, fix_com_origin)
       endif
 
