@@ -19,7 +19,8 @@ subroutine read_input(cfilepath, stat)
                          rng_seed, stop_wall_time_sec, fix_com_origin, &
                          ionic_strength, length_per_charge
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
-                             bp_min_loop, max_bp_per_nt, bp_model
+                             bp_min_loop, max_bp_per_nt, bp_model, &
+                             flg_stage, stage_sigma, stage_eps
    use var_top, only : nrepeat, nchains, inp_no_charge
   
    implicit none
@@ -476,6 +477,18 @@ subroutine read_input(cfilepath, stat)
       print '(a,g15.8)', '# variable_box change_x: ', variable_box_change(1)
       print '(a,g15.8)', '# variable_box change_y: ', variable_box_change(2)
       print '(a,g15.8)', '# variable_box change_z: ', variable_box_change(3)
+      print '(a)', '#'
+   endif
+
+   !################# stage #################
+   flg_stage = .False.
+   call get_value(table, "stage", group, requested=.False.)
+   if (associated(group)) then 
+      flg_stage = .True.
+      call get_value(group, "sigma", stage_sigma)
+      call get_value(group, "epsilon", stage_eps)
+      print '(a,g15.8)', '# stage sigma: ', stage_sigma
+      print '(a,g15.8)', '# stage epsilon: ', stage_eps
       print '(a)', '#'
    endif
 
