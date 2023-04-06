@@ -37,7 +37,7 @@ no_charge = [1, 27]
 length_per_charge = 4.38178046
 
 [Basepair]
-model = 2
+model = 1
 min_loop_size = 3
 max_bp_per_nt = -1
 

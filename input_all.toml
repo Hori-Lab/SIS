@@ -27,7 +27,8 @@ type = "MD"
          # Annealing-schedule file.
          # Required only when opt_anneal > 0 in [condition].
 
-      ## Either ct or bpseq is required when model = 2 in [Basepair]
+      ## Specific secondary structure.
+      ## If either 'ct' or 'bpseq' is given, only base pairs that constitute the secondary structure will be enabled.
       ct = "./test.ct"
          # CT (Connectivity Table) file
       bpseq = "./test.bpseq"
@@ -95,9 +96,11 @@ fix_com_origin = 0
 
 [Basepair]
 model = 1
-   # Secondary structure allowed.
-   # 1: All pairwise (default).
-   # 2: Specific pairs given in CT/BPSEQ file. (ct or bpseq is required in [files.in].)
+   # 1: The model by Nguyen, Hori, Thirumalai (2022) Nat. Chem.
+   # 2: (obsolete)
+　 # 3: Same as 1 but not allowing isolated base pairs.
+   # 4: Base pair potential U0 is calcualted by dG values of the nearest neighbour model.
+   # 5: Base pair potential U0 is calcualted by dH and dS values of the nearest neighbour model.
 
 min_loop_size = 3
    # Minimum loop size allowed. The default value is 3 if this option is omitted.
