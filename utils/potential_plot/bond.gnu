@@ -1,5 +1,5 @@
-set term postscript color 20 lw 4 solid
-set out 'bond.ps'
+set term pdfcairo color solid font "Arial, 12" lw 2
+set out 'bond.pdf'
 
 #kr = 15.0
 r0 = 5.84

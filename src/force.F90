@@ -4,8 +4,7 @@ subroutine force(irep, forces)
    use const
    use const_idx, only : ENE
    use var_parallel, only : nthreads
-   !use var_state, only : forces
-   use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, bp_model
+   use var_potential, only : flg_stage, flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, bp_model
    use var_top, only : nmp
 
    implicit none
@@ -53,6 +52,8 @@ subroutine force(irep, forces)
    call force_wca(irep, forces_t(1,1,tn))
 
    if (flg_ele) call force_ele_DH(irep, forces_t(1,1,tn))
+
+   if (flg_stage) call force_stage(irep, forces_t(1,1,tn))
 
 !$omp end parallel
 

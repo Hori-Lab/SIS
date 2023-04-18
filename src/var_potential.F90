@@ -96,5 +96,10 @@ module var_potential
    integer, save :: nele_max
    integer, allocatable, save :: ele_mp(:, :, :)  ! (2, nele_max, nrep_proc)
 
+   ! Stage potential parameters
+   logical, save :: flg_stage
+   real(PREC), save :: stage_sigma ! = wca_sigma = 10.0 Angstrom for now
+   real(PREC), save :: stage_eps ! = 1.2 kcal/mol
+
 
 end module var_potential

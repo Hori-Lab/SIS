@@ -30,95 +30,9 @@ subroutine init_bp()
    endif
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! All pairwise
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   if (bp_model == 1 .or. bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
-
-      do imp = 1, nmp-1
-         i = lmp_mp(imp)
-         ichain = ichain_mp(imp)
-
-         ! Either 5' or 3' end
-         if (i == 1 .or. i == nmp_chain(ichain)) cycle
-
-         do jmp = imp+1, nmp
-            j = lmp_mp(jmp)
-            jchain = ichain_mp(jmp)
-
-            ! Either 5' or 3' end
-            if (j == 1 .or. j == nmp_chain(jchain)) cycle
-
-            ! Minimum loop length
-            if (ichain == jchain .and. i + bp_min_loop >= j) cycle
-
-            if (bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
-               ! Isolated base pair not allowed
-               if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
-                   .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
-                  cycle
-               endif
-            endif
-
-            if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
-                (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
-               bp_map(imp, jmp) = BPT%GC
-               bp_map(jmp, imp) = BPT%GC
-
-            else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
-                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
-               bp_map(imp, jmp) = BPT%AU
-               bp_map(jmp, imp) = BPT%AU
-
-            else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
-                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
-               bp_map(imp, jmp) = BPT%GU
-               bp_map(jmp, imp) = BPT%GU
-            endif
-
-!            if (bp_map(imp, jmp) > 0) then
-!               if (bp_model == 4) then
-!
-!                  dG = 0.0_PREC
-!                  if (i == 2 .or. j+1 == nmp_chain(jchain)) then
-!                     continue
-!                  else if (is_complement(seq(i-1, ichain), seq(j+1, jchain))) then
-!                     dG = 0.5 * NN_dG(seqt2nnt(seq(i-1, ichain), seq(i, ichain), seq(j+1, jchain), seq(j, jchain)))
-!                  endif
-!
-!                  if (i+1 == nmp_chain(ichain) .or. j == 2) then
-!                     continue
-!                  else if (is_complement(seq(i+1, ichain), seq(j-1, jchain))) then
-!                     dG = dG + 0.5 * NN_dG(seqt2nnt(seq(i, ichain), seq(i+1, ichain), seq(j, jchain), seq(j-1, jchain)))
-!                  endif
-!
-!                  if (dG < 0.0_PREC) then
-!                     bp_map_dG(imp, jmp) = dG
-!                     bp_map_dG(jmp, imp) = dG
-!                     write(hdl, '(i5,1x,i5,3x,7a1,3x,f6.3)') imp, jmp, &
-!                               seqt2char(seq(i-1,ichain)), seqt2char(seq(i,ichain)), seqt2char(seq(i+1,ichain)), '/', &
-!                               seqt2char(seq(j+1,jchain)), seqt2char(seq(j,jchain)), seqt2char(seq(j-1,jchain)), dG
-!
-!                  else
-!                     bp_map(imp, jmp) = 0
-!                     bp_map(jmp, imp) = 0
-!
-!                  endif
-!
-!               endif
-!            endif
-
-         enddo
-      enddo
-
-      bp_map_0(:,:) = bp_map(:,:)
-      bp_map_0(:,:) = bp_map(:,:)
-
-      call set_bp_map()
-
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Specific pairs given in CT file
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   else if (bp_model == 2) then
+   if (flg_in_ct .or. flg_in_bpseq) then
 
       if (.not. flg_in_ct .and. .not. flg_in_bpseq) then
          print '(a)', 'Error: either .ct or .bpseq file is required for [Basepair] model = 2.'
@@ -232,6 +146,17 @@ subroutine init_bp()
                cycle
             endif
 
+            if (bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
+               ! Isolated base pair not allowed
+               if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
+                   .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
+                  print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered because it is an isolated base pair.'
+                  print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
+                  print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
+                  cycle
+               endif
+            endif
+
             if ((seq(i, ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
                 (seq(i, ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G)) then
                bp_map(imp, jmp) = BPT%GC
@@ -266,7 +191,62 @@ subroutine init_bp()
       print '(a)', 'Done: reading CT/BPSEQ file'
       print *
       flush(output_unit)
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! All pairwise
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   else
+
+      do imp = 1, nmp-1
+         i = lmp_mp(imp)
+         ichain = ichain_mp(imp)
+
+         ! Either 5' or 3' end
+         if (i == 1 .or. i == nmp_chain(ichain)) cycle
+
+         do jmp = imp+1, nmp
+            j = lmp_mp(jmp)
+            jchain = ichain_mp(jmp)
+
+            ! Either 5' or 3' end
+            if (j == 1 .or. j == nmp_chain(jchain)) cycle
+
+            ! Minimum loop length
+            if (ichain == jchain .and. i + bp_min_loop >= j) cycle
+
+            if (bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
+               ! Isolated base pair not allowed
+               if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
+                   .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
+                  cycle
+               endif
+            endif
+
+            if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
+                (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
+               bp_map(imp, jmp) = BPT%GC
+               bp_map(jmp, imp) = BPT%GC
+
+            else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
+                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
+               bp_map(imp, jmp) = BPT%AU
+               bp_map(jmp, imp) = BPT%AU
+
+            else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
+                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
+               bp_map(imp, jmp) = BPT%GU
+               bp_map(jmp, imp) = BPT%GU
+            endif
+
+
+         enddo
+      enddo
+
+      bp_map_0(:,:) = bp_map(:,:)
+      bp_map_0(:,:) = bp_map(:,:)
    endif
+
+   call set_bp_map()
 
 
    ! Calcuate BP cutoff

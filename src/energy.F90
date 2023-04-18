@@ -2,7 +2,7 @@ subroutine energy(irep, energies)
 
    use const
    use const_idx, only : ENE
-   use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, bp_model
+   use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, flg_stage, bp_model
 
    implicit none
 
@@ -36,6 +36,8 @@ subroutine energy(irep, energies)
    call energy_wca(irep, energies(ENE%EXV))
 
    if (flg_ele) call energy_ele_DH(irep, energies(ENE%ELE))
+
+   if (flg_stage) call energy_stage(irep, energies(ENE%STAGE))
 
    energies(ENE%TOTAL) = sum(energies(1:ENE%MAX))
 

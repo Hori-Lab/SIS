@@ -37,8 +37,7 @@ module var_io
    !character(len=CHAR_FILE_PATH) :: cfile_out
    character(len=CHAR_FILE_PATH), allocatable :: cfile_rst(:)  ! (nrep_proc)
    character(len=CHAR_FILE_PATH), allocatable :: cfile_dcd(:)  ! (nrep_proc)
-   character(len=CHAR_FILE_PATH) :: cfile_prefix
-   character(len=:), allocatable :: cfile_ff, cfile_dcd_in, cfile_pdb_ini, &
+   character(len=:), allocatable :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini, &
                                     cfile_fasta_in, cfile_ct_in, cfile_bpseq_in, &
                                     cfile_anneal_in, cfile_xyz_ini
 

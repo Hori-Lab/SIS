@@ -1,41 +1,44 @@
 title = "sis input"
 
-[job]
+[Job]
 type = "MD"
-   # Aveilable options:
-   #    "MD"
-   #    "DCD"
-   #    "CHECK_FORCE"
+    # Aveilable options:
+    #    "MD"
+    #    "DCD"
+    #    "CHECK_FORCE"
 
-[files]
-      [files.in]
-      ff = "./rna_cg1_para2.ff"
-         # Force-field file. Required.
+[Files]
+    [Files.In]
+    ff = "./rna_cg1_para2.ff"
+        # Force-field file. Required.
 
-      fasta = "./beta-globin.fasta"
-         # FASTA sequence file. Required unless [repeat] section is specified.
+     fasta = "./beta-globin.fasta"
+        # FASTA sequence file. Required unless [repeat] section is specified.
 
-      pdb_ini = "initial.pdb"
-      xyz_ini = "initial.xyz"
-         # File for initial structure. Only one of them is required.
-         # Only coordinates will be read, and any sequence information written in these files will be ignored.
+     pdb_ini = "initial.pdb"
+     xyz_ini = "initial.xyz"
+        # File for initial structure. Only one of them is required.
+        # Only the coordinates will be read from these files, 
+        # and any sequence information written will be ignored.
 
-      dcd = "./trajectory.dcd"
-         # DCD file to read. Required if type = "DCD" in [job].
+    dcd = "./trajectory.dcd"
+        # DCD file to read. Required if type = "DCD" in [job].
 
-      anneal = "./annealing_schedule.txt"
-         # Annealing-schedule file.
-         # Required only when opt_anneal > 0 in [condition].
+    anneal = "./annealing_schedule.txt"
+        # Annealing-schedule file.
+        # Required only when opt_anneal > 0 in [condition].
 
-      ## Either ct or bpseq is required when model = 2 in [Basepair]
-      ct = "./test.ct"
-         # CT (Connectivity Table) file
-      bpseq = "./test.bpseq"
-         # BPSEQ file (no comment line allowed)
+    ## Specific secondary structure.
+    ## If either 'ct' or 'bpseq' is given, only base pairs that constitute 
+    ## the secondary structure are enabled.
+    ct = "./test.ct"
+        # CT (Connectivity Table) file
+    bpseq = "./test.bpseq"
+        # BPSEQ file (no comment line allowed)
 
-      [files.out]
-      types = ["bp", "bpe", "bpall"]
-      prefix = "./test"
+    [Files.Out]
+    prefix = "./test"
+    types = ["bp", "bpe", "bpall"]
 
 [replica]
 n_replica_temp = 8
@@ -56,23 +59,25 @@ exchange = true
    7 = 353.15
    8 = 363.15
 
-[condition]
+[Condition]
 tempK = 310.15
-   # Specify the simulation temperature in Kelvin.
-   # This line will be ignored if opt_anneal = 1.
+    # Specify the simulation temperature in Kelvin.
+    # This line will be ignored if opt_anneal = 1.
 
 rng_seed = 123
+    # (optional, but highly recommended to set)
+    # Seed value for the pseudorandom number generator.
+    # Set a 64-bit integer. If omitted, it will be set based on SYSTEM_CLOCK.
 
 opt_anneal = 0
-   # (optional) flag for simulated annealing.
-   # 0: No annealing (default)
-   # 1: Annealing ("anneal" is required in [files.in])
+    # (optional) flag for simulated annealing.
+    # 0: No annealing (default)
+    # 1: Annealing ("anneal" is required in [files.in])
 
 temp_independent = 0
-   # (optional) temperature independent potential
-   # 0: Use the original (temperature-dependent) potential. (default)
-   # 1: Use temperature-independent potential. temp_ref is required.
-
+    # (optional) temperature independent potential
+    # 0: Use the original (temperature-dependent) potential. (default)
+    # 1: Use temperature-independent potential. temp_ref is required.
 tempK_ref = 328.15
 
 [repeat]
@@ -80,6 +85,8 @@ n_repeat = 47
 n_chain = 64
 
 [PBC_box]
+    # (optional)
+    # If this section is given, periodic boundary condition is enabled.
 x = 809.972
 y = 809.972
 z = 809.972
@@ -91,67 +98,89 @@ dt = 0.05
 nstep = 500000
 nstep_save = 500
 nstep_save_rst = 500
+
 neighbor_list_margin = 10.0
-   # (optional) default is 10.0
+    # (optional) default is 10.0
+
 viscosity_Pas = 0.00001
-   # (optional) default is 0.00001
+    # (optional) default is 0.00001
+    # Viscosity in Pascal Second used in Langevin dynamics.
 
 stop_wall_time_hour = 47.9
-   # (optional) Set wall-clock time limit for the job.
-   # If a positive value is specified, the job will be terminated once the wall time
-   # reaches the limit value. A restart file (.rst) will be recorded.
-   # The unit is hour and can be any positive real number, e.g. 0.25 for 15 minutes.
-   # If the specified value is negative, no limit will be set.
-   # The default is -1 thus no time limit.
-   # It is recommended to set a slightly smaller value than the resource time allowed,
-   # e.g. 47.9 for 48-hour job.
+    # (optional) Set wall-clock time limit for the job.
+    # If a positive value is specified, the job will be terminated once the wall time
+    # reaches the limit value. A restart file (.rst) will be recorded.
+    # The unit is hour and can be any positive real number, e.g. 0.25 for 15 minutes.
+    # If the specified value is negative, no limit will be set.
+    # The default is -1 thus no time limit.
+    # It is recommended to set a slightly smaller value than the resource time allowed,
+    # e.g. 47.9 for 48-hour job.
 
 fix_com_origin = 0
-   # (optional) Fix the translational motion of the molecule.
-   # 0 : No operation (default)
-   # 1 : Move the center of mass to the origin when output the coordinates.
-   # This should not be used if there are more than one chains.
+    # (optional) Fix the translational motion of the molecule.
+    # 0 : No operation (default)
+    # 1 : Move the center of mass to the origin when output the coordinates.
+    # This should not be used if there are more than one chains.
 
 [Basepair]
 model = 1
-   # Secondary structure allowed.
-   # 1: All pairwise (default).
-   # 2: Specific pairs given in CT/BPSEQ file. (ct or bpseq is required in [files.in].)
+    # 1: The model by Nguyen, Hori, Thirumalai (2022) Nat. Chem.
+    # 2: (obsolete)
+　  # 3: Same as 1 but not allowing isolated base pairs.
+    # 4: Base pair potential U0 is calcualted by dG values of the nearest neighbour model.
+    # 5: Base pair potential U0 is calcualted by dH and dS values of the nearest neighbour model.
 
 min_loop_size = 3
-   # Minimum loop size allowed. The default value is 3 if this option is omitted.
-   # It is the number of nucleotides that must exist between a base pair.
-   # E.g., if min_loop_size = 3, then (i) and (i+4) can form a base pair, whereas (i) and (i+3) cannot.
+    # Minimum loop size allowed. The default value is 3 if this option is omitted.
+    # It is the number of nucleotides that must exist between a base pair.
+    # E.g., if min_loop_size = 3, then (i) and (i+4) can form a base pair, whereas (i) and (i+3) cannot.
 
 max_bp_per_nt = -1
-   # Maximum number of base pairs simultaneously formed by one nucleotide.
-   # The default is -1 if this option is omitted.
-   # If max_bp_per_nt <= 0, no limitation is applied.
+    # Maximum number of base pairs simultaneously formed by one nucleotide.
+    # The default is -1 if this option is omitted.
+    # If max_bp_per_nt <= 0, no limitation is applied.
+
 
 [Electrostatic]
+    # (optional)
+    # If this section is given, electrostatic interaction is enabled.
+
 ionic_strength = 0.1
-   # Ionic strength of the monovalent-ion solution
+    # Ionic strength of the monovalent-ions in molar units.
 
 cutoff_type = 1
+    # How to specify the cutoff distance for electrostatic interactions.
+    #     = 1: Distance-based.
+    #          The cutoff will be specified as distance in Angstrom. (default)
+    #     = 2: Multiple of the Debye length. 
+    #          The cutoff will be a factor to be multiplied by Debye length.
+
 cutoff = 50.0
-   # cutoff_type: How to specify the cutoff distance for electrostatic interactions.
-   #             = 1: cutoff will be specified as distance in Angstrom. (default)
-   #             = 2: cutoff will be a factor to be multiplied by Debye length.
-   # cutoff: Either diestance (1) or factor (2), depending on the choice of cutoff_type.
+    # Either diestance (cutoff_type = 1) or multiple (cutoff_type = 2),
+    # depending on the choice of cutoff_type.
 
 no_charge = [1, 27]
-   # Particles having no charges. This 
+    # (optional) array of positive integeres.
+    # Particles having no charges.
 
 length_per_charge = 4.38178046
-   # Paremeter in ion-condensation theory.
+    # Paremeter in ion-condensation theory in Angstrom.
 
 
 [Progress]
+    # (optional)
+    # If this section is given, progress information will be output to STDOUT. 
 step = 1000
 
 
 [variable_box]
+    # (optional)
 step = 1000
 change_x = -1.0
 change_y = -1.0
 change_z = -1.0
+
+[Stage]
+    # (optional)
+sigma = 10.0
+epsilon = 1.2

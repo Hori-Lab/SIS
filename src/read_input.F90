@@ -1,6 +1,6 @@
 subroutine read_input(cfilepath)
 
-   use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT
+   use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT, INT64
    use tomlf
 
    use const, only : PREC, L_INT, CHAR_FILE_PATH
@@ -20,7 +20,8 @@ subroutine read_input(cfilepath)
                          rng_seed, stop_wall_time_sec, fix_com_origin, &
                          ionic_strength, length_per_charge
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
-                             bp_min_loop, max_bp_per_nt, bp_model
+                             bp_min_loop, max_bp_per_nt, bp_model, &
+                             flg_stage, stage_sigma, stage_eps
    use var_top, only : nrepeat, nchains, inp_no_charge
    use var_replica, only : n_replica_temp, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
                            replica_values, flg_replica
@@ -35,12 +36,13 @@ subroutine read_input(cfilepath)
    type(toml_table), allocatable :: table
    type(toml_table), pointer :: group, node
    type(toml_array), pointer :: array
+   type(toml_context) :: context
+   type(toml_error), allocatable :: tm_err
    !======= 
 
    integer :: i
-   integer :: istat
+   integer :: istat, origin
    integer :: hdl
-   integer(L_INT) :: idummy
    real(PREC) :: rdummy, boxsize(3)
    character(len=:), allocatable :: cline
    character(len=5) :: cquery
@@ -58,24 +60,44 @@ subroutine read_input(cfilepath)
          call sis_abort()
       endif
 
-      call toml_parse(table, hdl)
+      call toml_load(table, hdl, context=context, error=tm_err)
 
       close(hdl)
       iopen_hdl = iopen_hdl - 1
 
-      if (.not. allocated(table)) then
-         print '(2a)', 'Error: could not obtain data from the toml input file.'
+      if (allocated(tm_err)) then
+         print '(a)', tm_err%message
          call sis_abort()
       endif
 
+      !################# title #################
+      ! (optional)
       call get_value(table, "title", cline)
-      print '(2a)', '# title: ', trim(cline)
+      if (allocated(cline)) then
+         print '(2a)', '# title: ', trim(cline)
+         flush(6)
+      endif
 
-      !################# job #################
-      call get_value(table, "job", group)
-      call get_value(group, "type", cline)
+      !################# [Job] #################
+      call get_value(table, "Job", group, requested=.False.)
+      if (.not. associated(group)) then
+         call get_value(table, "job", group, requested=.False.)
+         if (.not. associated(group)) then
+            print '(a)', context%report("[Job] section is required.", 0)
+            call sis_abort()
+         else
+            print '(a)', context%report("[job] is deprecated. Please use [Job].", 0, level=toml_level%warning)
+         endif
+      endif
 
-      !cline = trim(cline)
+      !----------------- type -----------------
+      call get_value(group, "type", cline, stat=istat, origin=origin)
+
+      if (istat /= 0) then
+         print '(a)', context%report('invalid type in [Job].', origin, "expected either DCD, CHECK_FORCE, or MD.")
+         call sis_abort()
+      endif
+
       if (cline == 'DCD') then
          job = JOBT%DCD
 
@@ -86,24 +108,53 @@ subroutine read_input(cfilepath)
          job = JOBT%MD
 
       else
-         print '(2a)', 'Error: Unknown job type, ', trim(cline)
+         print '(a)', context%report('invalid type in [Job].', origin, "expected either DCD, CHECK_FORCE, or MD.")
          call sis_abort()
       endif
+      print '(3a,i3,a)', '# Job type: ', trim(cline), ' (type = ', job,')'
+      flush(6)
 
-      !################# input files #################
-      call get_value(table, "files", group)
-
+      !################# [Files] #################
+      call get_value(table, "Files", group, requested=.False.)
       if (.not. associated(group)) then
-         print '(a)', 'Error in input file: no files gorup in input.'
-         call sis_abort()
+         call get_value(table, "files", group, origin=origin, requested=.False.)
+
+         if (.not. associated(group)) then
+            print '(a)', context%report("[Files] section required.", 0)
+            call sis_abort()
+         else
+            print '(a)', context%report("[files] is deprecated. Please use [Files].", origin, level=toml_level%warning)
+         endif
       endif
 
-      call get_value(group, "in", node)
+      !================= [Files.In] =================
+      call get_value(group, "In", node, requested=.False.)
+      if (.not. associated(node)) then
+         call get_value(group, "in", node, origin=origin, requested=.False.)
+
+         if (.not. associated(group)) then
+            print '(a)', context%report("[Files.In] section required.", 0)
+            call sis_abort()
+         else
+            print '(a)', context%report("[files.in] is deprecated. Please use [Files.In].", origin, level=toml_level%warning)
+         endif
+      endif
+
       if (associated(node)) then
-         call get_value(node, "ff", cfile_ff)
+         call get_value(node, "ff", cfile_ff, stat=istat, origin=origin)
+         if (istat /= 0 .or. .not. allocated(cfile_ff)) then
+            print '(a)', context%report("invalid ff file name in [Files.In].", origin)
+            call sis_abort()
+         endif
 
          if (job == JOBT%DCD) then
-            call get_value(node, "dcd", cfile_dcd_in)
+            call get_value(node, "dcd", cfile_dcd_in, stat=istat, origin=origin)
+
+            if (istat /= 0 .or. .not. allocated(cfile_dcd_in)) then
+               print '(a)', context%report("invalid dcd file name in [Files.In]. Required when Job type = DCD.", origin)
+               call sis_abort()
+            endif
+
          endif
 
          call get_value(node, "pdb_ini", cfile_pdb_ini)
@@ -114,13 +165,10 @@ subroutine read_input(cfilepath)
          call get_value(node, "anneal", cfile_anneal_in)
 
       else
-         print '(a)', 'Error in input file: no files.in.'
+         print '(a)', context%report("Files.In section required.", 0)
          call sis_abort()
       endif
 
-      if (allocated(cfile_fasta_in)) flg_in_fasta = .True.
-      if (allocated(cfile_xyz_ini)) flg_in_xyz = .True.
-      if (allocated(cfile_pdb_ini)) flg_in_pdb = .True.
       if (allocated(cfile_ct_in)) flg_in_ct = .True.
       if (allocated(cfile_bpseq_in)) flg_in_bpseq = .True.
 
@@ -130,11 +178,11 @@ subroutine read_input(cfilepath)
       endif
 
       if (job == JOBT%MD) then
-         if (.not. flg_in_pdb .and. .not. flg_in_xyz) then
-            flg_gen_init_struct = .True.
-            print '(a)', 'Initial structure is not specified by XYZ or PDB. Random coil structure will be generated.'
+         if (len(cfile_pdb_ini) < 1 .and. len(cfile_xyz_ini) < 1) then
+            print '(a)', 'Error: Initial structure is not specified. Either XYZ or PDB is required.'
+            call sis_abort()
 
-         else if (flg_in_pdb .and. flg_in_xyz) then
+         else if (len(cfile_pdb_ini) > 0 .and. len(cfile_xyz_ini) > 0) then
             print '(a)', 'Error: Both XYZ and PDB are specified for the initial structure. Please use only one of them.'
             call sis_abort()
 
@@ -142,16 +190,40 @@ subroutine read_input(cfilepath)
       endif
 
 
-      !################# output files #################
-      call get_value(group, "out", node)
-      if (associated(node)) then
-         call get_value(node, "prefix", cline)
-         cfile_prefix = trim(cline)
+      !================= [Files.Out] =================
+      call get_value(group, "Out", node, requested=.False.)
+      if (.not. associated(node)) then
+         call get_value(group, "out", node, origin=origin, requested=.False.)
 
+         if (.not. associated(group)) then
+            print '(a)', context%report("[Files.Out] section required.", 0)
+            call sis_abort()
+         else
+            print '(a)', context%report("[files.out] is deprecated. Please use [Files.Out].", origin, level=toml_level%warning)
+         endif
+      endif
+
+      if (associated(node)) then
+
+         !----------------- prefix -----------------
+         call get_value(node, "prefix", cfile_prefix, stat=istat, origin=origin)
+         if (istat /= 0 .or. .not. allocated(cfile_prefix)) then
+            print '(a)', context%report("invalid prefix in [Files.Out].", origin)
+            call sis_abort()
+         endif
+
+         !call node%get_keys(list)
+         !do i = 1, size(list)
+         !   !call get_value(node, list(i)%key, cline, stat=stat)
+         !   call get_value(node, list(i)%key, cline)
+         !   print *, list(i)%key, cline
+         !enddo
+
+         !----------------- types -----------------
          call get_value(node, "types", array)
 
          do i = 1, len(array)
-            call get_value(array, i, cline)
+            call get_value(array, i, cline, stat=istat, origin=origin)
 
             if (cline == "bp") then
                flg_out_bp = .True.
@@ -160,14 +232,179 @@ subroutine read_input(cfilepath)
             else if (cline == "bpe") then
                flg_out_bpe = .True.
             else
-               print '(a)', 'Error in input file: Unknown output type, '//trim(cline)
+               print '(a)', context%report("invalid output type.", origin, "expected either bp, bpall, or bpe.")
                call sis_abort()
             endif
          enddo
 
       else
-         print '(a)', 'Error in input file: no files.out.'
+         print '(a)', context%report("Files.Out section required.", 0)
          call sis_abort()
+      endif
+
+      !################# [Condition] #################
+      call get_value(table, "Condition", group, requested=.False.)
+      if (.not. associated(group)) then
+         call get_value(table, "condition", group, requested=.False.)
+
+         if (.not. associated(group)) then
+            print '(a)', context%report("[Condition] section is required.", 0)
+            call sis_abort()
+         else
+            print '(a)', context%report("[condition] is deprecated. Please use [Condition].", 0, level=toml_level%warning)
+         endif
+      endif
+
+      !----------------- rng_seed -----------------
+      ! (optional, highly recommended)
+      ! Seed value for the pseudorandom number generator.
+      ! Set a 64-bit integer. If omitted, it will be set based on SYSTEM_CLOCK.
+      call get_value(group, "rng_seed", rng_seed, stat=istat, origin=origin)
+      if (istat /= 0) then
+         print '(a)', context%report("rng_seed (random-number seed value) is not set in [condition].", 0, "a value is set by SYSTEM_CLOCK.", level=toml_level%warning)
+         print '(a)', context%report("a value is set by SYSTEM_CLOCK.", origin=0, level=toml_level%warning)
+         call SYSTEM_CLOCK(rng_seed)
+      endif
+
+      !----------------- opt_anneal -----------------
+      ! (optional) flag for simulated annealing.
+      ! 0: No annealing (default)
+      ! 1: Annealing ("anneal" is required in [files.in])
+      call get_value(group, "opt_anneal", opt_anneal, 0, stat=istat, origin=origin)
+      if (istat /= 0 .or. all(opt_anneal /= (/0, 1/))) then
+         print '(a)', context%report("invalid opt_anneal in [condition].", origin, "expected either 0 or 1")
+         call sis_abort()
+      endif
+
+      if (opt_anneal == 1 .and. .not. allocated(cfile_anneal_in)) then
+         print '(a)', 'Error: opt_anneal requires anneal in [files.in].'
+         call sis_abort()
+      endif
+
+      !----------------- tempK -----------------
+      ! Specify the simulation temperature in Kelvin.
+      ! This line will be ignored if opt_anneal = 1.
+      tempK = -1.0
+      call get_value(group, "tempK", tempK, stat=istat, origin=origin)
+      if (istat /= 0 .or. (opt_anneal == 0 .and. tempK < 0.0)) then
+         print '(a)', context%report("Error: invalid tempK in [condition]", origin, "expected real positive value")
+         call sis_abort()
+      endif
+
+      !----------------- temp_independent -----------------
+      ! (optional) temperature independent potential
+      ! 0: Use the original (temperature-dependent) potential. (default)
+      ! 1: Use temperature-independent potential. temp_ref is required.
+      call get_value(group, "temp_independent", temp_independent, 0, stat=istat, origin=origin)
+
+      if (istat /= 0 .or. all(temp_independent /= (/0, 1/))) then
+         print '(a)', context%report("Error: invalid temp_independent in [condition]", origin, "expected either 0 or 1.")
+         call sis_abort()
+      endif
+
+      if (temp_independent > 0) then
+         call get_value(group, "tempK_ref", tempK_ref, stat=istat, origin=origin)
+         if (istat /= 0 .or. tempK_ref <= 0.0_PREC) then
+            print '(a)', context%report("Error: invalid tempK_ref in [condition]", origin, "expected positive real value.")
+            call sis_abort()
+         endif
+      endif
+
+      !################# Repeat sequence #################
+      if (.not. allocated(cfile_fasta_in)) then
+         call get_value(table, "repeat", group)
+         if (associated(group)) then
+            call get_value(group, "n_repeat", nrepeat)
+            call get_value(group, "n_chain", nchains)
+         endif
+      else
+         nrepeat = 0
+      endif
+
+      !################# MD #################
+      if (job == JOBT%MD) then
+
+         call get_value(table, "MD", group, requested=.false.)
+
+         if (.not. associated(group)) then 
+            print '(a)', 'Error: [MD] field required.'
+            call sis_abort()
+         endif
+
+         !----------------- integrator -----------------
+         call get_value(group, "integrator", cline)
+
+         !----------------- dt -----------------
+         call get_value(group, "dt", dt, stat=istat, origin=origin)
+         if (istat /= 0 .or. dt < 0.0) then
+            print '(a)', context%report("invalid dt value in [MD].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+
+         !----------------- nstep -----------------
+         call get_value(group, "nstep", nstep, stat=istat, origin=origin)
+         if (istat /= 0 .or. nstep < 0) then
+            print '(a)', context%report("invalid nstep value in [MD].", origin, "expected a positive integer value.")
+            call sis_abort()
+         endif
+
+         !----------------- nstep_save -----------------
+         call get_value(group, "nstep_save", nstep_save, stat=istat, origin=origin)
+         if (istat /= 0 .or. nstep_save < 0) then
+            print '(a)', context%report("invalid nstep_save value in [MD].", origin, "expected a positive integer value.")
+            call sis_abort()
+         endif
+
+         !----------------- nstep_save_rst -----------------
+         call get_value(group, "nstep_save_rst", nstep_save_rst, nstep_save, stat=istat, origin=origin)
+         if (istat /= 0 .or. nstep_save_rst < 0) then
+            print '(a)', context%report("invalid nstep_save_rst value in [MD].", origin, "expected a positive integer value.")
+            call sis_abort()
+         endif
+
+         !----------------- neighbor_list_margin -----------------
+         call get_value(group, "neighbor_list_margin", nl_margin, -1.0_PREC, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("invalid neighbor_list_margin value in [MD].", origin, "expected a positive real value.")
+            call sis_abort()
+         else if (nl_margin < 0.0) then
+            nl_margin = 10.0_PREC
+            print '(a)', context%report("neighbor_list_margin is not specified in [MD].", origin, "Default value 10.0 is used.", level=toml_level%warning)
+         endif
+
+         !----------------- viscosity_Pas -----------------
+         call get_value(group, "viscosity_Pas", viscosity_Pas, -1.0_PREC, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("invalid viscosity_Pas value in [MD].", origin, "expected a positive real value.")
+            call sis_abort()
+         else if (viscosity_Pas < 0.0) then
+            viscosity_Pas = 0.00001_PREC
+            print '(a)', context%report("viscosity_Pas is not specified in [MD].", origin, "Default value 0.00001 is used.", level=toml_level%warning)
+         endif
+
+         !----------------- stop_wall_time_hour -----------------
+         call get_value(group, "stop_wall_time_hour", rdummy, -1.0_PREC, stat=istat, origin=origin)
+
+         if (istat /= 0) then
+            print '(a)', context%report("Error: invalid stop_wall_time_hour in [MD]", origin, "expected real value.")
+            call sis_abort()
+         endif
+         if (rdummy < 0.0) then
+            stop_wall_time_sec = -1
+            print '(a,g15.8,a)', '# MD stop_wall_time_hour: ', rdummy, ' (wall time limit not set)'
+         else
+            stop_wall_time_sec = int(rdummy * 3600.0_PREC, kind=INT64)
+            print '(a,g15.8)', '# MD stop_wall_time_hour: ', rdummy
+         endif
+
+         !----------------- fix_com_origin -----------------
+         call get_value(group, "fix_com_origin", fix_com_origin, 0, stat=istat, origin=origin)
+
+         if (istat /= 0) then
+            print '(a)', 'Error: invalid value for fix_com_origin in [MD].'
+            call sis_abort()
+         endif
+
       endif
 
       !################# Replica #################
@@ -218,179 +455,29 @@ subroutine read_input(cfilepath)
          flg_exchange = .False.
       endif
 
-      !################# Condition #################
-      call get_value(table, "condition", group)
-
-      call get_value(group, "rng_seed", rng_seed)
-
-      opt_anneal = 0
-      call get_value(group, "opt_anneal", opt_anneal)
-
-      if (opt_anneal > 0 .and. .not. allocated(cfile_anneal_in)) then
-         print '(a)', 'Error: opt_anneal requires anneal in [files.in].'
-         call sis_abort()
-      endif
-
-      tempK = -1.0
-      call get_value(group, "tempK", tempK)
-
-      if (opt_anneal == 0 .and. tempK < 0.0) then
-         print '(a)', 'Error: tempK is invalid or undefined in [condition].'
-         call sis_abort()
-      endif
-
-      temp_independent = 0
-      call get_value(group, "temp_independent", temp_independent)
-
-      if (temp_independent > 0) then
-         call get_value(group, "tempK_ref", tempK_ref)
-      endif
-
-      !################# Repeat sequence #################
-      if (.not. allocated(cfile_fasta_in)) then
-         call get_value(table, "repeat", group)
-         if (associated(group)) then
-            call get_value(group, "n_repeat", nrepeat)
-            call get_value(group, "n_chain", nchains)
-         endif
-      else
-         nrepeat = 0
-      endif
-
-      !################# MD #################
-      if (job == JOBT%MD) then
-
-         call get_value(table, "MD", group, requested=.false.)
-
-         if (.not. associated(group)) then 
-            print '(a)', 'Error: [MD] field required.'
-            call sis_abort()
-         endif
-
-         !###### integrator #######
-         call get_value(group, "integrator", cline)
-
-         if (.not. allocated(cline)) then
-            print '(a)', 'Error: integrator is required in [MD].'
-            call sis_abort()
-
-         else if (cline == 'GJF-2GJ') then
-            integrator = INTGRT%LD_GJF2GJ
-
-         else
-            print '(2a)', 'Error: Unknown integrator type, ', trim(cline)
-            call sis_abort()
-         endif
-
-         !###### dt #######
-         dt = -1.0
-         call get_value(group, "dt", dt, stat=istat)
-         if (istat /= 0 .or. dt < 0.0) then
-            print '(a)', 'Error: invalid value for dt in [MD].'
-            call sis_abort()
-         endif
-
-         !###### nstep #######
-         nstep = -1
-         call get_value(group, "nstep", nstep, stat=istat)
-         if (istat /= 0 .or. nstep < 0) then
-            print '(a)', 'Error: invalid value for nstep in [MD].'
-            call sis_abort()
-         endif
-
-         !###### nstep_save #######
-         nstep_save = -1
-         call get_value(group, "nstep_save", nstep_save, stat=istat)
-         if (istat /= 0 .or. nstep_save < 0) then
-            print '(a)', 'Error: invalid value for nstep_save in [MD].'
-            call sis_abort()
-         endif
-
-         !###### nstep_save_rst #######
-         nstep_save_rst = nstep_save
-         call get_value(group, "nstep_save_rst", nstep_save_rst, stat=istat)
-         if (istat /= 0) then
-            print '(a)', 'Error: invalid value for nstep_save_rst in [MD].'
-            call sis_abort()
-         endif
-
-         !###### neighbor_list_margin ######
-         nl_margin = -1.0
-         call get_value(group, "neighbor_list_margin", nl_margin, stat=istat)
-         if (istat /= 0) then
-            print '(a)', 'Error: invalid value for neighbor_list_margin in [MD].'
-            call sis_abort()
-         else if (nl_margin < 0.0) then
-            nl_margin = 10.0_PREC
-            print '(a)', 'Warning: neighbor_list_margin is not specified in [MD] field. The default value will be used.'
-         endif
-
-         !###### viscosity_Pas ######
-         viscosity_Pas = -1.0
-         call get_value(group, "viscosity_Pas", viscosity_Pas, stat=istat)
-         if (istat /= 0) then
-            print '(a)', 'Error: invalid value for viscosity_Pas in [MD].'
-            call sis_abort()
-         else if (viscosity_Pas < 0.0) then
-            viscosity_Pas = 0.00001_PREC
-            print '(a)', 'Warning: viscosity_Pas is not specified in [MD] field. The default value will be used.'
-         endif
-
-         !###### stop_wall_time_hour ######
-         rdummy = -1.0
-         call get_value(group, "stop_wall_time_hour", rdummy, stat=istat)
-
-         if (istat /= 0) then
-            ! Try integer
-            call get_value(group, "stop_wall_time_hour", idummy, stat=istat)
-
-            if (istat /= 0) then
-               print '(a)', 'Error: invalid value for stop_wall_time_hour in [MD].'
-               call sis_abort()
-            endif
-
-            rdummy = real(idummy, kind=PREC)
-         endif
-
-         if (rdummy < 0.0) then
-            stop_wall_time_sec = -1
-         else
-            stop_wall_time_sec = int(rdummy * 3600.0_PREC, kind=L_INT)
-         endif
-
-         !###### fix_com_origin ######
-         fix_com_origin = 0
-         call get_value(group, "fix_com_origin", fix_com_origin, stat=istat)
-
-         if (istat /= 0) then
-            print '(a)', 'Error: invalid value for fix_com_origin in [MD].'
-            call sis_abort()
-         endif
-
-      endif
-
-      !################# Basepair #################
+      !################# [Basepair] #################
       call get_value(table, "Basepair", group, requested=.False.)
 
       if (associated(group)) then
 
          ! bp_model
-         bp_model = INVALID_INT_VALUE
-         call get_value(group, "model", bp_model)
-         if (bp_model > INVALID_INT_JUDGE) then
-            print '(a)', '# [Basepair] model is not specified in the input file. Default value applies.'
-            bp_model = 1   ! default
+         call get_value(group, "model", bp_model, stat=istat, origin=origin)
+         if (istat /= 0 .or. all(bp_model /= (/1, 3, 4, 5/))) then
+            print '(a)', context%report("model is not specified in [Basepair].", origin, "expected either 1, 3, 4, or 5.")
+            call sis_abort()
+         else
+            print '(a,i6)', '# Basepair, model: ', bp_model
          endif
 
-         ! max_bp_per_nt
+         !----------------- max_bp_per_nt -----------------
          max_bp_per_nt = INVALID_INT_VALUE
-         call get_value(group, "max_bp_per_nt", max_bp_per_nt)
-         if (max_bp_per_nt > INVALID_INT_JUDGE) then
-            print '(a)', '# [Basepair] max_bp_per_nt is not specified in the input file. Default value applies.'
+         call get_value(group, "max_bp_per_nt", max_bp_per_nt, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report('max_bp_per_nt is not specified in [Basepair]. Default value applies.', origin=0, level=toml_level%warning)
             max_bp_per_nt = -1   ! default
          endif
 
-         ! min_loop
+         !----------------- min_loop -----------------
          bp_min_loop = -1
          call get_value(group, "min_loop", bp_min_loop)
          if (bp_min_loop < 0) then
@@ -402,65 +489,78 @@ subroutine read_input(cfilepath)
          print '(a)', '# [Basepair] section does not exist in the input file. Default values are used.'
          max_bp_per_nt = 1  ! default
          bp_min_loop = 3    ! default
-
       endif
 
-
-      !################# Electrostatic #################
+      !################# [Electrostatic] #################
+      ! (optional)
+      ! If this section is given, electrostatic interaction is enabled.
       flg_ele = .False.
       call get_value(table, "Electrostatic", group, requested=.False.)
 
       if (associated(group)) then
 
-         print '(a)', '# Electrostatic: On'
-         flg_ele = .True.
-
-         ! ionic_strength
-         ionic_strength = INVALID_VALUE
-         call get_value(group, "ionic_strength", ionic_strength)
-         if (ionic_strength > INVALID_JUDGE) then
-            print '(a)', "Error: Invalid value for ionic_strength in [Electrostatic]."
+         !----------------- ionic_strength -----------------
+         ! Ionic strength of the monovalent-ions in molar units.
+         call get_value(group, "ionic_strength", ionic_strength, stat=istat, origin=origin)
+         if (istat /= 0 .or. ionic_strength <= 0.0_PREC) then
+            print '(a)', context%report("invalid ionic_strength in [Electrostatic].", origin, "expected a positive real value.")
             call sis_abort()
          endif
+         print '(a,g15.8)', '# Electrostatic, ionic strength: ', ionic_strength
 
-         ! cutoff type   1: distance-based (default) 
-         !               2: x Debye length
+         !----------------- cutoff_type -----------------
+         ! How to specify the cutoff distance for electrostatic interactions.
+         !     = 1: Distance-based.
+         !          The cutoff will be specified as distance in Angstrom. (default)
+         !     = 2: Multiple of the Debye length. 
+         !          The cutoff will be a factor to be multiplied by Debye length.
          ele_cutoff_type = 1
-         call get_value(group, "cutoff_type", ele_cutoff_type)
-         if (ele_cutoff_type /= 1 .and. ele_cutoff_type /= 2) then
-            print '(a)', "Error: Invalid values for cutoff_type in [Electrostatic]."
+         call get_value(group, "cutoff_type", ele_cutoff_type, 1, stat=istat, origin=origin)
+         if (istat /= 0 .or. all(ele_cutoff_type /= (/1, 2/))) then
+            print '(a)', context%report("invalid ele_cutoff_type in [Electrostatic].", origin, "expected either 1 or 2.")
             call sis_abort()
          endif
 
-         ! cutoff
-         ele_cutoff_inp = INVALID_VALUE
-         call get_value(group, "cutoff", ele_cutoff_inp)
-         if (ele_cutoff_inp > INVALID_JUDGE) then
-            print '(a)', "Error: Invalid values or absence of cutoff in [Electrostatic]."
+         !----------------- cutoff -----------------
+         ! Either diestance (cutoff_type = 1) or multiple (cutoff_type = 2),
+         ! depending on the choice of cutoff_type.
+         call get_value(group, "cutoff", ele_cutoff_inp, stat=istat, origin=origin)
+         if (istat /= 0 .or. ele_cutoff_inp < 0.0_PREC) then
+            print '(a)', context%report("invalid cutoff value in [Electrostatic].", origin, "expected a positive real value.")
             call sis_abort()
          endif
+         print '(a,g15.8)', '# Electrostatic, cutoff: ', ele_cutoff_inp
 
-         ! length_per_charge
-         length_per_charge = INVALID_VALUE
-         call get_value(group, "length_per_charge", length_per_charge)
-         if (length_per_charge > INVALID_JUDGE) then
-            print '(a)', "Error: Invalid value for length_per_charge in [Electrostatic]."
+         !----------------- length_per_charge -----------------
+         ! Paremeter in ion-condensation theory in Angstrom.
+         call get_value(group, "length_per_charge", length_per_charge, stat=istat, origin=origin)
+         if (istat /= 0 .or. length_per_charge < 0.0_PREC) then
+            print '(a)', context%report("invalid length_per_charge value in [Electrostatic].", origin, "expected a positive real value.")
             call sis_abort()
          endif
+         print '(a,g15.8)', '# Electrostatic, length per charge: ', length_per_charge
 
-         ! (optional) No charge particles
+         !----------------- no_charge -----------------
+         ! (optional) array of positive integeres.
+         ! Particles having no charges.
          call get_value(group, "no_charge", array)
 
          if (len(array) > 0) then
+            print '(a)', "# Electrostatic, no charges on the following particles:"
             allocate(inp_no_charge(len(array)))
             do i = 1, len(array)
-               call get_value(array, i, inp_no_charge(i))
+               call get_value(array, i, inp_no_charge(i), stat=istat, origin=origin)
+               if (istat /= 0 .or. inp_no_charge(i) < 1) then
+                  print '(a)', context%report("invalid particle ID in no_charge, [Electrostatic].", origin, "expected a positive integer.")
+                  call sis_abort()
+               endif
             enddo
          endif
-
       endif
 
-      !################# box #################
+      !################# [PBC_box] #################
+      ! (optional)
+      ! If this section is given, periodic boundary condition is enabled.
       flg_pbc = .False.
       call get_value(table, "PBC_box", group, requested=.False.)
       if (associated(group)) then 
@@ -470,7 +570,8 @@ subroutine read_input(cfilepath)
          call get_value(group, "z", boxsize(3))
       endif
 
-      !################# variable box #################
+      !################# [variable_box] #################
+      ! (optional)
       flg_variable_box = .False.
       call get_value(table, "variable_box", group, requested=.False.)
       if (associated(group)) then 
@@ -481,17 +582,50 @@ subroutine read_input(cfilepath)
          call get_value(group, "change_z", variable_box_change(3))
       endif
 
-      !################# Progress #################
+      !################# [Progress] #################
+      ! (optional)
+      ! If this section is given, progress information will be output to STDOUT. 
       flg_progress = .False.
       call get_value(table, "Progress", group, requested=.False.)
       if (associated(group)) then
          flg_progress = .True.
-         call get_value(group, "step", step_progress)
+         call get_value(group, "step", step_progress, stat=istat, origin=origin)
+         if (istat /= 0 .or. step_progress < 1) then
+            print '(a)', context%report("invalid step value in [Progress].", origin, "expected an integer value.")
+            call sis_abort()
+         endif
+      endif
+
+      !################# [Stage] #################
+      ! (optional)
+      flg_stage = .False.
+      call get_value(table, "Stage", group, requested=.False.)
+      if (.not. associated(group)) then 
+         call get_value(table, "stage", group, requested=.False.)
+         if (associated(group)) then 
+            print '(a)', context%report("[stage] is deprecated. Please use [Stage].", 0, level=toml_level%warning)
+         endif
+      endif
+
+      if (associated(group)) then 
+         flg_stage = .True.
+         call get_value(group, "sigma", stage_sigma, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("invalid sigma value in [Stage].", origin, "expected a real value.")
+            call sis_abort()
+         endif
+
+         call get_value(group, "epsilon", stage_eps, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("invalid epsilon value in [Stage].", origin, "expected a real value.")
+            call sis_abort()
+         endif
       endif
 
       call table%destroy
 
    endif ! myrank == 0
+
 
 #ifdef PAR_MPI
 
@@ -520,7 +654,7 @@ subroutine read_input(cfilepath)
 
    call MPI_BCAST(replica_values, n_replica_temp, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(rng_seed, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(rng_seed, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(opt_anneal, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(tempK, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(temp_independent, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -576,10 +710,13 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_progress, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(step_progress, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
+   call MPI_BCAST(flg_stage, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(stage_sigma, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(stage_eps, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+
 #endif
 
    kT = BOLTZ_KCAL_MOL * tempK
-
 
    if (flg_pbc) call set_pbc_size(boxsize)
 
@@ -640,18 +777,19 @@ subroutine read_input(cfilepath)
    print '(a,i5)', '# MD fix_com_origin: ', fix_com_origin
    print '(a)', '#'
 
-   print '(a,i6)', '# Basepair, model: ', bp_model
    print '(a,i6)', '# Basepair, max_bp_per_nt: ', max_bp_per_nt
    print '(a,i6)', '# Basepair, min_loop: ', bp_min_loop
    print '(a)', '#'
 
    if (flg_ele) then
       print '(a,g15.8)', '# Electrostatic, ionic strength: ', ionic_strength
+
       if (ele_cutoff_type == 1) then
          print '(a)', "# Electrostatic, cutoff type: 1 (distance-based)"
       else if (ele_cutoff_type == 2) then
          print '(a)', "# Electrostatic, cutoff type: 2 cutoff will be multiplied by the Debye length"
       endif
+
       print '(a,g15.8)', '# Electrostatic, cutoff: ', ele_cutoff_inp
       print '(a,g15.8)', '# Electrostatic, length per charge: ', length_per_charge
       if (allocated(inp_no_charge)) then
@@ -683,6 +821,11 @@ subroutine read_input(cfilepath)
       print '(a)', '#'
    endif
 
+   if (flg_stage) then
+      print '(a,g15.8)', '# Stage sigma: ', stage_sigma
+      print '(a,g15.8)', '# Stage epsilon: ', stage_eps
+      print '(a)', '#'
+   endif
 
    if (myrank == 0) then
       print '(a)', 'Done: reading input file'

@@ -1,5 +1,5 @@
-set term postscript color 20 lw 4 solid
-set out 'angl.ps'
+set term pdfcairo color solid font "Arial, 12" lw 2
+set out 'angle.pdf'
 
 #kr = 10.0
 t0 = 2.643
@@ -8,7 +8,7 @@ set grid
 set xr [0:pi]
 set yr [0:4]
 
-set yl 'U_{angl} / kcal/mol'
+set yl 'U_{angle} / kcal/mol'
 set xl 'theta'
 
 set key bottom left

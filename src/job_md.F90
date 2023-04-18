@@ -14,14 +14,15 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd
-   use var_potential, only : wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist
+   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, cfile_pdb_ini, cfile_xyz_ini
    use var_replica, only : nrep_proc, flg_replica, rep2val, irep2grep
+   use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist
+   use var_potential, only : ele_cutoff, flg_stage
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
 
-   integer :: i, irep, imp
+   integer :: i, irep, imp, icol
    real(PREC) :: tK
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp, nrep_proc)
@@ -33,9 +34,13 @@ subroutine job_md()
    real(PREC) :: d2, d2max, d2max_2nd
    real(PREC), allocatable :: forces(:, :)
    logical :: flg_stop
+   character(len=29) :: out_fmt
 
    ! Function
    real(PREC) :: rnd_boxmuller
+
+   ! Format in .out file
+   write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%MAX+1, '(1x, g13.6))'
 
    allocate(mass(nmp))
    allocate(accels(3, nmp, nrep_proc))
@@ -70,7 +75,7 @@ subroutine job_md()
    print '(a)', 'mass(U) = 305.164'
    print *
    flush(6)
-           
+
    ! Coefficients that do not depend on replicas
    do imp = 1, nmp
       ! Mass hard coded
@@ -98,6 +103,18 @@ subroutine job_md()
       call read_rst(RSTBLK%ACCEL)
 
    else
+      ! Load initial coordinates from PDB or XYZ
+      if (len(cfile_pdb_ini) > 0) then
+         call read_pdb(cfile_pdb_ini, nmp, xyz)
+
+      else if (len(cfile_xyz_ini) > 0) then
+         call read_xyz(cfile_xyz_ini, nmp, xyz)
+
+      else
+         error stop 'Initial structure not found in job_md'
+      endif
+
+      if (flg_stage) call check_int_stage()
 
       ! Set up initial velocities by Maxwell–Boltzmann distribution
       do irep = 1, nrep_proc
@@ -130,6 +147,8 @@ subroutine job_md()
    print '(a,f10.3)', 'bp_cutoff_ddist(GU) = ', bp_paras(BPT%GU)%cutoff_ddist
    print '(a,f10.3)', 'bp_cutoff_dist(for neighbor list) = ', bp_cutoff_dist
    print '(a,f10.3)', 'wca_sigma = ', wca_sigma
+   print '(a,f10.3)', 'stage_sigma = ', stage_sigma
+   print '(a,f10.3)', 'ele_cutoff = ', ele_cutoff
    print '(a,f10.3)', 'nl_margin = ', nl_margin
    print *
 
@@ -185,8 +204,15 @@ subroutine job_md()
                                                 !1234567890 1234 123456 1234567890123 1234567890123 1234567890123'
       write(hdl_out(irep), '(a)', advance='no') ' (7)Eangl      (8)Edih      '
                                                 ! 1234567890123 1234567890123'
-      write(hdl_out(irep), '(a)') ' (9)Ebp        (10)Eexv      (11)Eele'
-                                  ! 1234567890123 1234567890123 1234567890123
+      write(hdl_out(irep), '(a)', advance='no') ' (9)Ebp        (10)Eexv      (11)Eele'
+                                                ! 1234567890123 1234567890123 1234567890123
+      icol = 11
+      if (flg_stage) then
+         icol = icol + 1
+         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Estage   '
+                                                        ! 1   23     4567890123
+      endif
+      write(hdl_out(irep), *) ''
 
       if (flg_replica) then
          tK = rep2val(irep2grep(irep), REPT%TEMP)
@@ -200,14 +226,18 @@ subroutine job_md()
          print '(a)', '##### Energies at the beginning'
          print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
          print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, irep2grep(irep), tK, Ekinetic, energies(0, irep)
-         print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele'
-         print '(6(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
+         print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
+         print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          print *
 
       else
          ! At istep = 0 (not restarted), write both .out and DCD
-         write(hdl_out(irep), '(i10, 1x, i4, 1x, f6.2, 8(1x,g13.6))') istep, irep2grep(irep), tK, &
-                             Ekinetic(irep), (energies(i, irep), i=0,ENE%MAX)
+         write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic, (energies(i, irep), i=0,ENE%ELE)
+         if (flg_stage) then
+            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
+         endif
+         write(hdl_out(irep), *) ''
+
          call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
       endif
    enddo
@@ -299,8 +329,11 @@ subroutine job_md()
             endif
             call energy(irep, energies(0:ENE%MAX, irep))
             call energy_kinetic(irep, Ekinetic(irep))
-            write(hdl_out(irep), '(i10, 1x, i4, 1x, f6.2, 8(1x,g13.6))') istep, irep2grep(irep), tK, &
-                                 Ekinetic(irep), (energies(i, irep), i=0,ENE%MAX)
+            write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic, (energies(i, irep), i=0,ENE%ELE)
+            if (flg_stage) then
+               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
+            endif
+            write(hdl_out(irep), *) ''
             call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
          enddo
       endif
