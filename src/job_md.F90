@@ -48,8 +48,6 @@ subroutine job_md()
    else
       write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%ELE+2, '(1x, g13.6))'
    endif
-   print *, '## out_fmt'
-   print *, out_fmt
 
    allocate(mass(nmp))
    allocate(accels(3, nmp, nrep_proc))

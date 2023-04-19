@@ -516,6 +516,7 @@ subroutine read_input(cfilepath)
       call get_value(table, "Electrostatic", group, requested=.False.)
 
       if (associated(group)) then
+         flg_ele = .True.
 
          !----------------- ionic_strength -----------------
          ! Ionic strength of the monovalent-ions in molar units.
