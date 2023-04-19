@@ -37,18 +37,22 @@ module var_potential
    integer,    save :: bp_min_loop  ! = 4 (in the original CAG work), = 3 (for mRNA)
    integer,    save :: bp_model
 
-   integer, allocatable :: bp_map_0(:,:)
+   !integer, allocatable :: bp_map_0(:,:)
    integer, allocatable :: bp_map(:,:)
-   real(PREC), allocatable :: bp_map_dG(:,:,:)   ! (nmp, nmp, nrep_proc)
+   integer, allocatable :: bp3_map(:,:)
+   !real(PREC), allocatable :: bp_map_dG(:,:,:)   ! (nmp, nmp, nrep_proc)
    real(PREC) :: bp_cutoff_energy  ! 0.01 kcal/mol
    real(PREC) :: bp_cutoff_dist
    integer,    save :: bp_seqdep
       ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.
       ! = 1: Sequence dependent parameters. All possible combinations of trinucleotide-dimer are required.
 
-   real(PREC), save :: coef_dG
-   real(PREC), save :: dH0
-   real(PREC), save :: dS0
+   real(PREC) :: coef_dG
+   real(PREC) :: dH0
+   real(PREC) :: dS0
+
+   real(PREC) :: bp3_dH(1:468)
+   real(PREC) :: bp3_dS(1:468)
 
    type basepair_parameters
       real(PREC) :: cutoff_ddist
@@ -71,8 +75,9 @@ module var_potential
 
    ! Basepair list
    integer, allocatable :: nbp(:)
-   integer, save :: nbp_max  ! This defines the size of neighbor list
-   integer, allocatable, save :: bp_mp(:,:,:)  ! (3, nbp, nrep_proc) 1: imp1, 2: imp2, 3: bp type
+   integer :: nbp_max  ! This defines the size of neighbor list
+   integer, allocatable :: bp_mp(:,:,:)  ! (3, nbp, nrep_proc) 1: imp1, 2: imp2, 3: bp type
+   real(PREC), allocatable :: bp_coef(:,:,: )  ! (2, nbp, nrep_proc) 1: dH, 2: dS
 
    ! WCA parameters
    real(PREC), save :: wca_sigma  ! = 10.0

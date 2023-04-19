@@ -1,4 +1,4 @@
-subroutine energy_bp_limit_triplet(irep, Ebp)
+subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
 
    use :: ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
 
@@ -6,17 +6,19 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
    use mt_stream
    use const, only : PREC
    use const_idx, only : REPT
+   use const_phys, only : BOLTZ_KCAL_MOL
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
-   use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy, mts
-   use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, bp_paras, &
-                             basepair_parameters, bp_map_dG
+   use var_state, only : xyz, bp_status, ene_bp, flg_bp_energy, mts, temp_independent
+   use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, bp_paras, bp_coef, &
+                             basepair_parameters
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
-   use var_replica, only : flg_replica, rep2val, irep2grep
+   use var_replica, only : flg_repvar, rep2val, irep2grep
 
    implicit none
   
    integer, intent(in) :: irep
+   real(PREC), intent(in) :: tempK_in
    real(PREC), intent(inout) :: Ebp
 
    integer :: i, ibp, jbp
@@ -24,7 +26,7 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
    integer :: imp, jmp
    integer :: i_save, i_swap
    type(basepair_parameters) :: bpp
-   real(PREC) :: tK
+   real(PREC) :: tK, dG
    real(PREC) :: u, beta, ratio
    real(PREC) :: d, theta, phi
    real(PREC) :: ene
@@ -36,11 +38,20 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
    integer :: ntlist_excess(nmp)
    logical :: halt_mode
 
-   if (flg_replica) then
+   if (flg_repvar(REPT%TEMP)) then
       tK = rep2val(irep2grep(irep), REPT%TEMP)
-      beta = 1.0_PREC / tK
+      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
    else
-      beta = 1.0_PREC / kT 
+      tK = tempK_in
+      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
+   endif
+
+   if (temp_independent == 0) then
+      tK = tempK_in
+      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
+   else
+      tK = 0.0_PREC
+      beta = HUGE(beta)   ! so that the highest energy BP will be deleted.
    endif
 
    if (.not. flg_bp_energy) then
@@ -51,12 +62,16 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
 
       !$omp barrier
 
-      !$omp parallel do private(imp, jmp, d, u, theta, phi, ene, bpp)
+      !$omp parallel do private(imp, jmp, d, u, theta, phi, ene, bpp, dG)
       do ibp = 1, nbp(irep)
 
          imp = bp_mp(1, ibp, irep)
          jmp = bp_mp(2, ibp, irep)
          bpp = bp_paras(bp_mp(3, ibp, irep))
+
+         ! dG = dH - T * dS
+         dG = bp_coef(1, ibp, irep) - tK * bp_coef(2, ibp, irep)
+         if (dG >= 0.0_PREC) cycle
 
          d = norm2(pbc_vec_d(xyz(:,imp,irep), xyz(:, jmp,irep))) - bpp%bond_r
 
@@ -82,7 +97,7 @@ subroutine energy_bp_limit_triplet(irep, Ebp)
          phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
          u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
-         ene = bpp%U0 * bp_map_dG(imp, jmp, irep) * exp(-u)
+         ene = bpp%U0 * dG * exp(-u)
 
          if (ene <= bp_cutoff_energy) then
             ene_bp(ibp) = ene

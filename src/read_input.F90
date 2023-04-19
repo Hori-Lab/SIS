@@ -3,9 +3,9 @@ subroutine read_input(cfilepath)
    use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT, INT64
    use tomlf
 
-   use const, only : PREC, L_INT, CHAR_FILE_PATH
+   use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA
    use const_phys, only : BOLTZ_KCAL_MOL, INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT
+   use const_idx, only : JOBT, INTGRT, REPT, MAX_REP_PER_DIM
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, flg_gen_init_struct, &
                       flg_progress, step_progress, &
@@ -23,8 +23,8 @@ subroutine read_input(cfilepath)
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps
    use var_top, only : nrepeat, nchains, inp_no_charge
-   use var_replica, only : n_replica_temp, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
-                           replica_values, flg_replica
+   use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
+                           replica_values, flg_replica, flg_repvar
    use var_parallel
 
    implicit none
@@ -169,6 +169,9 @@ subroutine read_input(cfilepath)
          call sis_abort()
       endif
 
+      if (allocated(cfile_pdb_ini)) flg_in_pdb = .True.
+      if (allocated(cfile_xyz_ini)) flg_in_xyz = .True.
+      if (allocated(cfile_fasta_in)) flg_in_fasta = .True.
       if (allocated(cfile_ct_in)) flg_in_ct = .True.
       if (allocated(cfile_bpseq_in)) flg_in_bpseq = .True.
 
@@ -410,48 +413,58 @@ subroutine read_input(cfilepath)
       !################# Replica #################
       flg_replica = .False.
       replica_values(:,:) = INVALID_VALUE
-      n_replica_temp = -1
+      nrep(:) = -1
 
-      call get_value(table, "replica", group, requested=.False.)
+      call get_value(table, "Replica", group, requested=.False.)
 
       if (associated(group)) then
 
          flg_replica = .True.
 
-         n_replica_temp = 0
-         call get_value(group, "n_replica_temp", n_replica_temp)
+         nrep(REPT%TEMP) = 0
+         call get_value(group, "nrep_temp", nrep(REPT%TEMP))
+
+         if (nrep(REPT%TEMP) > MAX_REP_PER_DIM) then
+            print '(a)', 'Error in input file: Number of replicas exceeds MAX_REP_PER_DIM in [Replica.Temperature].'
+            print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
          call get_value(group, "nstep_exchange", nstep_rep_exchange)
          call get_value(group, "nstep_save", nstep_rep_save)
 
          flg_exchange = .True.
          call get_value(group, "exchange", flg_exchange)
 
-         if (n_replica_temp > 0) then
-            call get_value(group, "temperature", node, requested=.False.)
+         if (nrep(REPT%TEMP) > 0) then
+
+            flg_repvar(REPT%TEMP) = .True.
+
+            call get_value(group, "Temperature", node, requested=.False.)
             if (associated(node)) then
-               do i = 1, n_replica_temp
+               do i = 1, nrep(REPT%TEMP)
                   write(cquery, '(i0)') i
                   call get_value(node, cquery, replica_values(i, REPT%TEMP))
                enddo
             else
-               print '(a)', 'Error in input file: [replica.temperature] is needed.'
+               print '(a)', 'Error in input file: [Replica.Temperature] is required.'
                call sis_abort()
             endif
 
          else
-            print '(a)', 'Error in input file: n_replica_temp has to be more than zero in [replica].'
+            print '(a)', 'Error in input file: nrep_temp has to be more than zero in [Replica].'
             call sis_abort()
          endif
 
-         do i = 1, n_replica_temp
+         do i = 1, nrep(REPT%TEMP)
             if (replica_values(i, REPT%TEMP) > INVALID_JUDGE) then
-               print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [replica.temperature].'
+               print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Temperature].'
                call sis_abort()
             endif
          enddo
 
       else
-         n_replica_temp = 1
+         nrep(REPT%TEMP) = 1
          flg_exchange = .False.
       endif
 
@@ -647,12 +660,13 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_out_bpall, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(flg_replica, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(n_replica_temp, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_repvar, REPT%MAX, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nrep, REPT%MAX, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(nstep_rep_exchange, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(nstep_rep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_exchange, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(replica_values, n_replica_temp, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(replica_values, MAX_REPLICA, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(rng_seed, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(opt_anneal, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -733,7 +747,7 @@ subroutine read_input(cfilepath)
    endif
 
    if (flg_replica) then
-      print '(a,i16)', '# Replica, n_replica: ', n_replica_temp
+      print '(a,i16)', '# Replica, nrep_temp: ', nrep(REPT%TEMP)
       print '(a,i16)', '# Replica, nstep_exchange: ', nstep_rep_exchange
       print '(a,i16)', '# Replica, nstep_save: ', nstep_rep_save
       if (flg_exchange) then

@@ -28,6 +28,7 @@ module var_io
    integer, allocatable :: hdl_bp(:)
    integer, allocatable :: hdl_bpall(:)
    integer, allocatable :: hdl_bpe(:)
+   integer  :: hdl_rep
 
    integer :: iopen_hdl = 15
 

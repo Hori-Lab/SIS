@@ -3,6 +3,7 @@ subroutine energy(irep, energies)
    use const
    use const_idx, only : ENE
    use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, flg_stage, bp_model
+   use var_state, only : tempK
 
    implicit none
 
@@ -27,7 +28,7 @@ subroutine energy(irep, energies)
       call energy_bp(irep, energies(ENE%BP))
    else
       if (bp_model == 4 .or. bp_model == 5) then
-         call energy_bp_limit_triplet(irep, energies(ENE%BP))
+         call energy_bp_limit_triplet(irep, tempK, energies(ENE%BP))
       else
          call energy_bp_limit(irep, energies(ENE%BP))
       endif

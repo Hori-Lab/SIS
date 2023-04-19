@@ -19,14 +19,14 @@ module const_idx
    type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,7)
 
    type seq_types
-      integer :: UNDEF  ! 0
-      integer :: A   ! 1
-      integer :: U   ! 2
-      integer :: G   ! 3
-      integer :: C   ! 4
+      integer :: UNDEF  ! -1
+      integer :: A   ! 0
+      integer :: U   ! 1
+      integer :: G   ! 2
+      integer :: C   ! 3
       integer :: MAX
    endtype seq_types
-   type(seq_types), parameter :: SEQT = seq_types(0,1,2,3,4,4)
+   type(seq_types), parameter :: SEQT = seq_types(-1,0,1,2,3,3)
 
    type job_types
       integer :: DEBUG       ! 0

@@ -5,9 +5,10 @@ subroutine init_out_files
    use var_state, only : job
    use var_io, only : iopen_hdl, cfile_prefix, KIND_OUT_BP, KIND_OUT_BPE, &
                       flg_out_dcd, flg_out_rst, flg_out_bp, flg_out_bpall, flg_out_bpe, &
-                      hdl_out, hdl_dcd, hdl_rst, hdl_bp, hdl_bpall, hdl_bpe,&
+                      hdl_out, hdl_dcd, hdl_rst, hdl_bp, hdl_bpall, hdl_bpe, hdl_rep, &
                       cfile_rst, cfile_dcd
    use var_replica, only : nrep_proc, flg_replica, irep2grep
+   use var_parallel, only : myrank
 
    implicit none
 
@@ -107,5 +108,12 @@ subroutine init_out_files
          open(hdl_bpe(irep), file=cfilename, status='replace', action='write', form='formatted')
       endif
    enddo
+
+   if (flg_replica .and. myrank == 0) then
+      cfilename = trim(cfile_prefix) // '.rep'
+      iopen_hdl = iopen_hdl + 1
+      hdl_rep = iopen_hdl
+      open(hdl_rep, file=cfilename, status='replace', action='write', form='formatted')
+   endif
 
 endsubroutine init_out_files

@@ -3,33 +3,50 @@ subroutine init_replica
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const_idx, only : REPT
    use var_replica, only : flg_replica, nrep_all, rep2val, nrep_proc, irep2grep, &
-                           n_replica_temp, rep2lab, lab2rep, lab2val, replica_values
+                           nrep, rep2lab, lab2rep, lab2val, replica_values, &
+                           ndim_replica, flg_repvar
    use var_parallel, only : myrank, nprocs
 
    implicit none
 
    integer :: irep, grep
+   integer :: ivar
+
+   ndim_replica = 0
+   nrep_all = 1
+   nrep_proc = 1
+   irep2grep(:) = 1
 
    if (flg_replica) then
 
       print '(a)', 'Initializing replicas'
 
-      nrep_all = n_replica_temp
+      do ivar = 1, REPT%MAX
+         if (flg_repvar(ivar)) then
+            ndim_replica = ndim_replica + 1
+            nrep_all = nrep_all * nrep(ivar)
+         endif
+      enddo
 
 #ifdef PAR_MPI
-      if (nprocs > n_replica_temp) then
+      print *, 'nrep_all=',nrep_all
+      print *, 'nprocs=',nprocs
+      print *, 'nrep(REPT%TEMP)=', nrep(REPT%TEMP)
+
+      if (nprocs > nrep(REPT%TEMP)) then
          print *, 'Error: the number of MPI processes should be equal to or smaller than the number of replicas.'
          call sis_abort()
       endif
 
-      if (mod(n_replica_temp, nprocs) /= 0) then
+      if (mod(nrep(REPT%TEMP), nprocs) /= 0) then
          print *, 'Error: the number of replicas has to be a multiple of the number of MPI processes.'
          call sis_abort()
       endif
 
-      nrep_proc = n_replica_temp / nprocs
+      nrep_proc = nrep_all / nprocs
+      print *, 'nrep_proc=',nrep_proc
 #else
-      nrep_proc = n_replica_temp
+      nrep_proc = nrep_all
 #endif
 
       do grep = 1, nrep_all
@@ -47,11 +64,6 @@ subroutine init_replica
          print '(a,i5,a,i5)', '# irep = ', irep, ' ==> grep = ', grep
       enddo
       print '(a)', '#'
-   else
-
-      nrep_all = 1
-      nrep_proc = 1
-      irep2grep(:) = 1
 
    endif
 

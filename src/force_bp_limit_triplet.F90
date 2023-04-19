@@ -3,11 +3,14 @@ subroutine force_bp_limit_triplet(irep, forces)
    !use mt19937_64, only : genrand64_real1, genrand64_real3
    use mt_stream
    use const, only : PREC
+   use const_idx, only : REPT
+   use const_phys, only : BOLTZ_KCAL_MOL
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
-   use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy, nt_bp_excess, mts
-   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, bp_paras, &
-                             basepair_parameters, bp_map_dG
+   use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy, nt_bp_excess, mts, tempK
+   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, bp_paras, bp_coef, &
+                             basepair_parameters
+   use var_replica, only : flg_repvar, rep2val, irep2grep
 
    implicit none
 
@@ -22,6 +25,7 @@ subroutine force_bp_limit_triplet(irep, forces)
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
    type(basepair_parameters) :: bpp
+   real(PREC) :: tK, dG
    real(PREC) :: u, pre, beta, ene, ratio, rnd
    real(PREC) :: d, cosine, dih
    real(PREC) :: f_i(3), f_j(3), f_k(3), f_l(3)
@@ -41,7 +45,13 @@ subroutine force_bp_limit_triplet(irep, forces)
    ! jmp+1 (6) --- jmp (2) --- jmp-1 (4)
    !#######################################
 
-   beta = 1.0_PREC / kT
+   if (flg_repvar(REPT%TEMP)) then
+      tK = rep2val(irep2grep(irep), REPT%TEMP)
+      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
+   else
+      tK = tempK
+      beta = 1.0_PREC / kT
+   endif
 
    !$omp master
    bp_status(1:nbp(irep), irep) = .False.
@@ -56,12 +66,17 @@ subroutine force_bp_limit_triplet(irep, forces)
    !$omp do private(bpp, imp1, imp2, imp3, imp4, imp5, imp6, d, u, ene, pre, cosine, dih, &
    !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
    !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
-   !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212)
+   !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212, &
+   !$omp&           dG)
    do ibp = 1, nbp(irep)
 
       imp1 = bp_mp(1, ibp, irep)
       imp2 = bp_mp(2, ibp, irep)
       bpp = bp_paras(bp_mp(3, ibp, irep))
+
+      ! dG = dH - T * dS
+      dG = bp_coef(1, ibp, irep) - tK * bp_coef(2, ibp, irep)
+      if (dG >= 0.0_PREC) cycle
 
       v12(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
       d1212 = dot_product(v12,v12)
@@ -200,7 +215,8 @@ subroutine force_bp_limit_triplet(irep, forces)
       for_bp(:, 5, ibp) = for_bp(:, 5, ibp) + f_l(:)
 
       !===== Total =====
-      ene = bpp%U0 * bp_map_dG(imp1, imp2, irep) * exp(-u)
+      !ene = bpp%U0 * bp_map_dG(imp1, imp2, irep) * exp(-u)
+      ene = bpp%U0 * dG * exp(-u)
 
       if (ene <= bp_cutoff_energy) then
          bp_status(ibp, irep) = .True.

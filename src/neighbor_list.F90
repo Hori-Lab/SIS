@@ -1,14 +1,13 @@
 subroutine neighbor_list(irep)
   
    use const, only : PREC
-   use const_idx, only : SEQT, BPT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
    use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge
    use var_state, only : xyz, bp_status, ene_bp, for_bp, nt_bp_excess, nl_margin, lambdaD
    use var_potential, only : wca_sigma, nwca, nwca_max, wca_mp, &
-                             bp_cutoff_dist, bp_mp, nbp, nbp_max, bp_map, &
+                             bp_cutoff_dist, bp_mp, bp_coef, nbp, nbp_max, bp_map, &
                              ele_cutoff_type, ele_cutoff, ele_cutoff_inp, &
-                             nele, nele_max, ele_mp, flg_ele
+                             nele, nele_max, ele_mp, flg_ele, bp3_dH, bp3_dS, bp3_map
    use var_replica, only : nrep_proc
 
    implicit none
@@ -36,16 +35,19 @@ subroutine neighbor_list(irep)
 
    if (allocated(bp_mp)) then
       bp_mp(:,:,irep) = 0
+      bp_coef(:,:,irep) = 0.0_PREC
    else
       allocate(nbp(nrep_proc))
       nbp_max = nmp / 2
       allocate(bp_mp(3, nbp_max, nrep_proc))
+      allocate(bp_coef(2, nbp_max, nrep_proc))
       allocate(bp_status(nbp_max, nrep_proc))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
       allocate(nt_bp_excess(nmp))
       nbp(:) = 0
       bp_mp(:,:,:) = 0
+      bp_coef(:,:,:) = 0.0_PREC
       bp_status(:,:) = .False.
       ene_bp(:) = 0.0_PREC
       for_bp(:,:,:) = 0.0_PREC
@@ -134,7 +136,7 @@ subroutine neighbor_list(irep)
                endif
 
                ! Basepairs
-               if (bp_map(imp, jmp) > 0 .and. d2 <= bp_nl_cut2) then
+               if (bp3_map(imp, jmp) > 0 .and. d2 <= bp_nl_cut2) then
 
                   ibp = ibp + 1
                   if (ibp > nbp_max) then
@@ -144,6 +146,8 @@ subroutine neighbor_list(irep)
                   bp_mp(1, ibp, irep) = imp
                   bp_mp(2, ibp, irep) = jmp
                   bp_mp(3, ibp, irep) = bp_map(imp, jmp)
+                  bp_coef(1, ibp, irep) = bp3_dH(bp3_map(imp, jmp))  ! dH
+                  bp_coef(2, ibp, irep) = bp3_dS(bp3_map(imp, jmp))  ! dS (0.001 already multiplied so that the unit is kcal/mol/K)
 
                endif
    
@@ -208,11 +212,14 @@ contains
       
       integer :: old_max
       integer :: tmp(3, nbp_max, nrep_proc)
+      real(PREC) :: tmp2(2, nbp_max, nrep_proc)
 
       old_max = nbp_max   
       tmp(1:3, 1:old_max, 1:nrep_proc) = bp_mp(1:3, 1:old_max, 1:nrep_proc)
+      tmp2(1:2, 1:old_max, 1:nrep_proc) = bp_coef(1:2, 1:old_max, 1:nrep_proc)
 
       deallocate(bp_mp)
+      deallocate(bp_coef)
       deallocate(bp_status)
       deallocate(ene_bp)
       deallocate(for_bp)
@@ -220,12 +227,16 @@ contains
       nbp_max = int(nbp_max * 1.2)
 
       allocate(bp_mp(3, nbp_max, nrep_proc))
+      allocate(bp_coef(2, nbp_max, nrep_proc))
       allocate(bp_status(nbp_max, nrep_proc))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
 
       bp_mp(:, :, :) = 0
       bp_mp(1:3, 1:old_max, 1:nrep_proc) = tmp(1:3, 1:old_max, 1:nrep_proc)
+
+      bp_coef(:, :, :) = 0.0_PREC
+      bp_coef(1:2, 1:old_max, 1:nrep_proc) = tmp2(1:2, 1:old_max, 1:nrep_proc)
 
       bp_status(:,:) = .False.
       ene_bp(:) = 0.0_PREC

@@ -10,7 +10,7 @@ program sis
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
                       hdl_out, hdl_bp, hdl_bpall, hdl_bpe
    use var_parallel, only : init_parallel, end_parallel
-   use var_replica, only : nrep_proc
+   use var_replica, only : nrep_proc, flg_replica
    !use mt19937_64, only : init_genrand64
 
    implicit none
@@ -81,7 +81,6 @@ program sis
       tempK = anneal_tempK(1)
    endif
 
-   
    !! Prepare output files
    call init_out_files()
 
@@ -142,6 +141,8 @@ program sis
       call job_check_force()
 
    else if (job == JOBT%MD) then
+
+      if (flg_replica) call write_rep_table()
 
       print '(a)', 'Starting MD'
       call job_md()

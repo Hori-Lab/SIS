@@ -9,12 +9,14 @@ add_executable(${SIS_EXE}
     var_top.F90 var_state.F90 var_potential.F90 var_io.F90
     read_force_field.F90 read_input.F90 read_pdb.F90 read_xyz.F90 read_fasta.F90
     read_anneal.F90
+    write_rep_table.F90
     write_rst.F90 read_rst.F90
     init_mts.F90 init_out_files.F90 init_replica.F90 init_ele.F90
     init_sequence.F90 init_structure.F90 gen_random_coil.F90
     list_local.F90 list_bp.F90
     list_exv.F90 list_ele.F90
-    init_bp.F90 set_bp_map.F90 set_ele.F90
+    init_bp.F90 set_ele.F90
+    replica_exchange.F90
     energy.F90
     energy_kinetic.F90
     energy_bond.F90 energy_angl.F90 energy_angl_ReB.F90
@@ -29,8 +31,8 @@ add_executable(${SIS_EXE}
     neighbor_list.F90
     job_md.F90 job_dcd.F90 job_check_force.F90
     sis_abort.F90
-    main.F90
     warning_stage.F90
+    main.F90
 )
 
 add_dependencies(${SIS_EXE} toml-f-lib)

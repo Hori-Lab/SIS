@@ -14,10 +14,13 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, cfile_pdb_ini, cfile_xyz_ini
-   use var_replica, only : nrep_proc, flg_replica, rep2val, irep2grep
-   use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist
-   use var_potential, only : ele_cutoff, flg_stage
+   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep, &
+                      cfile_pdb_ini, cfile_xyz_ini
+   use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
+                             ele_cutoff, flg_stage
+   use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
+                           nstep_rep_exchange, nstep_rep_save, nrep_all
+   use var_parallel, only : myrank
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
@@ -33,6 +36,7 @@ subroutine job_md()
    real(PREC) :: accels_pre(3)
    real(PREC) :: d2, d2max, d2max_2nd
    real(PREC), allocatable :: forces(:, :)
+   real(PREC), allocatable :: replica_energies(:, :)
    logical :: flg_stop
    character(len=29) :: out_fmt
 
@@ -48,6 +52,7 @@ subroutine job_md()
    allocate(forces(3, nmp))
    allocate(energies(0:ENE%MAX, nrep_proc))
    allocate(Ekinetic(nrep_proc))
+   allocate(replica_energies(2, nrep_all))
 
    ! set PBC box
    if (flg_pbc) then
@@ -57,7 +62,9 @@ subroutine job_md()
       enddo
    endif
 
-   !! Set up variables for dynamics
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!! Set up constants for the dynamics
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    radius = 10.0
    v = viscosity_Pas * sqrt(1.0e3_PREC / KCAL2JOUL) * N_AVO * 1.0e-20_PREC
    fric(:) = 6.0e0_PREC * PI * v * radius
@@ -97,7 +104,9 @@ subroutine job_md()
    call set_md_coef()
 
 
-   !! Set up the initial state
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!! set up the initial state
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (restarted) then
       call read_rst(RSTBLK%VELO)
       call read_rst(RSTBLK%ACCEL)
@@ -179,19 +188,25 @@ subroutine job_md()
       tempK = anneal_tempK(ianneal)
 
       call set_md_coef()
-      call set_bp_map()
+      !call set_bp_map()
 
       if (ianneal < nanneal) then
          istep_anneal_next = anneal_step(ianneal+1)
       endif
    endif
 
-   ! Initial energies
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!! Initial energies
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    do irep = 1, nrep_proc
+      print *, 'irep=', irep
+      flush(6)
 
       flg_bp_energy = .False.
       call energy(irep, energies(0:ENE%MAX, irep))
       call energy_kinetic(irep, Ekinetic(irep))
+      print *, 'energy done'
+      flush(6)
 
       ! Open DCD file and write the header
       print '(a,i5,2a)', '# Opening dcd file for irep = ', irep, ', ', trim(cfile_dcd(irep))
@@ -251,7 +266,7 @@ subroutine job_md()
    flg_stop = .False.
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   !!! Time integration
+   !!! Main loop for time integration
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    do while (istep < nstep)
 
@@ -320,6 +335,9 @@ subroutine job_md()
 
       enddo ! irep
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Energy calculation
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (mod(istep, nstep_save) == 0) then
          do irep = 1, nrep_proc
             if (flg_replica) then
@@ -338,6 +356,32 @@ subroutine job_md()
          enddo
       endif
 
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Replica exchange
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (flg_replica) then
+         if (mod(istep, nstep_rep_exchange) == 0) then
+
+            call replica_exchange(velos, replica_energies, tempk)
+
+            ! Write rep file
+            if (myrank == 0 .and. mod(istep, nstep_rep_save) == 0) then
+               write(hdl_rep, '(i12,1x)', ADVANCE='no') istep
+
+               do irep = 1, nrep_all - 1
+                  write(hdl_rep, '(i5,1x)', ADVANCE='no') rep2lab(irep)
+               enddo
+
+               write(hdl_rep, '(i5)') rep2lab(nrep_all)
+            endif
+         endif
+      endif
+
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Update the box size
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_variable_box) then
          if (mod(istep, variable_box_step) == 0) then
             call set_pbc_size(pbc_box(:) + variable_box_change(:))
@@ -350,12 +394,16 @@ subroutine job_md()
          endif
       endif
 
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Annealing
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (opt_anneal > 0 .and. istep + 1 == istep_anneal_next) then
          ianneal = ianneal + 1
          tempK = anneal_tempK(ianneal)
 
          call set_md_coef()
-         call set_bp_map()
+         !call set_bp_map()
 
          if (ianneal < nanneal) then
             istep_anneal_next = anneal_step(ianneal+1)
@@ -364,24 +412,36 @@ subroutine job_md()
          endif
       endif
 
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Write progress
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_progress) then
          if (mod(istep, step_progress) == 0) then
             call progress_update(istep, nstep)
          endif
       endif
 
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Check wall time
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (stop_wall_time_sec > 0 .and. wall_time_sec() > stop_wall_time_sec) then
          flg_stop = .True.
          print '(a)', 'Wall-clock time limit reached. Stop the job after writing rst file.'
       endif
 
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Write restart file (.rst)
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (mod(istep, nstep_save_rst) == 0 .or. flg_stop) then
          call write_rst()
       endif
 
       if (flg_stop) exit
 
-   enddo
+   enddo  ! <--- Main loop for time integration
 
    do irep = 1, nrep_proc
       call fdcd(irep)%close()

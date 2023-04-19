@@ -1,37 +1,30 @@
 module var_replica
 
-   use const, only : PREC, MAX_REPLICA
+   use const, only : PREC, MAX_REPLICA, MAX_REP_DIM, MAX_REP_PER_DIM
    use const_idx, only : REPT
    implicit none
 
    logical :: flg_replica
+   logical :: flg_repvar(REPT%MAX)
+
+   integer :: ndim_replica
 
    integer :: nrep_all
    integer :: nrep_proc
 
-   integer :: n_replica_temp
+   integer :: nrep(REPT%MAX)
 
    integer :: nstep_rep_exchange
    integer :: nstep_rep_save
 
    logical :: flg_exchange
 
-   real(PREC) :: replica_values(MAX_REPLICA, REPT%MAX)
-
-   !integer :: nrep_dimensions
+   real(PREC) :: replica_values(MAX_REP_PER_DIM, REPT%MAX)
 
    integer, save :: irep2grep(MAX_REPLICA)  !< replica(local) => replica(global)
    !integer, save :: grep2irep(MXREPLICA)  !< replica(global) => replica(local)
    !integer, save :: grep2rank(MXREPLICA)  !< replica(global) => local_rank_rep
    !logical, save :: flg_rep(1:REPTYPE%MAX) = .false.
-
-!   !----------------------------------------------
-!   ! Histogram
-!   integer, save              :: total_attempt = 0     !< Total # of times of exchange attempt
-!   integer, allocatable, save :: hist_combination(:,:) !< Histogram of existence (label, replica)
-!   integer, allocatable, save :: hist_exchange(:,:,:)  !< Total # of times of accepted exchange for each (label, period)
-!   integer, allocatable, save :: hist_attempt(:,:,:) !< Total # of times of exchange attempt for each (label, period)
-!   real(PREC), allocatable, save :: rate_exchange(:,:,:)  !< (label, label, period)
 
 
    ! ================================================
@@ -57,39 +50,39 @@ module var_replica
    real(PREC), save :: lab2val(MAX_REPLICA, REPT%MAX) !< Replica variables
 
 !   integer, allocatable, save :: label_order(:,:)  !< (REPTYPE%MAX, n_repica_all) 
-!
-!   ! ===============================================================
-!   ! Using these 'Permutation function'
-!   ! Ex.)
-!   ! replica => label  (rep2lab)
-!   ! label => replica  (lab2rep)
-!   ! --------------------------------
-!   ! | replica  | 1 | 2 | 3 | 4 | 5 |
-!   ! | label    | 3 | 1 | 5 | 2 | 4 |
-!   ! --------------------------------
-!   ! 
-!   ! label   => value  (lab2val)
-!   ! --------------------------------
-!   ! | label    | 1 | 2 | 3 | 4 | 5 |
-!   ! | value    |1.0|1.2|1.4|1.6|1.8| (temperature, ionic strength, and so on.)
-!   ! --------------------------------
-!   !
-!   ! As a result, in this situation, 
-!   ! replica => value  (rep2val (function))
-!   ! --------------------------------
-!   ! | replica  | 1 | 2 | 3 | 4 | 5 |
-!   ! | value    |1.4|1.0|1.8|1.2|1.6| (temperature, ionic strength, and so on.)
-!   ! --------------------------------
-!   ! ===============================================================
-!
-!   !-----------------------------------------------------------
-!   ! to detect whether current exchange step is odd or even
-!   ! (These are private variables)
-!   integer, save, private :: type_array(1:MXREPDIM)
-!   integer, save, private :: exchange_pair_tb(1:MXREPLICA,1:MXREPDIM*2)
-!   integer, save, private :: idx_type = 1
-!   integer, save, private :: idx_pair = 1
-!
+
+   ! ===============================================================
+   ! Using these 'Permutation function'
+   ! Ex.)
+   ! replica => label  (rep2lab)
+   ! label => replica  (lab2rep)
+   ! --------------------------------
+   ! | replica  | 1 | 2 | 3 | 4 | 5 |
+   ! | label    | 3 | 1 | 5 | 2 | 4 |
+   ! --------------------------------
+   ! 
+   ! label   => value  (lab2val)
+   ! --------------------------------
+   ! | label    | 1 | 2 | 3 | 4 | 5 |
+   ! | value    |1.0|1.2|1.4|1.6|1.8| (temperature, ionic strength, and so on.)
+   ! --------------------------------
+   !
+   ! As a result, in this situation, 
+   ! replica => value  (rep2val (function))
+   ! --------------------------------
+   ! | replica  | 1 | 2 | 3 | 4 | 5 |
+   ! | value    |1.4|1.0|1.8|1.2|1.6| (temperature, ionic strength, and so on.)
+   ! --------------------------------
+   ! ===============================================================
+
+   !-----------------------------------------------------------
+   ! to detect whether current exchange step is odd or even
+   ! (These are private variables)
+   integer, save, private :: type_array(1:MAX_REP_DIM)
+   integer, save, private :: exchange_pair_tb(1:MAX_REPLICA,1:MAX_REP_DIM*2)
+   integer, save, private :: idx_type = 1
+   integer, save, private :: idx_pair = 1
+
 !! ###########################################################################
 contains
 
@@ -107,31 +100,31 @@ contains
 !      rep2step = lab2step(rep2lab(ireplica))
 !   endfunction rep2step
 !
-!
-!   integer function get_pair(i)
-!      implicit none
-!      integer, intent(in) :: i
-!      get_pair = exchange_pair_tb(i, idx_pair)
-!   endfunction get_pair
-!
-!
-!   subroutine set_forward()
-!      implicit none
-!
-!      if (idx_type == n_dimension) then
-!         idx_type = 1
-!      else
-!         idx_type = idx_type + 1
-!      endif
-!
-!      if (idx_pair == n_dimension*2) then
-!         idx_pair = 1
-!      else
-!         idx_pair = idx_pair + 1
-!      endif
-!   endsubroutine set_forward
-!
-!
+
+   integer function get_pair(i)
+      implicit none
+      integer, intent(in) :: i
+      get_pair = exchange_pair_tb(i, idx_pair)
+   endfunction get_pair
+
+
+   subroutine set_forward()
+      implicit none
+
+      if (idx_type == ndim_replica) then
+         idx_type = 1
+      else
+         idx_type = idx_type + 1
+      endif
+
+      if (idx_pair == ndim_replica*2) then
+         idx_pair = 1
+      else
+         idx_pair = idx_pair + 1
+      endif
+   endsubroutine set_forward
+
+
 !   integer function get_type(i)
 !      implicit none
 !      integer, intent(in), optional :: i
@@ -164,103 +157,103 @@ contains
 !      enddo
 !   endsubroutine make_type_array
 !
-!
-!   subroutine make_exchange_pair_tb()
-!      implicit none
-!      integer :: icounter, ivar, iset
-!      integer :: idimn, iparity, icycle, ireplica, icontinue
-!      integer :: ireplica_start
-!      integer :: n_division_pre, n_division, n_continue
-!      logical :: flg_post_zero
-!#ifdef _DEBUG
-!      integer :: irep
-!#endif
-!
-!      exchange_pair_tb(:,:) = 0
-!
-!      ! ==========================================================
-!      ! exchange order  (Ex. 3-dimension case)
-!      !   -----------------------------------------------------
-!      !    icounter  |  1   |  2   |  3   |  4   |  5   |  6
-!      !   -----------------------------------------------------
-!      !    exchange- | dim1 | dim2 | dim3 | dim1 | dim2 | dim3 
-!      !      pair    | odd  | odd  | odd  | even | even | even
-!      !   -----------------------------------------------------
-!      ! ==========================================================
-!
-!      icounter       = 0
-!      do iparity = 1, 2   ! odd or even
-!                          ! 1 odd  : exchange 1-2, 3-4, 5-6 ,.....
-!                          ! 2 even : exchange 2-3, 4-5, 6-7 ,.....
-!
-!         n_division     = 1
-!         do idimn = 1, n_dimension 
-!
-!            icounter = icounter + 1
-!            ivar = type_array(idimn)
-!            n_division_pre = n_division
-!            n_division     = n_division * inrep%n_replica(ivar) 
-!            n_continue     = nrep_all / n_division
-!
-!            iset = 0
-!            do icycle = 1, n_division_pre
-!
-!               flg_post_zero = .false.
-!               if (iparity == 1) then
-!                  if (mod(inrep%n_replica(ivar),2) == 1) then 
-!                     ! #replica is odd
-!                     flg_post_zero = .true.
-!                  endif
-!                  ireplica_start = 1
-!               else
-!                  ! zeroing 1st replica
-!                  do icontinue = 1, n_continue
-!                     iset = iset + 1
-!                     exchange_pair_tb(iset, icounter) = 0
-!                  enddo
-!                  if (mod(inrep%n_replica(ivar),2) == 0) then
-!                     ! #replica is even
-!                     flg_post_zero = .true.
-!                   endif
-!                  ireplica_start = 2
-!               endif
-!
-!               do ireplica = ireplica_start, (inrep%n_replica(ivar)-1), 2
-!
-!                  do icontinue = 1, n_continue*2
-!                     iset = iset + 1
-!
-!                     if (icontinue <= n_continue) then
-!                        exchange_pair_tb(iset, icounter) = iset + n_continue
-!                     else
-!                        exchange_pair_tb(iset, icounter) = iset - n_continue
-!                     endif
-!                  enddo
-!
-!               enddo ! ireplica
-!
-!               ! zeroing last replica
-!               if (flg_post_zero) then
-!                  do icontinue = 1, n_continue
-!                     iset = iset + 1
-!                     exchange_pair_tb(iset, icounter) = 0
-!                  enddo
-!               endif
-!
-!            enddo ! icycle
-!         enddo ! iparity
-!      enddo ! idimn
-!
-!#ifdef _DEBUG
-!      do icounter = 1, MXREPDIM*2
-!         write(*,*) '#################'
-!         write(*,*) 'icounter = ',icounter
-!         do irep = 1, nrep_all
-!            write(*,*) 'exchange_pair_tb(',irep,',',icounter,')=', exchange_pair_tb(irep, icounter)
-!         enddo
-!      enddo
-!#endif
-!
-!   endsubroutine make_exchange_pair_tb
+
+   subroutine make_exchange_pair_tb()
+      implicit none
+      integer :: icounter, ivar, iset
+      integer :: idimn, iparity, icycle, ireplica, icontinue
+      integer :: ireplica_start
+      integer :: n_division_pre, n_division, n_continue
+      logical :: flg_post_zero
+#ifdef _DEBUG
+      integer :: irep
+#endif
+
+      exchange_pair_tb(:,:) = 0
+
+      ! ==========================================================
+      ! exchange order  (Ex. 3-dimension case)
+      !   -----------------------------------------------------
+      !    icounter  |  1   |  2   |  3   |  4   |  5   |  6
+      !   -----------------------------------------------------
+      !    exchange- | dim1 | dim2 | dim3 | dim1 | dim2 | dim3 
+      !      pair    | odd  | odd  | odd  | even | even | even
+      !   -----------------------------------------------------
+      ! ==========================================================
+
+      icounter       = 0
+      do iparity = 1, 2   ! odd or even
+                          ! 1 odd  : exchange 1-2, 3-4, 5-6 ,.....
+                          ! 2 even : exchange 2-3, 4-5, 6-7 ,.....
+
+         n_division     = 1
+         do idimn = 1, ndim_replica 
+
+            icounter = icounter + 1
+            ivar = type_array(idimn)
+            n_division_pre = n_division
+            n_division     = n_division * nrep(ivar) 
+            n_continue     = nrep_all / n_division
+
+            iset = 0
+            do icycle = 1, n_division_pre
+
+               flg_post_zero = .false.
+               if (iparity == 1) then
+                  if (mod(nrep(ivar),2) == 1) then 
+                     ! #replica is odd
+                     flg_post_zero = .true.
+                  endif
+                  ireplica_start = 1
+               else
+                  ! zeroing 1st replica
+                  do icontinue = 1, n_continue
+                     iset = iset + 1
+                     exchange_pair_tb(iset, icounter) = 0
+                  enddo
+                  if (mod(nrep(ivar),2) == 0) then
+                     ! #replica is even
+                     flg_post_zero = .true.
+                   endif
+                  ireplica_start = 2
+               endif
+
+               do ireplica = ireplica_start, (nrep(ivar)-1), 2
+
+                  do icontinue = 1, n_continue*2
+                     iset = iset + 1
+
+                     if (icontinue <= n_continue) then
+                        exchange_pair_tb(iset, icounter) = iset + n_continue
+                     else
+                        exchange_pair_tb(iset, icounter) = iset - n_continue
+                     endif
+                  enddo
+
+               enddo ! ireplica
+
+               ! zeroing last replica
+               if (flg_post_zero) then
+                  do icontinue = 1, n_continue
+                     iset = iset + 1
+                     exchange_pair_tb(iset, icounter) = 0
+                  enddo
+               endif
+
+            enddo ! icycle
+         enddo ! iparity
+      enddo ! idimn
+
+#ifdef _DEBUG
+      do icounter = 1, MAX_REP_DIM*2
+         write(*,*) '#################'
+         write(*,*) 'icounter = ',icounter
+         do irep = 1, nrep_all
+            write(*,*) 'exchange_pair_tb(',irep,',',icounter,')=', exchange_pair_tb(irep, icounter)
+         enddo
+      enddo
+#endif
+
+   endsubroutine make_exchange_pair_tb
 
 endmodule var_replica

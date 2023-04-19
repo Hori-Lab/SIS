@@ -18,7 +18,9 @@ module const
    integer, parameter :: CHAR_FILE_LINE = 500
    integer, parameter :: FILENAME_DIGIT_REPLICA = 4
 
-   integer, parameter :: MAX_REPLICA = 8
+   integer, parameter :: MAX_REP_DIM = 1
+   integer, parameter :: MAX_REP_PER_DIM = 8
+   integer, parameter :: MAX_REPLICA = MAX_REP_PER_DIM * MAX_REP_DIM
 contains
 
    subroutine init_const()

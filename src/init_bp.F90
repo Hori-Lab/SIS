@@ -1,33 +1,104 @@
 subroutine init_bp()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
-   use const
+   use const, only : PREC
    use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
-   use var_potential, only : bp_model, bp_map_0, bp_map, bp_min_loop, bp_map_dG, &
-                             bp_paras, bp_cutoff_energy, bp_cutoff_dist
-   use var_replica, only : nrep_proc
+   use var_potential, only : bp_model, bp_map, bp_min_loop, & !bp_map_dG, bp_map_0, &
+                             bp_paras, bp_cutoff_energy, bp_cutoff_dist, bp3_map, &
+                             NN_dH, NN_dS, dH0, dS0, bp3_dH, bp3_dS
+   !use var_replica, only : nrep_proc
 
    implicit none
 
    integer :: imp, jmp, bptype
    integer :: irep, grep
    integer :: i, j, ichain, jchain
-   integer :: l, n, idummy
+   integer :: h, l, n, idummy
+   integer :: w, x, u, z, y, v
    integer :: istat, hdl
    real(PREC) :: bp_bond_r
+   real(PREC) :: dH, dS
    character(len=1) :: nt
+   logical :: comp_wz, comp_uv
+   integer :: bp3_hash(1:4**6)   ! 4**6 = 4096
 
    allocate(bp_map(nmp, nmp))
-   allocate(bp_map_0(nmp, nmp))
+   allocate(bp3_map(nmp, nmp))
    bp_map(:,:) = 0
-   bp_map_0(:,:) = 0
+   bp3_map(:,:) = 0
 
-   if (bp_model == 4 .or. bp_model == 5) then
-      allocate(bp_map_dG(nmp, nmp, nrep_proc))
-      bp_map_dG(:,:,:) = 0.0_PREC
+   !if (bp_model == 4 .or. bp_model == 5) then
+   !   allocate(bp_map_dG(nmp, nmp, nrep_proc))
+   !   bp_map_dG(:,:,:) = 0.0_PREC
+   !endif
+
+
+   if (bp_model == 5) then
+
+      bp3_hash(:) = 0
+      bp3_dH(:) = 0.0_PREC
+      bp3_dS(:) = 0.0_PREC
+
+      h = 0
+
+      !! seq1: 5'-w x u-3'
+      !! seq2: 3'-z y v-5'
+
+      !! Centre base pair
+      do x = 0, 2        ! A,         U,      G
+         do y = x+1, 3   ! (U, G, C), (G, C), C
+
+            !! Centre has to be paired.
+            if (.not. is_complement(x,y)) cycle
+
+            !! Upper base pair
+            do w = 0, 3   ! A, U, G, C
+               do z = 0, 3   ! A, U, G, C
+
+                  comp_wz = is_complement(w, z)
+                  if (comp_wz) then
+                     dH = 0.5_PREC * (NN_dH(seqt2nnt(w, x, z, y)) - dH0)
+                     dS = 0.5_PREC * (NN_dS(seqt2nnt(w, x, z, y)) - dS0)
+                  else
+                     dH = 0.0_PREC
+                     dS = 0.0_PREC
+                  endif
+
+                  !! Lower base pair
+                  do u = 0, 3   ! A, U, G, C
+                     do v = 0, 3   ! A, U, G, C
+
+                        comp_uv = is_complement(u, v)
+
+                        !! At least either side has to be a complementary base pair
+                        if ((.not. comp_wz) .and. (.not. comp_uv)) cycle
+
+                        h = h + 1
+
+                        i = bp3_hash_key(w, x, u, z, y, v)
+                        bp3_hash(i) = h
+
+                        if (comp_uv) then
+                           bp3_dH(h) = dH + 0.5_PREC * (NN_dH(seqt2nnt(x, u, y, v)) - dH0)
+                           bp3_dS(h) = (dS + 0.5_PREC * (NN_dS(seqt2nnt(x, u, y, v)) - dS0)) * 1.0e03_PREC
+                        else
+                           bp3_dH(h) = dH
+                           bp3_dS(h) = dS
+                        endif
+
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+      enddo
+
+      !print *, h
+      !! h must be 468
    endif
+
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Specific pairs given in CT file
@@ -179,8 +250,8 @@ subroutine init_bp()
 
             endif
 
-            bp_map_0(imp, jmp) = bp_map(imp, jmp)
-            bp_map_0(jmp, imp) = bp_map(jmp, imp)
+            !bp_map_0(imp, jmp) = bp_map(imp, jmp)
+            !bp_map_0(jmp, imp) = bp_map(jmp, imp)
 
          endif
       enddo
@@ -238,15 +309,35 @@ subroutine init_bp()
                bp_map(jmp, imp) = BPT%GU
             endif
 
+            if (bp_model == 5) then
+               if (ichain == jchain .and. (i-1) + bp_min_loop >= (j+1)) then
+                  ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
+                                                            SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+
+               else if (ichain == jchain .and. (i+1) + bp_min_loop >= (j-1)) then
+                  ! (i+1) and (j-1) should be treated as unpaired (represented as U-U).
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
+                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
+
+               else
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), seq(i+1, ichain), &
+                                                            seq(j+1, jchain), seq(j, jchain), seq(j-1, jchain)))
+               endif
+            endif
 
          enddo
       enddo
 
-      bp_map_0(:,:) = bp_map(:,:)
-      bp_map_0(:,:) = bp_map(:,:)
+      !bp_map_0(:,:) = bp_map(:,:)
+      !bp_map_0(:,:) = bp_map(:,:)
    endif
 
-   call set_bp_map()
+   if (bp_model /= 5) then
+      bp3_map(:,:) = bp_map(:,:)
+   endif
+
+   !call set_bp_map()
 
 
    ! Calcuate BP cutoff
@@ -309,5 +400,16 @@ contains
       endif
 
    end function is_complement
+
+   function bp3_hash_key(a, b, c, d, e, f) result (i)
+
+      integer, intent(in) :: a, b, c, d, e, f
+      integer :: i
+
+      !i = a*(4**5) + b*(4**4) + c*(4**3) + d*(4**2) + e*4 + f + 1
+      i = 1 + a + b*4 + c*(4**2) + d*(4**3) + e*(4**4) + f*(4**5)
+      !! Add 1 because the index starts with 1 but not 0.
+
+   end function bp3_hash_key
 
 endsubroutine init_bp
