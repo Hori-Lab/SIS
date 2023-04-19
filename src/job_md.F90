@@ -14,8 +14,7 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next
-   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep, &
-                      cfile_pdb_ini, cfile_xyz_ini
+   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
@@ -38,13 +37,19 @@ subroutine job_md()
    real(PREC), allocatable :: forces(:, :)
    real(PREC), allocatable :: replica_energies(:, :)
    logical :: flg_stop
-   character(len=29) :: out_fmt
+   character(len=37) :: out_fmt
 
    ! Function
    real(PREC) :: rnd_boxmuller
 
    ! Format in .out file
-   write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%MAX+1, '(1x, g13.6))'
+   if (flg_replica) then
+      write(out_fmt, '(a23,i2,a12)') '(i10, 1x, i4, 1x, f6.2,', ENE%ELE+2, '(1x, g13.6))'
+   else
+      write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%ELE+2, '(1x, g13.6))'
+   endif
+   print *, '## out_fmt'
+   print *, out_fmt
 
    allocate(mass(nmp))
    allocate(accels(3, nmp, nrep_proc))
@@ -189,14 +194,10 @@ subroutine job_md()
    !!! Initial energies
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    do irep = 1, nrep_proc
-      print *, 'irep=', irep
-      flush(6)
 
       flg_bp_energy = .False.
       call energy(irep, energies(0:ENE%MAX, irep))
       call energy_kinetic(irep, Ekinetic(irep))
-      print *, 'energy done'
-      flush(6)
 
       ! Open DCD file and write the header
       print '(a,i5,2a)', '# Opening dcd file for irep = ', irep, ', ', trim(cfile_dcd(irep))
@@ -205,13 +206,23 @@ subroutine job_md()
       call fdcd(irep)%write_header(nmp)
 
       ! Open .out file
-      write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
-                                                !1234567890 1234 123456 1234567890123 1234567890123 1234567890123'
-      write(hdl_out(irep), '(a)', advance='no') ' (7)Eangl      (8)Edih      '
-                                                ! 1234567890123 1234567890123'
-      write(hdl_out(irep), '(a)', advance='no') ' (9)Ebp        (10)Eexv      (11)Eele'
-                                                ! 1234567890123 1234567890123 1234567890123
-      icol = 11
+      if (flg_replica) then
+         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
+                                                   !1234567890 1234 123456 1234567890123 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') ' (7)Eangl      (8)Edih      '
+                                                   ! 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') ' (9)Ebp        (10)Eexv      (11)Eele'
+                                                   ! 1234567890123 1234567890123 1234567890123
+         icol = 11
+      else
+         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
+                                                   !1234567890 123456 1234567890123 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') ' (6)Eangl      (7)Edih      '
+                                                   ! 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') ' (8)Ebp        (9)Eexv       (10)Eele'
+                                                   ! 1234567890123 1234567890123 1234567890123
+         icol = 10
+      endif
       if (flg_stage) then
          icol = icol + 1
          write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Estage   '
@@ -229,15 +240,26 @@ subroutine job_md()
       if (restarted) then
          ! Only STDOUT if restarted. No DCD output.
          print '(a)', '##### Energies at the beginning'
-         print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
-         print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, irep2grep(irep), tK, Ekinetic, energies(0, irep)
-         print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
-         print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
+         if (flg_replica) then
+            print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
+            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, irep2grep(irep), tK, Ekinetic(irep), energies(0, irep)
+            print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
+            print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
+         else
+            print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
+            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
+            print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele      (11)Estage'
+            print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
+         endif
          print *
 
       else
          ! At istep = 0 (not restarted), write both .out and DCD
-         write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic, (energies(i, irep), i=0,ENE%ELE)
+         if (flg_replica) then
+            write(hdl_out(irep), out_fmt, advance='no') istep, irep2grep(irep), tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+         else
+            write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+         endif
          if (flg_stage) then
             write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
          endif
@@ -337,7 +359,12 @@ subroutine job_md()
             endif
             call energy(irep, energies(0:ENE%MAX, irep))
             call energy_kinetic(irep, Ekinetic(irep))
-            write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic, (energies(i, irep), i=0,ENE%ELE)
+
+            if (flg_replica) then
+               write(hdl_out(irep), out_fmt, advance='no') istep, irep2grep(irep), tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+            else
+               write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+            endif
             if (flg_stage) then
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
             endif
