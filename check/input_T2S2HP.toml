@@ -1,22 +1,20 @@
 title = "sis input"
 
-[job]
+[Job]
 type = "MD"
 #type = "CHECK_FORCE"
 
-[files]
-      [files.in]
-      #ff = "./rna_cg1_triplet.ff"
+[Files]
+      [Files.In]
       ff = "./sis_dih_ReB_NN.ff"
       fasta = "T2S2HP.fasta"
-      pdb_ini = "T2S2HP_folded.pdb"
-      #xyz_ini = "T2S2HP_random.xyz"
+      xyz_ini = "T2S2HP_random.xyz"
 
-      [files.out]
+      [Files.Out]
       types = ["bp", "bpe", "bpall"]
       prefix = "./test_T2S2HP"
 
-[condition]
+[Condition]
       #tempK = 348.15
       tempK = 300.00
       rng_seed = 123
