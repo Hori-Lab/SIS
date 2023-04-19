@@ -25,6 +25,8 @@ subroutine read_force_field()
    type(toml_table), allocatable :: table
    type(toml_table), pointer :: group, node, subnode
    !type(toml_array), pointer :: array
+   type(toml_context) :: context
+   type(toml_error), allocatable :: tm_err
    !======= 
 
    call set_invalid()
@@ -45,10 +47,15 @@ subroutine read_force_field()
          error stop
       endif
 
-      call toml_parse(table, hdl)
+      call toml_load(table, hdl, context=context, error=tm_err)
 
       close(hdl)
       iopen_hdl = iopen_hdl - 1
+
+      if (allocated(tm_err)) then
+         print '(a)', tm_err%message
+         call sis_abort()
+      endif
 
       call get_value(table, "title", cline)
       print '(2a)', '# title: ', trim(cline)

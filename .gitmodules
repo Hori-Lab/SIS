@@ -1,3 +1,4 @@
 [submodule "subprojects/toml-f"]
 	path = subprojects/toml-f
 	url = https://github.com/hori-lab/toml-f
+	branch = sis
