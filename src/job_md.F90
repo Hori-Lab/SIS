@@ -112,16 +112,6 @@ subroutine job_md()
       call read_rst(RSTBLK%ACCEL)
 
    else
-      ! Load initial coordinates from PDB or XYZ
-      if (len(cfile_pdb_ini) > 0) then
-         call read_pdb(cfile_pdb_ini, nmp, xyz)
-
-      else if (len(cfile_xyz_ini) > 0) then
-         call read_xyz(cfile_xyz_ini, nmp, xyz)
-
-      else
-         error stop 'Initial structure not found in job_md'
-      endif
 
       if (flg_stage) call check_int_stage()
 

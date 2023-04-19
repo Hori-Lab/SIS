@@ -14,6 +14,9 @@ subroutine init_mts()
    integer :: irep, grep
    integer :: id_offset
 
+   print '(a)', 'Initialising MT stream.'
+   flush(6)
+
    allocate(mts(0:nrep_proc))
 
    call set_mt19937()
@@ -24,6 +27,7 @@ subroutine init_mts()
 
    ! If REMD, geenerate another stream specifically for replica exchange.
    if (flg_replica) then
+      print '(a)', 'Creating an MT stream, mts_rep.'
       call create_stream(mts(0), mts_rep, 1)
       id_offset = 1
    endif     
@@ -31,7 +35,13 @@ subroutine init_mts()
    ! Stream for each process.
    do irep = 1, nrep_proc
       grep = irep2grep(irep)
-      call create_stream(mts(0), mts(irep), grep + id_offset)
+      if (grep /= 0) then
+         print '(a,i4,a,i4,a,i5)', 'Creating an MT stream, mts(', irep, '), grep = ', grep, ', id = ', grep + id_offset
+         call create_stream(mts(0), mts(irep), grep + id_offset)
+      endif
    enddo
  
+   print '(a)', 'Done: Initialising MT stream.'
+   print *
+   flush(6)
 endsubroutine init_mts

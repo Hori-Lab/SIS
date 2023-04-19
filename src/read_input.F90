@@ -43,9 +43,14 @@ subroutine read_input(cfilepath)
    integer :: i
    integer :: istat, origin
    integer :: hdl
+#ifdef PAR_MPI
+   integer :: strlen
+#endif
    real(PREC) :: rdummy, boxsize(3)
    character(len=:), allocatable :: cline
    character(len=5) :: cquery
+
+   flush(OUTPUT_UNIT)
 
    if (myrank == 0) then
 
@@ -654,7 +659,12 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(cfile_prefix, CHAR_FILE_PATH, MPI_CHARACTER, 0, MPI_COMM_WORLD, istat)
+   ! Because the length of cfile_prefix is unknown...
+   if (myrank == 0) strlen = len(cfile_prefix)
+   call MPI_BCAST(strlen, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   if (myrank /= 0) allocate(character(len=strlen)::cfile_prefix)
+
+   call MPI_BCAST(cfile_prefix, strlen, MPI_CHARACTER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_out_bp, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_out_bpe, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_out_bpall, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
