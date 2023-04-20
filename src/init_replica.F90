@@ -4,7 +4,8 @@ subroutine init_replica
    use const_idx, only : REPT
    use var_replica, only : flg_replica, nrep_all, rep2val, nrep_proc, irep2grep, &
                            nrep, rep2lab, lab2rep, lab2val, replica_values, &
-                           ndim_replica, flg_repvar
+                           ndim_replica, flg_repvar, &
+                           make_replica_exchange_pair_tb, make_replica_type_array
    use var_parallel, only : myrank, nprocs
 
    implicit none
@@ -65,6 +66,9 @@ subroutine init_replica
       enddo
       print '(a)', '#'
 
+      call make_replica_type_array()
+
+      call make_replica_exchange_pair_tb()
    endif
 
    print *

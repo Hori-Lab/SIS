@@ -125,40 +125,40 @@ contains
    endsubroutine set_forward
 
 
-!   integer function get_type(i)
-!      implicit none
-!      integer, intent(in), optional :: i
-!      if (present(i)) then
-!         get_type = type_array(i)
-!      else
-!         get_type = type_array(idx_type)
-!      endif
-!   endfunction get_type
-!
-!
-!   subroutine make_type_array()
-!      ! called by replica_settable only once
-!      use const_index
-!      use const_maxsize
-!      implicit none
-!      integer :: idx, ivar
-!
-!      type_array(:) = 0
-!      idx = 0
-!      do ivar = 1, REPTYPE%MAX
-!         if (flg_rep(ivar)) then
-!            idx = idx + 1
-!            if (idx > MXREPDIM) then
-!               call util_error(ERROR%STOP_ALL, &
-!               'Error: defect in var_replica::make_type_table')
-!            endif
-!            type_array(idx) = ivar
-!         endif
-!      enddo
-!   endsubroutine make_type_array
-!
+   integer function get_type(i)
+      implicit none
+      integer, intent(in), optional :: i
+      if (present(i)) then
+         get_type = type_array(i)
+      else
+         get_type = type_array(idx_type)
+      endif
+   endfunction get_type
 
-   subroutine make_exchange_pair_tb()
+
+   subroutine make_replica_type_array()
+      ! called by replica_settable only once
+      use const, only : MAX_REP_DIM
+      use const_idx, only : REPT
+      implicit none
+      integer :: idx, ivar
+
+      type_array(:) = 0
+      idx = 0
+      do ivar = 1, REPT%MAX
+         if (flg_repvar(ivar)) then
+            idx = idx + 1
+            if (idx > MAX_REP_DIM) then
+               print '(a)', 'Erorr: defect in var_replica::make_type_table'
+               call sis_abort()
+            endif
+            type_array(idx) = ivar
+         endif
+      enddo
+   endsubroutine make_replica_type_array
+
+
+   subroutine make_replica_exchange_pair_tb()
       implicit none
       integer :: icounter, ivar, iset
       integer :: idimn, iparity, icycle, ireplica, icontinue
@@ -181,7 +181,7 @@ contains
       !   -----------------------------------------------------
       ! ==========================================================
 
-      icounter       = 0
+      icounter = 0
       do iparity = 1, 2   ! odd or even
                           ! 1 odd  : exchange 1-2, 3-4, 5-6 ,.....
                           ! 2 even : exchange 2-3, 4-5, 6-7 ,.....
@@ -246,14 +246,15 @@ contains
 
 #ifdef _DEBUG
       do icounter = 1, MAX_REP_DIM*2
-         write(*,*) '#################'
-         write(*,*) 'icounter = ',icounter
+         print  '(a)', '#################'
+         print '(a,i5)', 'icounter = ',icounter
          do irep = 1, nrep_all
-            write(*,*) 'exchange_pair_tb(',irep,',',icounter,')=', exchange_pair_tb(irep, icounter)
+            print *, 'exchange_pair_tb(',irep,',',icounter,')=', exchange_pair_tb(irep, icounter)
          enddo
       enddo
+      flush(6)
 #endif
 
-   endsubroutine make_exchange_pair_tb
+   endsubroutine make_replica_exchange_pair_tb
 
 endmodule var_replica

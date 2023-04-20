@@ -4,15 +4,16 @@
 !#undef DUMP
 !#endif
 
-#define DUMP
+!#define DUMP
 
 subroutine replica_exchange(velos, replica_energy, tempk)
 
    use const
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : REPT
+   use var_top, only : nmp
    use var_state, only : mts_rep
-   use var_replica, only : nrep_all, &
+   use var_replica, only : nrep_all, nrep_proc, &
                            rep2lab, lab2rep, lab2val,&
                            flg_repvar, get_pair, set_forward
    use mt_stream
@@ -21,8 +22,8 @@ subroutine replica_exchange(velos, replica_energy, tempk)
    implicit none
 
    !---------------------------------------------------------------------------
-   real(PREC), intent(inout) :: velos(:,:,:)      ! (SDIM, mp, replica)
-   real(PREC), intent(in)    :: replica_energy(:,:) ! (2, replica)
+   real(PREC), intent(inout) :: velos(3,nmp,nrep_proc)      ! (SDIM, mp, replica)
+   real(PREC), intent(in)    :: replica_energy(2,nrep_all) ! (2, replica)
    real(PREC), intent(in)    :: tempk
 
    !---------------------------------------------------------------------------
@@ -75,7 +76,7 @@ subroutine replica_exchange(velos, replica_energy, tempk)
    !   rep_j :  l_i  =   temp_m    &  pot_j_m
    !
 #ifdef DUMP
-   write(6,*) ''
+   write(6,*) 'nrep_all = ', nrep_all
 #endif
    nrand = 0
    do l_i = 1, nrep_all
@@ -218,4 +219,4 @@ contains
    end subroutine
 
 end subroutine replica_exchange
-#undef DUMP
+!#undef DUMP

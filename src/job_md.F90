@@ -150,7 +150,9 @@ subroutine job_md()
    print '(a,f10.3)', 'bp_cutoff_dist(for neighbor list) = ', bp_cutoff_dist
    print '(a,f10.3)', 'wca_sigma = ', wca_sigma
    print '(a,f10.3)', 'stage_sigma = ', stage_sigma
-   print '(a,f10.3)', 'ele_cutoff = ', ele_cutoff
+   do irep = 1, nrep_proc
+      print '(a,i4,a,f10.3)', 'ele_cutoff(irep=',irep,') = ', ele_cutoff(irep)
+   enddo
    print '(a,f10.3)', 'nl_margin = ', nl_margin
    print *
 
