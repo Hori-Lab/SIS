@@ -17,7 +17,7 @@ add_executable(${SIS_EXE}
     list_exv.F90 list_ele.F90
     init_bp.F90 set_ele.F90
     replica_exchange.F90
-    energy.F90
+    energy_sumup.F90
     energy_kinetic.F90
     energy_bond.F90 energy_angl.F90 energy_angl_ReB.F90
     energy_bp.F90 energy_bp_limit.F90 energy_bp_limit_triplet.F90

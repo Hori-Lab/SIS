@@ -53,7 +53,7 @@ subroutine job_dcd()
       if (istat == iostat_end) exit
       nframe = nframe + 1
 
-      call energy(IREP, energies(0:ENE%MAX, IREP))
+      call energy_sumup(IREP, energies(0:ENE%MAX, IREP))
       
       write(hdl_out(IREP), '(i10, 1x, f6.2, 8(1x,g13.6))') nframe, 0.0, 0.0, (energies(i, IREP), i=0,ENE%MAX)
 

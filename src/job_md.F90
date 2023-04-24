@@ -18,7 +18,7 @@ subroutine job_md()
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
-                           nstep_rep_exchange, nstep_rep_save, nrep_all
+                           nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar
    use var_parallel, only : myrank
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -38,6 +38,9 @@ subroutine job_md()
    real(PREC), allocatable :: replica_energies(:, :)
    logical :: flg_stop
    character(len=37) :: out_fmt
+#ifdef MPI_PAR
+   real(PREC) :: replica_energies_l(2, nrep_all)
+#endif
 
    ! Function
    real(PREC) :: rnd_boxmuller
@@ -196,7 +199,7 @@ subroutine job_md()
    do irep = 1, nrep_proc
 
       flg_bp_energy = .False.
-      call energy(irep, energies(0:ENE%MAX, irep))
+      call energy_sumup(irep, energies(0:ENE%MAX, irep))
       call energy_kinetic(irep, Ekinetic(irep))
 
       ! Open DCD file and write the header
@@ -357,7 +360,7 @@ subroutine job_md()
             else
                tK = tempK
             endif
-            call energy(irep, energies(0:ENE%MAX, irep))
+            call energy_sumup(irep, energies(1:ENE%MAX, irep))
             call energy_kinetic(irep, Ekinetic(irep))
 
             if (flg_replica) then
@@ -378,20 +381,28 @@ subroutine job_md()
       !!! Replica exchange
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_replica) then
+         ! Write rep file
+         if (myrank == 0 .and. mod(istep, nstep_rep_save) == 0) then
+            write(hdl_rep, '(i12,1x)', ADVANCE='no') istep
+
+            do irep = 1, nrep_all - 1
+               write(hdl_rep, '(i5,1x)', ADVANCE='no') rep2lab(irep)
+            enddo
+
+            write(hdl_rep, '(i5)') rep2lab(nrep_all)
+         endif
+
+         ! Exchange
          if (mod(istep, nstep_rep_exchange) == 0) then
 
+#ifdef MPI_PAR
+            replica_energies_l(:,:) = replica_energies(:,:)
+            call MPI_ALLREDUCE(replica_energies_l, replica_energies, 2*nrep_all, PREC_MPI, &
+                               MPI_SUM, MPI_COMM_WORLD, istat)
+#endif
             call replica_exchange(velos, replica_energies, tempk)
 
-            ! Write rep file
-            if (myrank == 0 .and. mod(istep, nstep_rep_save) == 0) then
-               write(hdl_rep, '(i12,1x)', ADVANCE='no') istep
-
-               do irep = 1, nrep_all - 1
-                  write(hdl_rep, '(i5,1x)', ADVANCE='no') rep2lab(irep)
-               enddo
-
-               write(hdl_rep, '(i5)') rep2lab(nrep_all)
-            endif
+            if (flg_repvar(REPT%TEMP)) call set_md_coef()
          endif
       endif
 
@@ -468,24 +479,30 @@ contains
 
    subroutine set_md_coef()
 
+      logical, save :: flg_first = .True.
+
       ! Coefficients that do not depend on replicas
-      do imp = 1, nmp
-         !fric(imp) = v * mass(imp)
-         !if (imp == 1) then
-         !   write(*,*) 'fric = ', fric(imp)
-         !endif
+      if (flg_first) then
+         do imp = 1, nmp
+            !fric(imp) = v * mass(imp)
+            !if (imp == 1) then
+            !   write(*,*) 'fric = ', fric(imp)
+            !endif
 
-         !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
-         c1 = 0.5 * dt * fric(imp) / mass(imp)
-         c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
+            !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
+            c1 = 0.5 * dt * fric(imp) / mass(imp)
+            c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
 
-         ! md_coef(1) = a
-         md_coef(1, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
-         ! md_coef(2) = sqrt(b) h / m
-         md_coef(2, imp) = c2 * dt / mass(imp)
-         ! md_coef(3) = sqrt(b) h
-         md_coef(3, imp) = c2 * dt
-      enddo
+            ! md_coef(1) = a
+            md_coef(1, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
+            ! md_coef(2) = sqrt(b) h / m
+            md_coef(2, imp) = c2 * dt / mass(imp)
+            ! md_coef(3) = sqrt(b) h
+            md_coef(3, imp) = c2 * dt
+         enddo
+
+         flg_first = .False.
+      endif
 
       ! Coefficients depending on replicas
       do irep = 1, nrep_proc

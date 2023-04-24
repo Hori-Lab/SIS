@@ -58,11 +58,11 @@ subroutine job_check_force()
 
          xyz_save = xyz(ixyz, imp, IREP)
          xyz(ixyz, imp, IREP) = xyz_save + small
-         call energy(IREP, energies)
+         call energy_sumup(IREP, energies)
          e_save = energies(ENE%TOTAL, IREP)
 
          xyz(ixyz, imp, IREP) = xyz_save - small
-         call energy(IREP, energies)
+         call energy_sumup(IREP, energies)
 
          f_energy(ixyz) = - (e_save - energies(ENE%TOTAL, IREP)) / (2.0 * small)
          xyz(ixyz, imp, IREP) = xyz_save

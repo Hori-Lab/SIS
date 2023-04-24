@@ -1,4 +1,4 @@
-subroutine energy(irep, energies)
+subroutine energy_sumup(irep, energies)
 
    use const
    use const_idx, only : ENE
@@ -42,4 +42,4 @@ subroutine energy(irep, energies)
 
    energies(ENE%TOTAL) = sum(energies(1:ENE%MAX))
 
-end subroutine energy
+end subroutine energy_sumup
