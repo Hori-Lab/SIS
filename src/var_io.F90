@@ -2,6 +2,7 @@ module var_io
    
    use const
 
+   logical :: flg_out_bpcoef = .False.
    logical :: flg_out_bp = .False.
    logical :: flg_out_bpall = .False.
    logical :: flg_out_bpe = .False.
@@ -23,6 +24,7 @@ module var_io
    integer, parameter :: hdl_in_rst = 10  ! input rst
 
    integer, allocatable :: hdl_out(:)
+   integer, allocatable :: hdl_bpcoef(:)
    integer, allocatable :: hdl_dcd(:)
    integer, allocatable :: hdl_rst(:)
    integer, allocatable :: hdl_bp(:)

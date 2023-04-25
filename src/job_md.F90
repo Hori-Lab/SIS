@@ -1,3 +1,4 @@
+#define OUTFLUSH
 subroutine job_md()
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
@@ -19,7 +20,7 @@ subroutine job_md()
                              ele_cutoff, flg_stage
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar
-   use var_parallel, only : myrank
+   use var_parallel
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
    implicit none
@@ -35,10 +36,11 @@ subroutine job_md()
    real(PREC) :: accels_pre(3)
    real(PREC) :: d2, d2max, d2max_2nd
    real(PREC), allocatable :: forces(:, :)
-   real(PREC), allocatable :: replica_energies(:, :)
+   real(PREC) :: replica_energies(2, nrep_all)
    logical :: flg_stop
    character(len=37) :: out_fmt
-#ifdef MPI_PAR
+#ifdef PAR_MPI
+   integer :: istat
    real(PREC) :: replica_energies_l(2, nrep_all)
 #endif
 
@@ -58,7 +60,7 @@ subroutine job_md()
    allocate(forces(3, nmp))
    allocate(energies(0:ENE%MAX, nrep_proc))
    allocate(Ekinetic(nrep_proc))
-   allocate(replica_energies(2, nrep_all))
+   !allocate(replica_energies(2, nrep_all))
 
    ! set PBC box
    if (flg_pbc) then
@@ -208,7 +210,7 @@ subroutine job_md()
 
       call fdcd(irep)%write_header(nmp)
 
-      ! Open .out file
+      ! .out file header
       if (flg_replica) then
          write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
                                                    !1234567890 1234 123456 1234567890123 1234567890123 1234567890123'
@@ -309,7 +311,7 @@ subroutine job_md()
          call force(irep, forces(:,:))
 
          if (maxval(forces(:,:)) > 100.0) then
-            print *, 'irep, istep, force ', irep, istep, maxval(forces)
+            print *, 'Warning: maxval(forces) > 100.0. (irep, istep, force) =', irep, istep, maxval(forces)
             flush(6)
          endif
 
@@ -353,6 +355,11 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Energy calculation
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (mod(istep, nstep_save) == 0 .or. mod(istep, nstep_rep_exchange) == 0) then
+         replica_energies(:, :) = 0.0_PREC
+         call energy_replica(energies, replica_energies, flg_replica)
+      endif
+
       if (mod(istep, nstep_save) == 0) then
          do irep = 1, nrep_proc
             if (flg_replica) then
@@ -360,7 +367,8 @@ subroutine job_md()
             else
                tK = tempK
             endif
-            call energy_sumup(irep, energies(1:ENE%MAX, irep))
+
+            !call energy_sumup(irep, energies(1:ENE%MAX, irep))
             call energy_kinetic(irep, Ekinetic(irep))
 
             if (flg_replica) then
@@ -372,6 +380,10 @@ subroutine job_md()
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
             endif
             write(hdl_out(irep), *) ''
+#ifdef OUTFLUSH
+            flush(hdl_out(irep))
+#endif
+
             call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
          enddo
       endif
@@ -381,6 +393,7 @@ subroutine job_md()
       !!! Replica exchange
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_replica) then
+
          ! Write rep file
          if (myrank == 0 .and. mod(istep, nstep_rep_save) == 0) then
             write(hdl_rep, '(i12,1x)', ADVANCE='no') istep
@@ -395,14 +408,16 @@ subroutine job_md()
          ! Exchange
          if (mod(istep, nstep_rep_exchange) == 0) then
 
-#ifdef MPI_PAR
+#ifdef PAR_MPI
             replica_energies_l(:,:) = replica_energies(:,:)
             call MPI_ALLREDUCE(replica_energies_l, replica_energies, 2*nrep_all, PREC_MPI, &
                                MPI_SUM, MPI_COMM_WORLD, istat)
 #endif
+
             call replica_exchange(velos, replica_energies, tempk)
 
             if (flg_repvar(REPT%TEMP)) call set_md_coef()
+
          endif
       endif
 

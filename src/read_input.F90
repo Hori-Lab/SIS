@@ -9,7 +9,7 @@ subroutine read_input(cfilepath)
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, flg_gen_init_struct, &
                       flg_progress, step_progress, &
-                      flg_out_bp, flg_out_bpe, flg_out_bpall, &
+                      flg_out_bpcoef, flg_out_bp, flg_out_bpe, flg_out_bpall, &
                       flg_in_ct, flg_in_bpseq, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
@@ -233,14 +233,16 @@ subroutine read_input(cfilepath)
          do i = 1, len(array)
             call get_value(array, i, cline, stat=istat, origin=origin)
 
-            if (cline == "bp") then
+            if (cline == "bpcoef") then
+               flg_out_bpcoef = .True.
+            else if (cline == "bp") then
                flg_out_bp = .True.
             else if (cline == "bpall") then
                flg_out_bpall = .True.
             else if (cline == "bpe") then
                flg_out_bpe = .True.
             else
-               print '(a)', context%report("invalid output type.", origin, "expected either bp, bpall, or bpe.")
+               print '(a)', context%report("invalid output type.", origin, "expected either bpcoef, bp, bpall, or bpe.")
                call sis_abort()
             endif
          enddo
@@ -666,6 +668,7 @@ subroutine read_input(cfilepath)
    if (myrank /= 0) allocate(character(len=strlen)::cfile_prefix)
 
    call MPI_BCAST(cfile_prefix, strlen, MPI_CHARACTER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_out_bpcoef, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_out_bp, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_out_bpe, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_out_bpall, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)

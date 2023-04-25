@@ -98,7 +98,7 @@ subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
                                 * sqrt(tempk / ionic_strength)
 #endif
 
-   out_lb = lb
-   out_Zp = Zp
+   if (present(out_lb)) out_lb = lb
+   if (present(out_Zp)) out_Zp = Zp
 
 end subroutine set_ele

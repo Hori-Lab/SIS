@@ -4,8 +4,9 @@ subroutine init_out_files
    use const_idx, only : JOBT
    use var_state, only : job
    use var_io, only : iopen_hdl, cfile_prefix, KIND_OUT_BP, KIND_OUT_BPE, &
-                      flg_out_dcd, flg_out_rst, flg_out_bp, flg_out_bpall, flg_out_bpe, &
-                      hdl_out, hdl_dcd, hdl_rst, hdl_bp, hdl_bpall, hdl_bpe, hdl_rep, &
+                      flg_out_dcd, flg_out_rst, &
+                      flg_out_bpcoef, flg_out_bp, flg_out_bpall, flg_out_bpe, &
+                      hdl_out, hdl_dcd, hdl_rst, hdl_bpcoef, hdl_bp, hdl_bpall, hdl_bpe, hdl_rep, &
                       cfile_rst, cfile_dcd
    use var_replica, only : nrep_proc, flg_replica, irep2grep
    use var_parallel, only : myrank
@@ -45,6 +46,7 @@ subroutine init_out_files
       allocate(cfile_dcd(nrep_proc))
    endif
 
+   if (flg_out_bpcoef) allocate(hdl_bpcoef(nrep_proc))
    if (flg_out_bp) allocate(hdl_bp(nrep_proc))
    if (flg_out_bpall) allocate(hdl_bpall(nrep_proc))
    if (flg_out_bpe) allocate(hdl_bpe(nrep_proc))
@@ -65,6 +67,14 @@ subroutine init_out_files
       iopen_hdl = iopen_hdl + 1
       hdl_out(irep) = iopen_hdl
       open(hdl_out(irep), file = cfilename, status = 'replace', action = 'write', form='formatted')
+
+      !! bpcoef
+      if (flg_out_bpcoef) then
+         cfilename = trim(cfilebase) // '.bpcoef'
+         iopen_hdl = iopen_hdl + 1
+         hdl_bpcoef(irep) = iopen_hdl
+         open(hdl_bpcoef(irep), file=cfilename, status='replace', action='write', form='formatted')
+      endif
 
       !! dcd  (The file will be opened in job_md using dcd module.)
       if (flg_out_dcd) then

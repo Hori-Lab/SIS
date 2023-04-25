@@ -13,7 +13,6 @@ subroutine init_bp()
    implicit none
 
    integer :: imp, jmp, bptype
-   integer :: irep, grep
    integer :: i, j, ichain, jchain
    integer :: h, l, n, idummy
    integer :: w, x, u, z, y, v
@@ -82,10 +81,10 @@ subroutine init_bp()
 
                         if (comp_uv) then
                            bp3_dH(h) = dH + 0.5_PREC * (NN_dH(seqt2nnt(x, u, y, v)) - dH0)
-                           bp3_dS(h) = (dS + 0.5_PREC * (NN_dS(seqt2nnt(x, u, y, v)) - dS0)) * 1.0e03_PREC
+                           bp3_dS(h) = (dS + 0.5_PREC * (NN_dS(seqt2nnt(x, u, y, v)) - dS0)) * 1.0e-3_PREC
                         else
                            bp3_dH(h) = dH
-                           bp3_dS(h) = dS
+                           bp3_dS(h) = dS * 1.0e-3_PREC
                         endif
 
                      enddo
@@ -291,6 +290,16 @@ subroutine init_bp()
                    .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
                   cycle
                endif
+
+               if ((i-1 == 1 .or. j+1 == nmp_chain(jchain)) .and. &
+                  (.not. is_complement(seq(i+1, ichain), seq(j-1, jchain)))) then
+                  cycle
+               endif
+               if ((j-1 == 1 .or. i+1 == nmp_chain(ichain)) .and. &
+                  (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)))) then
+                  cycle
+               endif
+
             endif
 
             if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
@@ -310,10 +319,19 @@ subroutine init_bp()
             endif
 
             if (bp_model == 5) then
-               if (ichain == jchain .and. (i-1) + bp_min_loop >= (j+1)) then
+               !if (ichain == jchain .and. (j+1) + bp_min_loop >= (i-1)) then
+               !   ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
+               !   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
+               !                                             SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+
+               if (i-1 == 1 .or. j+1 == nmp_chain(jchain)) then
                   ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
                   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
                                                             SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+
+               else if (j-1 == 1 .or. i+1 == nmp_chain(ichain)) then
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
+                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
 
                else if (ichain == jchain .and. (i+1) + bp_min_loop >= (j-1)) then
                   ! (i+1) and (j-1) should be treated as unpaired (represented as U-U).
@@ -323,6 +341,7 @@ subroutine init_bp()
                else
                   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), seq(i+1, ichain), &
                                                             seq(j+1, jchain), seq(j, jchain), seq(j-1, jchain)))
+
                endif
             endif
 
@@ -369,6 +388,8 @@ subroutine init_bp()
 
    endif
 
+   call write_bpcoef()
+
 contains
 
    logical function is_complement(s1, s2)
@@ -401,10 +422,27 @@ contains
 
    end function is_complement
 
-   function bp3_hash_key(a, b, c, d, e, f) result (i)
+   function bp3_hash_key(w, x, u, z, y, v) result (i)
 
-      integer, intent(in) :: a, b, c, d, e, f
+      integer, intent(in) :: w, x, u, z, y, v
+      integer :: a, b, c, d, e, f
       integer :: i
+
+      if (x < y) then
+         a = w
+         b = x
+         c = u
+         d = z
+         e = y
+         f = v
+      else
+         f = w
+         e = x
+         d = u
+         c = z
+         b = y
+         a = v
+      endif
 
       !i = a*(4**5) + b*(4**4) + c*(4**3) + d*(4**2) + e*4 + f + 1
       i = 1 + a + b*4 + c*(4**2) + d*(4**3) + e*(4**4) + f*(4**5)

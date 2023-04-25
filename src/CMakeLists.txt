@@ -11,13 +11,14 @@ add_executable(${SIS_EXE}
     read_anneal.F90
     write_rep_table.F90
     write_rst.F90 read_rst.F90
+    write_bpcoef.F90
     init_mts.F90 init_out_files.F90 init_replica.F90 init_ele.F90
     init_sequence.F90 init_structure.F90 gen_random_coil.F90
     list_local.F90 list_bp.F90
     list_exv.F90 list_ele.F90
     init_bp.F90 set_ele.F90
     replica_exchange.F90
-    energy_sumup.F90
+    energy_replica.F90 energy_sumup.F90
     energy_kinetic.F90
     energy_bond.F90 energy_angl.F90 energy_angl_ReB.F90
     energy_bp.F90 energy_bp_limit.F90 energy_bp_limit_triplet.F90

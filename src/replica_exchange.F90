@@ -1,9 +1,3 @@
-!#ifdef _DUMP_REP_EX
-!#define DUMP
-!#else
-!#undef DUMP
-!#endif
-
 !#define DUMP
 
 subroutine replica_exchange(velos, replica_energy, tempk)

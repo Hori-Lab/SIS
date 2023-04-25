@@ -14,6 +14,16 @@ subroutine init_ele()
    integer :: i, irep, grep
    real(PREC) :: tK, lb, Zp
 
+   interface
+   subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
+      use const, only : PREC
+      integer, intent(in) :: irep
+      real(PREC), intent(in) :: tempk
+      real(PREC), intent(in) :: ionic_strength
+      real(PREC), intent(out), optional :: out_lb
+      real(PREC), intent(out), optional :: out_Zp
+   endsubroutine set_ele
+   endinterface
 
    !! Allocation
    allocate(has_charge(nmp))

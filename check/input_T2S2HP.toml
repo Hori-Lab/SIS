@@ -11,7 +11,7 @@ type = "MD"
       xyz_ini = "T2S2HP_random.xyz"
 
       [Files.Out]
-      types = ["bp", "bpe", "bpall"]
+      types = ["bpcoef", "bp", "bpe", "bpall"]
       prefix = "./test_T2S2HP"
 
 [Condition]
