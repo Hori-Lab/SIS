@@ -38,10 +38,10 @@ type = "MD"
 
     [Files.Out]
     prefix = "./test"
-    types = ["bp", "bpe", "bpall"]
+    types = ["bpcoef", "bp", "bpe", "bpall"]
 
 [Replica]
-n_replica_temp = 8
+nrep_temp = 8
 
 nstep_exchange = 10
 nstep_save = 100
