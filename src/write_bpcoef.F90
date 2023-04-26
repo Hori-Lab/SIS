@@ -47,6 +47,7 @@ subroutine write_bpcoef()
                   grep = irep2grep(irep)
                   tK = rep2val(grep, REPT%TEMP)
                else
+                  grep = 1
                   tK = tempK
                endif
 

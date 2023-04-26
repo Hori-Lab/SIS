@@ -15,7 +15,7 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
 
    integer :: irep, grep
    integer :: label_own, label_opp
-   real(PREC) :: ionic_strength_rep, tempk_rep, pullforce
+   real(PREC) :: ionic_strength_rep, tempk_rep
    real(PREC) :: new_energies(0:ENE%MAX)
 
    interface

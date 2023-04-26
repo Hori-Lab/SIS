@@ -245,7 +245,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
          if (bp_status(ibp, irep)) then
             imp = bp_mp(1, ibp, irep)
             jmp = bp_mp(2, ibp, irep)
-            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, ene_bp(ibp)
+            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f6.2)', advance='no') imp, jmp, ene_bp(ibp)
          endif
       enddo
 

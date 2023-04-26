@@ -29,7 +29,6 @@ subroutine init_replica
          endif
       enddo
 
-#ifdef PAR_MPI
       print *, 'nrep_all=',nrep_all
       print *, 'nprocs=',nprocs
       print *, 'nrep(REPT%TEMP)=', nrep(REPT%TEMP)
@@ -39,6 +38,7 @@ subroutine init_replica
          call sis_abort()
       endif
 
+#ifdef PAR_MPI
       if (mod(nrep(REPT%TEMP), nprocs) /= 0) then
          print *, 'Error: the number of replicas has to be a multiple of the number of MPI processes.'
          call sis_abort()

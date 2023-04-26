@@ -38,6 +38,7 @@ subroutine job_md()
    real(PREC), allocatable :: forces(:, :)
    real(PREC) :: replica_energies(2, nrep_all)
    logical :: flg_stop
+   logical :: flg_step_save, flg_step_rep_save, flg_step_rep_exchange
    character(len=37) :: out_fmt
 #ifdef PAR_MPI
    integer :: istat
@@ -352,15 +353,24 @@ subroutine job_md()
 
       enddo ! irep
 
+      flg_step_save = .False.
+      flg_step_rep_save = .False.
+      flg_step_rep_exchange = .False.
+      if (mod(istep, nstep_save) == 0) flg_step_save = .True.
+      if (flg_replica) then
+         if (mod(istep, nstep_rep_exchange) == 0) flg_step_rep_exchange = .True.
+         if (mod(istep, nstep_rep_save) == 0) flg_step_rep_save = .True.
+      endif
+
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Energy calculation
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (mod(istep, nstep_save) == 0 .or. mod(istep, nstep_rep_exchange) == 0) then
+      if (flg_step_save .or. flg_step_rep_exchange) then
          replica_energies(:, :) = 0.0_PREC
          call energy_replica(energies, replica_energies, flg_replica)
       endif
 
-      if (mod(istep, nstep_save) == 0) then
+      if (flg_step_save) then
          do irep = 1, nrep_proc
             if (flg_replica) then
                tK = rep2val(irep2grep(irep), REPT%TEMP)
@@ -395,7 +405,7 @@ subroutine job_md()
       if (flg_replica) then
 
          ! Write rep file
-         if (myrank == 0 .and. mod(istep, nstep_rep_save) == 0) then
+         if (myrank == 0 .and. flg_step_rep_save) then
             write(hdl_rep, '(i12,1x)', ADVANCE='no') istep
 
             do irep = 1, nrep_all - 1
@@ -406,7 +416,7 @@ subroutine job_md()
          endif
 
          ! Exchange
-         if (mod(istep, nstep_rep_exchange) == 0) then
+         if (flg_step_rep_exchange) then
 
 #ifdef PAR_MPI
             replica_energies_l(:,:) = replica_energies(:,:)
