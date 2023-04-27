@@ -1,4 +1,4 @@
-#define OUTFLUSH
+!#define OUTFLUSH
 subroutine job_md()
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
