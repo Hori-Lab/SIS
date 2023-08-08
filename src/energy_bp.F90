@@ -39,13 +39,13 @@ subroutine energy_bp(Ebp)
       u = u + bpp%angl_k1 * (theta - bpp%angl_theta1)**2
 
       theta = mp_angle(imp-1, imp, jmp)
-      u = u + bpp%angl_k1 * (theta - bpp%angl_theta1)**2
+      u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
 
       theta = mp_angle(imp, jmp, jmp+1)
-      u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
+      u = u + bpp%angl_k3 * (theta - bpp%angl_theta3)**2
 
       theta = mp_angle(imp+1, imp, jmp)
-      u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
+      u = u + bpp%angl_k4 * (theta - bpp%angl_theta4)**2
 
       phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
       u = u + bpp%dihd_k1 * (1.0_PREC + cos(phi + bpp%dihd_phi1))
