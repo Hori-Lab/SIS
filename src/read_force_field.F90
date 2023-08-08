@@ -379,8 +379,12 @@ contains
          bp_paras(bptype)%bond_r = INVALID_VALUE
          bp_paras(bptype)%angl_k1 = INVALID_VALUE
          bp_paras(bptype)%angl_k2 = INVALID_VALUE
+         bp_paras(bptype)%angl_k3 = INVALID_VALUE
+         bp_paras(bptype)%angl_k4 = INVALID_VALUE
          bp_paras(bptype)%angl_theta1 = INVALID_VALUE
          bp_paras(bptype)%angl_theta2 = INVALID_VALUE
+         bp_paras(bptype)%angl_theta3 = INVALID_VALUE
+         bp_paras(bptype)%angl_theta4 = INVALID_VALUE
          bp_paras(bptype)%dihd_k1 = INVALID_VALUE
          bp_paras(bptype)%dihd_k2 = INVALID_VALUE
          bp_paras(bptype)%dihd_phi1 = INVALID_VALUE
@@ -431,6 +435,20 @@ contains
          print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_k2: ", bp_paras(bptype)%angl_k2
       endif
 
+      if (bp_paras(bptype)%angl_k3 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_k3 for ", BPTYPE_CHAR(bptype)
+         stat = .False.
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_k3: ", bp_paras(bptype)%angl_k3
+      endif
+
+      if (bp_paras(bptype)%angl_k4 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_k4 for ", BPTYPE_CHAR(bptype)
+         stat = .False.
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_k4: ", bp_paras(bptype)%angl_k4
+      endif
+
       if (bp_paras(bptype)%angl_theta1 > INVALID_JUDGE) then
          print '(2a)', "INVALID value in the force field file. bp angl_theta1 for ", BPTYPE_CHAR(bptype)
          stat = .False.
@@ -443,6 +461,20 @@ contains
          stat = .False.
       else
          print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_theta2: ", bp_paras(bptype)%angl_theta2
+      endif
+
+      if (bp_paras(bptype)%angl_theta3 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_theta3 for ", BPTYPE_CHAR(bptype)
+         stat = .False.
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_theta3: ", bp_paras(bptype)%angl_theta3
+      endif
+
+      if (bp_paras(bptype)%angl_theta4 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_theta4 for ", BPTYPE_CHAR(bptype)
+         stat = .False.
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_theta4: ", bp_paras(bptype)%angl_theta4
       endif
 
       if (bp_paras(bptype)%dihd_k1 > INVALID_JUDGE) then
