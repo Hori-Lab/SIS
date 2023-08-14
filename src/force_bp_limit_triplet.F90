@@ -5,8 +5,8 @@ subroutine force_bp_limit_triplet(forces)
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
    use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy, nt_bp_excess
-   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, bp_paras, &
-                             basepair_parameters, bp_map_dG
+   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, &
+                             basepair_parameters, bp_map_paras
 
    implicit none
 
@@ -59,7 +59,7 @@ subroutine force_bp_limit_triplet(forces)
 
       imp1 = bp_mp(1, ibp)
       imp2 = bp_mp(2, ibp)
-      bpp = bp_paras(bp_mp(3, ibp))
+      bpp = bp_map_paras(imp2, imp1)
 
       v12(:) = pbc_vec_d(xyz(:,imp1), xyz(:,imp2))
       d1212 = dot_product(v12,v12)
@@ -198,7 +198,7 @@ subroutine force_bp_limit_triplet(forces)
       for_bp(:, 5, ibp) = for_bp(:, 5, ibp) + f_l(:)
 
       !===== Total =====
-      ene = bpp%U0 * bp_map_dG(imp1, imp2) * exp(-u)
+      ene = bpp%U0 * exp(-u)
 
       if (ene <= bp_cutoff_energy) then
          bp_status(ibp) = .True.

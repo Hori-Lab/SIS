@@ -5,7 +5,7 @@ subroutine init_bp()
    use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
-   use var_potential, only : bp_model, bp_map_0, bp_map, bp_min_loop, bp_map_dG, &
+   use var_potential, only : bp_model, bp_map_0, bp_map, bp_min_loop, bp_map_paras, &
                              bp_paras, bp_cutoff_energy, bp_cutoff_dist
    implicit none
 
@@ -22,8 +22,7 @@ subroutine init_bp()
    bp_map_0(:,:) = 0
 
    if (bp_model == 4 .or. bp_model == 5) then
-      allocate(bp_map_dG(nmp, nmp))
-      bp_map_dG(:,:) = 0.0_PREC
+      allocate(bp_map_paras(nmp, nmp))
    endif
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

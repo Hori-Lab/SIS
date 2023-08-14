@@ -248,4 +248,19 @@ contains
       nnt = char2nnt(ci//cj//'_'//ck//cl)
    endfunction seqt2nnt
 
+   function seqt2bpt(i,j) result (bpti)
+      integer, intent(in) :: i, j
+      integer :: bpti
+      if ((i == SEQT%G .and. j == SEQT%C) .or. &
+          (i == SEQT%C .and. j == SEQT%G)) then
+          bpti = BPT%GC
+      else if ((i == SEQT%A .and. j == SEQT%U) .or. &
+               (i == SEQT%U .and. j == SEQT%A)) then
+          bpti = BPT%AU
+      else if ((i == SEQT%G .and. j == SEQT%U) .or. &
+              (i == SEQT%U .and. j == SEQT%G)) then
+          bpti = BPT%GU
+      endif
+   endfunction seqt2bpt
+
 end module const_idx

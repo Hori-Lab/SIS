@@ -38,7 +38,6 @@ module var_potential
    integer,    save :: bp_model
    integer, allocatable, save :: bp_map_0(:,:)
    integer, allocatable, save :: bp_map(:,:)
-   real(PREC), allocatable, save :: bp_map_dG(:,:)
    real(PREC), save :: bp_cutoff_dist
    real(PREC), save :: bp_cutoff_energy  ! 0.01 kcal/mol
    integer,    save :: bp_seqdep
@@ -69,6 +68,7 @@ module var_potential
    end type basepair_parameters
 
    type(basepair_parameters), save :: bp_paras(BPT%MAX)
+   type(basepair_parameters), allocatable, save :: bp_map_paras(:,:)
 
    integer, save :: bp_type2nhb(1:3) = (/ 3, 2, 2/)
 

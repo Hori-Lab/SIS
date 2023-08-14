@@ -7,8 +7,8 @@ subroutine energy_bp_limit_triplet(Ebp)
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
    use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy
-   use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, bp_paras, &
-                             basepair_parameters, bp_map_dG
+   use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, &
+                             basepair_parameters, bp_map_paras
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
@@ -45,7 +45,7 @@ subroutine energy_bp_limit_triplet(Ebp)
 
          imp = bp_mp(1, ibp)
          jmp = bp_mp(2, ibp)
-         bpp = bp_paras(bp_mp(3, ibp))
+         bpp = bp_map_paras(jmp, imp)
 
          d = norm2(pbc_vec_d(xyz(:,imp), xyz(:, jmp))) - bpp%bond_r
 
@@ -71,7 +71,7 @@ subroutine energy_bp_limit_triplet(Ebp)
          phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
          u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
-         ene = bpp%U0 * bp_map_dG(imp, jmp) * exp(-u)
+         ene = bpp%U0 * exp(-u)
 
          if (ene <= bp_cutoff_energy) then
             ene_bp(ibp) = ene
