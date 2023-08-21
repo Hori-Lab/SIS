@@ -153,20 +153,26 @@ subroutine init_bp()
                endif
             endif
 
-            if ((seq(i, ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
-                (seq(i, ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G)) then
+            if (seq(i, ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) then
                bp_map(imp, jmp) = BPT%GC
                bp_map(jmp, imp) = BPT%GC
+            else if (seq(i, ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) then
+               bp_map(imp, jmp) = BPT%CG
+               bp_map(jmp, imp) = BPT%CG
 
-            else if ((seq(i, ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
-                     (seq(i, ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A)) then
+            else if (seq(i, ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) then
                bp_map(imp, jmp) = BPT%AU
                bp_map(jmp, imp) = BPT%AU
+            else if (seq(i, ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) then
+               bp_map(imp, jmp) = BPT%UA
+               bp_map(jmp, imp) = BPT%UA
 
-            else if ((seq(i, ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
-                     (seq(i, ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G)) then
+            else if (seq(i, ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) then
                bp_map(imp, jmp) = BPT%GU
                bp_map(jmp, imp) = BPT%GU
+            else if (seq(i, ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) then
+               bp_map(imp, jmp) = BPT%UG
+               bp_map(jmp, imp) = BPT%UG
 
             else
                print '(a)', 'Warning: The following pair in CT/BPSEQ file does not form any known types of base pairs.'
@@ -218,20 +224,26 @@ subroutine init_bp()
                endif
             endif
 
-            if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
-                (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
+            if (seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) then
                bp_map(imp, jmp) = BPT%GC
                bp_map(jmp, imp) = BPT%GC
+            else if (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) then
+               bp_map(imp, jmp) = BPT%CG
+               bp_map(jmp, imp) = BPT%CG
 
-            else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
-                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
+            else if (seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) then
                bp_map(imp, jmp) = BPT%AU
                bp_map(jmp, imp) = BPT%AU
+            else if (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) then
+               bp_map(imp, jmp) = BPT%UA
+               bp_map(jmp, imp) = BPT%UA
 
-            else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
-                     (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
+            else if (seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) then
                bp_map(imp, jmp) = BPT%GU
                bp_map(jmp, imp) = BPT%GU
+            else if (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) then
+               bp_map(imp, jmp) = BPT%UG
+               bp_map(jmp, imp) = BPT%UG
             endif
 
 
@@ -241,9 +253,6 @@ subroutine init_bp()
       bp_map_0(:,:) = bp_map(:,:)
       bp_map_0(:,:) = bp_map(:,:)
    endif
-
-   call set_bp_map()
-
 
    ! Calcuate BP cutoff
    ! If bp_cutoff_energy is not specified in ff, the default value is 0.01 (kcal/mol).
@@ -273,6 +282,8 @@ subroutine init_bp()
       bp_cutoff_dist = bp_bond_r + bp_cutoff_dist
 
    endif
+
+   call set_bp_map()
 
 contains
 

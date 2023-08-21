@@ -49,11 +49,14 @@ module const_idx
       integer :: GC      ! 1
       integer :: AU      ! 2
       integer :: GU      ! 3
+      integer :: CG      ! 4
+      integer :: UA      ! 5
+      integer :: UG      ! 6
       integer :: MAX
    endtype bp_types
-   type(bp_types), parameter :: BPT = bp_types(0,1,2,3,3)
+   type(bp_types), parameter :: BPT = bp_types(0,1,2,3,4,5,6,6)
 
-   character(len=*), dimension(3), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU'/)
+   character(len=*), dimension(6), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU', 'CG', 'UA', 'UG'/)
 
    type rst_block
       integer :: STEP
@@ -251,15 +254,18 @@ contains
    function seqt2bpt(i,j) result (bpti)
       integer, intent(in) :: i, j
       integer :: bpti
-      if ((i == SEQT%G .and. j == SEQT%C) .or. &
-          (i == SEQT%C .and. j == SEQT%G)) then
+      if (i == SEQT%G .and. j == SEQT%C) then
           bpti = BPT%GC
-      else if ((i == SEQT%A .and. j == SEQT%U) .or. &
-               (i == SEQT%U .and. j == SEQT%A)) then
+      else if (i == SEQT%C .and. j == SEQT%G) then
+          bpti = BPT%CG
+      else if (i == SEQT%A .and. j == SEQT%U) then
           bpti = BPT%AU
-      else if ((i == SEQT%G .and. j == SEQT%U) .or. &
-              (i == SEQT%U .and. j == SEQT%G)) then
+      else if (i == SEQT%U .and. j == SEQT%A) then
+          bpti = BPT%UA
+      else if (i == SEQT%G .and. j == SEQT%U) then
           bpti = BPT%GU
+      else if(i == SEQT%U .and. j == SEQT%G) then
+          bpti = BPT%UG
       endif
    endfunction seqt2bpt
 
