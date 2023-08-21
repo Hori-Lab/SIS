@@ -231,6 +231,64 @@ subroutine read_force_field(stat)
          call get_value(subnode, "dihd_phi2", bp_paras(BPT%GU)%dihd_phi2)
       endif
 
+      ! call again for CG, UA, UG
+      call get_value(node, "GC", subnode)
+      if (associated(subnode)) then
+         call get_value(subnode, "U0", bp_paras(BPT%CG)%U0)
+         call get_value(subnode, "bond_k", bp_paras(BPT%CG)%bond_k)
+         call get_value(subnode, "bond_r", bp_paras(BPT%CG)%bond_r)
+         call get_value(subnode, "angl_k1", bp_paras(BPT%CG)%angl_k2)
+         call get_value(subnode, "angl_k2", bp_paras(BPT%CG)%angl_k1)
+         call get_value(subnode, "angl_k3", bp_paras(BPT%CG)%angl_k4)
+         call get_value(subnode, "angl_k4", bp_paras(BPT%CG)%angl_k3)
+         call get_value(subnode, "angl_theta1", bp_paras(BPT%CG)%angl_theta2)
+         call get_value(subnode, "angl_theta2", bp_paras(BPT%CG)%angl_theta1)
+         call get_value(subnode, "angl_theta3", bp_paras(BPT%CG)%angl_theta4)
+         call get_value(subnode, "angl_theta4", bp_paras(BPT%CG)%angl_theta3)
+         call get_value(subnode, "dihd_k1", bp_paras(BPT%CG)%dihd_k2)
+         call get_value(subnode, "dihd_k2", bp_paras(BPT%CG)%dihd_k1)
+         call get_value(subnode, "dihd_phi1", bp_paras(BPT%CG)%dihd_phi2)
+         call get_value(subnode, "dihd_phi2", bp_paras(BPT%CG)%dihd_phi1)
+      endif
+
+      call get_value(node, "AU", subnode)
+      if (associated(subnode)) then
+         call get_value(subnode, "U0", bp_paras(BPT%UA)%U0)
+         call get_value(subnode, "bond_k", bp_paras(BPT%UA)%bond_k)
+         call get_value(subnode, "bond_r", bp_paras(BPT%UA)%bond_r)
+         call get_value(subnode, "angl_k1", bp_paras(BPT%UA)%angl_k2)
+         call get_value(subnode, "angl_k2", bp_paras(BPT%UA)%angl_k1)
+         call get_value(subnode, "angl_k3", bp_paras(BPT%UA)%angl_k4)
+         call get_value(subnode, "angl_k4", bp_paras(BPT%UA)%angl_k3)
+         call get_value(subnode, "angl_theta1", bp_paras(BPT%UA)%angl_theta2)
+         call get_value(subnode, "angl_theta2", bp_paras(BPT%UA)%angl_theta1)
+         call get_value(subnode, "angl_theta3", bp_paras(BPT%UA)%angl_theta4)
+         call get_value(subnode, "angl_theta4", bp_paras(BPT%UA)%angl_theta3)
+         call get_value(subnode, "dihd_k1", bp_paras(BPT%UA)%dihd_k2)
+         call get_value(subnode, "dihd_k2", bp_paras(BPT%UA)%dihd_k1)
+         call get_value(subnode, "dihd_phi1", bp_paras(BPT%UA)%dihd_phi2)
+         call get_value(subnode, "dihd_phi2", bp_paras(BPT%UA)%dihd_phi1)
+      endif
+
+      call get_value(node, "GU", subnode)
+      if (associated(subnode)) then
+         call get_value(subnode, "U0", bp_paras(BPT%UG)%U0)
+         call get_value(subnode, "bond_k", bp_paras(BPT%UG)%bond_k)
+         call get_value(subnode, "bond_r", bp_paras(BPT%UG)%bond_r)
+         call get_value(subnode, "angl_k1", bp_paras(BPT%UG)%angl_k2)
+         call get_value(subnode, "angl_k2", bp_paras(BPT%UG)%angl_k1)
+         call get_value(subnode, "angl_k3", bp_paras(BPT%UG)%angl_k4)
+         call get_value(subnode, "angl_k4", bp_paras(BPT%UG)%angl_k3)
+         call get_value(subnode, "angl_theta1", bp_paras(BPT%UG)%angl_theta2)
+         call get_value(subnode, "angl_theta2", bp_paras(BPT%UG)%angl_theta1)
+         call get_value(subnode, "angl_theta3", bp_paras(BPT%UG)%angl_theta4)
+         call get_value(subnode, "angl_theta4", bp_paras(BPT%UG)%angl_theta3)
+         call get_value(subnode, "dihd_k1", bp_paras(BPT%UG)%dihd_k2)
+         call get_value(subnode, "dihd_k2", bp_paras(BPT%UG)%dihd_k1)
+         call get_value(subnode, "dihd_phi1", bp_paras(BPT%UG)%dihd_phi2)
+         call get_value(subnode, "dihd_phi2", bp_paras(BPT%UG)%dihd_phi1)
+      endif
+
    else
       print '(a)', 'Error: [basepair] parameters required in FF file'
       return
@@ -607,6 +665,9 @@ contains
       call check_bp_paras(BPT%GC)
       call check_bp_paras(BPT%AU)
       call check_bp_paras(BPT%GU)
+      call check_bp_paras(BPT%CG)
+      call check_bp_paras(BPT%UA)
+      call check_bp_paras(BPT%UG)
 
       !if (bp_min_loop < 0) then
       !   print '(a)', "INVALID bp_min_loop in the force field file"
