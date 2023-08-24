@@ -30,7 +30,7 @@ subroutine neighbor_list()
 
    if (.not. allocated(bp_mp)) then
       nbp_max = nmp / 2
-      allocate(bp_mp(3, nbp_max))
+      allocate(bp_mp(2, nbp_max))
       allocate(bp_status(nbp_max))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
@@ -120,7 +120,6 @@ subroutine neighbor_list()
                   endif
                   bp_mp(1, ibp) = imp
                   bp_mp(2, ibp) = jmp
-                  bp_mp(3, ibp) = bp_map(imp, jmp)
 
                endif
    
@@ -184,10 +183,10 @@ contains
    subroutine reallocate_bp_mp()
       
       integer :: old_max
-      integer :: tmp(3, nbp_max)
+      integer :: tmp(2, nbp_max)
 
       old_max = nbp_max   
-      tmp(1:3, 1:old_max) = bp_mp(1:3, 1:old_max)
+      tmp(1:2, 1:old_max) = bp_mp(1:2, 1:old_max)
 
       deallocate(bp_mp)
       deallocate(bp_status)
@@ -196,13 +195,13 @@ contains
 
       nbp_max = int(nbp_max * 1.2)
 
-      allocate(bp_mp(3, nbp_max))
+      allocate(bp_mp(2, nbp_max))
       allocate(bp_status(nbp_max))
       allocate(ene_bp(nbp_max))
       allocate(for_bp(3, 6, nbp_max))
 
       bp_mp(:, :) = 0
-      bp_mp(1:3, 1:old_max) = tmp(1:3, 1:old_max)
+      bp_mp(1:2, 1:old_max) = tmp(1:2, 1:old_max)
 
       bp_status(:) = .False.
       ene_bp(:) = 0.0_PREC

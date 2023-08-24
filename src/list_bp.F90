@@ -2,7 +2,7 @@ subroutine list_bp()
 
    use const
    use const_idx, only : SEQT, BPT
-   use var_top, only : nmp_chain, seq, imp_chain, nchains, nmp
+   use var_top, only : nmp_chain, imp_chain, nchains, nmp
    use var_state, only : bp_status, ene_bp, for_bp, nt_bp_excess
    use var_potential, only : nbp, bp_mp, bp_min_loop
 
@@ -34,43 +34,14 @@ subroutine list_bp()
                   
                   jmp = imp_chain(j, jchain)
     
-                  if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
-                      (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
 
-                     ibp = ibp + 1
+                  ibp = ibp + 1
 
-                     if (n == 2) then
-                        bp_mp(1,ibp) = imp
-                        bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%GC
-                        !bp_U0(ibp) = bp_U0_GC
-                     endif
-    
-                  else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
-                           (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
-
-                     ibp = ibp + 1
-
-                     if (n == 2) then
-                        bp_mp(1,ibp) = imp
-                        bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%AU
-                        !bp_U0(ibp) = bp_U0_AU
-                     endif
-    
-                  else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
-                           (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
-
-                     ibp = ibp + 1
-
-                     if (n == 2) then
-                        bp_mp(1,ibp) = imp
-                        bp_mp(2,ibp) = jmp
-                        bp_mp(3,ibp) = BPT%GU
-                        !bp_U0(ibp) = bp_U0_GU
-                     endif
-
+                  if (n == 2) then
+                     bp_mp(1,ibp) = imp
+                     bp_mp(2,ibp) = jmp
                   endif
+    
     
                enddo
             enddo
@@ -80,7 +51,7 @@ subroutine list_bp()
 
       if (n == 1) then
          nbp = ibp
-         allocate(bp_mp(3, nbp))
+         allocate(bp_mp(2, nbp))
          !allocate(bp_U0(nbp))
          allocate(bp_status(nbp))
          allocate(ene_bp(nbp))
