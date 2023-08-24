@@ -34,9 +34,7 @@ subroutine list_bp()
                   
                   jmp = imp_chain(j, jchain)
     
-                  if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) .or. &
-                      (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) ) then
-
+                  if (seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) then
                      ibp = ibp + 1
 
                      if (n == 2) then
@@ -46,9 +44,18 @@ subroutine list_bp()
                         !bp_U0(ibp) = bp_U0_GC
                      endif
     
-                  else if ((seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) .or. &
-                           (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) ) then
+                  else if (seq(i,ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) then
 
+                     ibp = ibp + 1
+
+                     if (n == 2) then
+                        bp_mp(1,ibp) = imp
+                        bp_mp(2,ibp) = jmp
+                        bp_mp(3,ibp) = BPT%CG
+                        !bp_U0(ibp) = bp_U0_CG
+                     endif
+    
+                  else if (seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) then
                      ibp = ibp + 1
 
                      if (n == 2) then
@@ -58,15 +65,35 @@ subroutine list_bp()
                         !bp_U0(ibp) = bp_U0_AU
                      endif
     
-                  else if ((seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) .or. &
-                           (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) ) then
+                  else if (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) then
 
                      ibp = ibp + 1
 
                      if (n == 2) then
                         bp_mp(1,ibp) = imp
                         bp_mp(2,ibp) = jmp
+                        bp_mp(3,ibp) = BPT%UA
+                        !bp_U0(ibp) = bp_U0_AU
+                     endif
+    
+                  else if (seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) then
+                     ibp = ibp + 1
+
+                     if (n == 2) then
+                        bp_mp(1,ibp) = imp
+                        bp_mp(2,ibp) = jmp
                         bp_mp(3,ibp) = BPT%GU
+                        !bp_U0(ibp) = bp_U0_GU
+                     endif
+
+                  else if (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) then
+
+                     ibp = ibp + 1
+
+                     if (n == 2) then
+                        bp_mp(1,ibp) = imp
+                        bp_mp(2,ibp) = jmp
+                        bp_mp(3,ibp) = BPT%UG
                         !bp_U0(ibp) = bp_U0_GU
                      endif
 
