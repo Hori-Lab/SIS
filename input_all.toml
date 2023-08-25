@@ -2,10 +2,10 @@ title = "sis input"
 
 [Job]
 type = "MD"
-    # Aveilable options:
-    #    "MD"
-    #    "DCD"
-    #    "CHECK_FORCE"
+    # Available options:
+    #    "MD": Default.
+    #    "DCD": Read an existing DCD file (specified by [Files.In] dcd) and calculate energies.
+    #    "CHECK_FORCE": For debug. Check consistency between the energy and force routines.
 
 [Files]
     [Files.In]
@@ -19,14 +19,14 @@ type = "MD"
      xyz_ini = "initial.xyz"
         # File for initial structure. Only one of them is required.
         # Only the coordinates will be read from these files, 
-        # and any sequence information written will be ignored.
+        # and any sequence information therein will be ignored.
 
     dcd = "./trajectory.dcd"
         # DCD file to read. Required if type = "DCD" in [job].
 
     anneal = "./annealing_schedule.txt"
         # Annealing-schedule file.
-        # Required only when opt_anneal > 0 in [condition].
+        # Required only when opt_anneal > 0 in [Condition].
 
     ## Specific secondary structure.
     ## If either 'ct' or 'bpseq' is given, only base pairs that constitute 
@@ -39,6 +39,10 @@ type = "MD"
     [Files.Out]
     prefix = "./test"
     types = ["bpcoef", "bp", "bpe", "bpall"]
+        # Available options:
+        # "bpcoef": bp parameters will be written.
+        # "bp": bp energy trajectory in binary format.
+        # "bpe": bp energy trajecotry in ASCII format.
 
 [Replica]
 nrep_temp = 8
@@ -156,7 +160,7 @@ cutoff_type = 1
     #          The cutoff will be a factor to be multiplied by Debye length.
 
 cutoff = 50.0
-    # Either diestance (cutoff_type = 1) or multiple (cutoff_type = 2),
+    # Either distance (cutoff_type = 1) or multiple (cutoff_type = 2),
     # depending on the choice of cutoff_type.
 
 no_charge = [1, 27]

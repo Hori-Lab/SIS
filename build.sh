@@ -12,7 +12,8 @@ elif [[ ${hostname:13:24} == 'augusta.nottingham.ac.uk' ]]; then
 elif [[ ${hostname:12:5} == 'cosma' ]]; then
     FC=ifort cmake .. -DCMAKE_BUILD_TYPE=Release
 else
-    cmake .. -DCMAKE_BUILD_TYPE=Release
+    #FC=ifort cmake .. -DCMAKE_BUILD_TYPE=Debug
+    FC=gfortran cmake .. -DCMAKE_BUILD_TYPE=Release
 fi
 
 make -j8
