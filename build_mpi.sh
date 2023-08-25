@@ -6,9 +6,7 @@ cd build_mpi
 hostname=`hostname`
 
 if [[ ${hostname:8:9} == 'sulis.hpc' ]]; then
-    #FC=ifort cmake .. -DCMAKE_BUILD_TYPE=Release
-    echo 'Edit build_mpi.sh!'
-    exit 2
+    FC=mpiifort cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_MPI=ON
 elif [[ ${hostname:13:24} == 'augusta.nottingham.ac.uk' ]]; then
     #FC=ifort cmake .. -DCMAKE_BUILD_TYPE=Release
     echo 'Edit build_mpi.sh!'
