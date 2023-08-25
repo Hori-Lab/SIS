@@ -1,4 +1,4 @@
-#define OUTFLUSH
+!#define OUTFLUSH
 subroutine job_md()
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
@@ -234,7 +234,7 @@ subroutine job_md()
          write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Estage   '
                                                         ! 1   23     4567890123
       endif
-      write(hdl_out(irep), *) ''
+      write(hdl_out(irep), '(a)') ''
 
       if (flg_replica) then
          tK = rep2val(irep2grep(irep), REPT%TEMP)
@@ -269,7 +269,7 @@ subroutine job_md()
          if (flg_stage) then
             write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
          endif
-         write(hdl_out(irep), *) ''
+         write(hdl_out(irep), '(a)') ''
 
          call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
       endif
@@ -389,7 +389,7 @@ subroutine job_md()
             if (flg_stage) then
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
             endif
-            write(hdl_out(irep), *) ''
+            write(hdl_out(irep), '(a)') ''
 #ifdef OUTFLUSH
             flush(hdl_out(irep))
 #endif
