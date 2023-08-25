@@ -19,7 +19,7 @@ module const
    integer, parameter :: FILENAME_DIGIT_REPLICA = 4
 
    integer, parameter :: MAX_REP_DIM = 1
-   integer, parameter :: MAX_REP_PER_DIM = 8
+   integer, parameter :: MAX_REP_PER_DIM = 256
    integer, parameter :: MAX_REPLICA = MAX_REP_PER_DIM * MAX_REP_DIM
 contains
 
