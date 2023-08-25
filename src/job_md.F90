@@ -26,6 +26,7 @@ subroutine job_md()
    implicit none
 
    integer :: i, irep, imp, icol
+   integer :: grep, rep_label
    real(PREC) :: tK
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp, nrep_proc)
@@ -237,7 +238,9 @@ subroutine job_md()
       write(hdl_out(irep), '(a)') ''
 
       if (flg_replica) then
-         tK = rep2val(irep2grep(irep), REPT%TEMP)
+         grep = irep2grep(irep)
+         rep_label = rep2lab(grep)
+         tK = rep2val(grep, REPT%TEMP)
       else
          tK = tempK
       endif
@@ -248,7 +251,7 @@ subroutine job_md()
          print '(a)', '##### Energies at the beginning'
          if (flg_replica) then
             print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
-            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, irep2grep(irep), tK, Ekinetic(irep), energies(0, irep)
+            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, rep_label, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          else
@@ -262,9 +265,9 @@ subroutine job_md()
       else
          ! At istep = 0 (not restarted), write both .out and DCD
          if (flg_replica) then
-            write(hdl_out(irep), out_fmt, advance='no') istep, irep2grep(irep), tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+            write(hdl_out(irep), out_fmt, advance='no') istep, rep_label, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
          else
-            write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+            write(hdl_out(irep), out_fmt, advance='no') istep, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
          endif
          if (flg_stage) then
             write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
@@ -373,7 +376,9 @@ subroutine job_md()
       if (flg_step_save) then
          do irep = 1, nrep_proc
             if (flg_replica) then
-               tK = rep2val(irep2grep(irep), REPT%TEMP)
+               grep = irep2grep(irep)
+               rep_label = rep2lab(grep)
+               tK = rep2val(grep, REPT%TEMP)
             else
                tK = tempK
             endif
@@ -382,9 +387,9 @@ subroutine job_md()
             call energy_kinetic(irep, Ekinetic(irep))
 
             if (flg_replica) then
-               write(hdl_out(irep), out_fmt, advance='no') istep, irep2grep(irep), tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+               write(hdl_out(irep), out_fmt, advance='no') istep, rep_label, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
             else
-               write(hdl_out(irep), out_fmt, advance='no') istep, tempK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
+               write(hdl_out(irep), out_fmt, advance='no') istep, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%ELE)
             endif
             if (flg_stage) then
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
