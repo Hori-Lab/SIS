@@ -361,8 +361,7 @@ subroutine init_bp()
 
    ! Calcuate BP cutoff
    ! If bp_cutoff_energy is not specified in ff, the default value is 0.01 (kcal/mol).
-   !if (abs(bp_cutoff_energy) <= epsilon(bp_cutoff_energy)) then
-   if (bp_cutoff_energy > -0.00001_PREC .and. bp_cutoff_energy < 0.0001_PREC) then
+   if (abs(bp_cutoff_energy) <= epsilon(bp_cutoff_energy)) then
       ! When bp_cutoff_energy = 0.0, treat it as in the original way Hung did.
       bp_cutoff_dist = 18.0_PREC
 
