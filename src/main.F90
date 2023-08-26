@@ -35,14 +35,9 @@ program sis
       stop
    endif
 
-
    !! Read input file
    call get_command_argument(1, cfile_inp)
    call read_input(cfile_inp)
-
-
-   !! Initialise replicas
-   call init_replica()
 
 
    !! Open restart file if given
@@ -61,6 +56,8 @@ program sis
       restarted = .True.
    end if
 
+   !! Initialise replicas
+   call init_replica()
 
    !! Initialize the random number generator
    !call init_genrand64(rng_seed)

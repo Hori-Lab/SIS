@@ -22,8 +22,8 @@ module var_replica
    real(PREC) :: replica_values(MAX_REP_PER_DIM, REPT%MAX)
 
    integer, save :: irep2grep(MAX_REPLICA)  !< replica(local) => replica(global)
-   !integer, save :: grep2irep(MXREPLICA)  !< replica(global) => replica(local)
-   !integer, save :: grep2rank(MXREPLICA)  !< replica(global) => local_rank_rep
+   integer, save :: grep2irep(MAX_REPLICA)  !< replica(global) => replica(local)
+   integer, save :: grep2rank(MAX_REPLICA)  !< replica(global) => local_rank_rep
    !logical, save :: flg_rep(1:REPTYPE%MAX) = .false.
 
 

@@ -16,6 +16,10 @@ module var_parallel
    integer :: ncores
    integer :: PREC_MPI
 
+#ifdef PAR_MPI
+   integer :: istats_mpi(MPI_STATUS_SIZE)
+#endif
+
 contains
 
    subroutine init_parallel()
