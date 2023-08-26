@@ -42,14 +42,14 @@ subroutine neighbor_list(irep)
       allocate(bp_mp(3, nbp_max, nrep_proc))
       allocate(bp_coef(2, nbp_max, nrep_proc))
       allocate(bp_status(nbp_max, nrep_proc))
-      allocate(ene_bp(nbp_max))
+      allocate(ene_bp(nbp_max, nrep_proc))
       allocate(for_bp(3, 6, nbp_max))
       allocate(nt_bp_excess(nmp))
       nbp(:) = 0
       bp_mp(:,:,:) = 0
       bp_coef(:,:,:) = 0.0_PREC
       bp_status(:,:) = .False.
-      ene_bp(:) = 0.0_PREC
+      ene_bp(:,:) = 0.0_PREC
       for_bp(:,:,:) = 0.0_PREC
       nt_bp_excess(:) = 0
    endif
@@ -229,7 +229,7 @@ contains
       allocate(bp_mp(3, nbp_max, nrep_proc))
       allocate(bp_coef(2, nbp_max, nrep_proc))
       allocate(bp_status(nbp_max, nrep_proc))
-      allocate(ene_bp(nbp_max))
+      allocate(ene_bp(nbp_max, nrep_proc))
       allocate(for_bp(3, 6, nbp_max))
 
       bp_mp(:, :, :) = 0
@@ -239,7 +239,7 @@ contains
       bp_coef(1:2, 1:old_max, 1:nrep_proc) = tmp2(1:2, 1:old_max, 1:nrep_proc)
 
       bp_status(:,:) = .False.
-      ene_bp(:) = 0.0_PREC
+      ene_bp(:,:) = 0.0_PREC
       for_bp(:,:,:) = 0.0_PREC
 
    endsubroutine reallocate_bp_mp

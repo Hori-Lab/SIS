@@ -36,7 +36,7 @@ subroutine energy_bp_limit(irep, Ebp)
       beta = 1.0_PREC / kT
       bp_status(1:nbp(irep), irep) = .False.
       nt_bp_excess(1:nmp) = -max_bp_per_nt
-      ene_bp(1:nbp(irep)) = 0.0_PREC
+      ene_bp(1:nbp(irep), irep) = 0.0_PREC
 
       !$omp parallel do private(imp, jmp, d, u, theta, phi, ene, bpp)
       do ibp = 1, nbp(irep)
@@ -72,7 +72,7 @@ subroutine energy_bp_limit(irep, Ebp)
          ene = bpp%U0 * exp(-u)
 
          if (ene <= bp_cutoff_energy) then
-            ene_bp(ibp) = ene
+            ene_bp(ibp, irep) = ene
             bp_status(ibp, irep) = .True.
 
             !$omp atomic
@@ -134,7 +134,7 @@ subroutine energy_bp_limit(irep, Ebp)
          do i = 2, nbp_seq
             jbp = bp_seq(i)
 
-            ratio = exp( (ene_bp(jbp) - ene_bp(ibp_delete)) * beta )
+            ratio = exp( (ene_bp(jbp, irep) - ene_bp(ibp_delete, irep)) * beta )
             !rnd = genrand64_real1()
             rnd = genrand_double1(mts(irep))  ! [0,1]-real-interval
 
@@ -159,7 +159,7 @@ subroutine energy_bp_limit(irep, Ebp)
    endif
    
    ! Sum of ene_bp masked by bp_status (Note: bp_status(1:nbp_max))
-   Ebp = sum(ene_bp(1:nbp(irep)), bp_status(1:nbp(irep), irep))
+   Ebp = sum(ene_bp(1:nbp(irep), irep), bp_status(1:nbp(irep), irep))
 
    if (flg_out_bp) then
 
@@ -174,7 +174,7 @@ subroutine energy_bp_limit(irep, Ebp)
             imp = bp_mp(1, ibp, irep)
             jmp = bp_mp(2, ibp, irep)
             write(hdl_bp(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
-                                real(ene_bp(ibp), kind=KIND_OUT_BPE)
+                                real(ene_bp(ibp, irep), kind=KIND_OUT_BPE)
          endif
       enddo
 
@@ -196,7 +196,7 @@ subroutine energy_bp_limit(irep, Ebp)
             imp = bp_mp(1, ibp, irep)
             jmp = bp_mp(2, ibp, irep)
             write(hdl_bpall(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
-                                   real(ene_bp(ibp), kind=KIND_OUT_BPE)
+                                   real(ene_bp(ibp, irep), kind=KIND_OUT_BPE)
          endif
       enddo
 
@@ -217,7 +217,7 @@ subroutine energy_bp_limit(irep, Ebp)
          if (bp_status(ibp, irep)) then
             imp = bp_mp(1, ibp, irep)
             jmp = bp_mp(2, ibp, irep)
-            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, ene_bp(ibp)
+            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, ene_bp(ibp, irep)
          endif
       enddo
 

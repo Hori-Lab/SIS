@@ -5,7 +5,7 @@ subroutine job_dcd()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
    use var_top, only : nmp
-   use var_state, only : xyz, energies, flg_bp_energy
+   use var_state, only : xyz, energies, flg_bp_energy, tempK
    use var_io, only : hdl_out, cfile_dcd_in, iopen_hdl
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -53,7 +53,7 @@ subroutine job_dcd()
       if (istat == iostat_end) exit
       nframe = nframe + 1
 
-      call energy_sumup(IREP, energies(0:ENE%MAX, IREP))
+      call energy_sumup(IREP, tempK, energies(0:ENE%MAX, IREP))
       
       write(hdl_out(IREP), '(i10, 1x, f6.2, 8(1x,g13.6))') nframe, 0.0, 0.0, (energies(i, IREP), i=0,ENE%MAX)
 

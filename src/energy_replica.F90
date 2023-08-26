@@ -3,7 +3,7 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
    use const, only : PREC
    use const_idx, only : REPT, ENE
    use var_replica, only : nrep_all, nrep_proc, irep2grep, &
-                           lab2val, rep2lab, flg_repvar, get_pair
+                           lab2val, rep2lab, flg_repvar, get_pair, rep2val
    use var_potential, only : flg_ele
    use var_state, only : flg_bp_energy, tempK, ionic_strength
 
@@ -15,15 +15,16 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
 
    integer :: irep, grep
    integer :: label_own, label_opp
-   real(PREC) :: ionic_strength_rep, tempk_rep
+   real(PREC) :: ionic_strength_rep, tempK_rep
    real(PREC) :: new_energies(0:ENE%MAX)
 
    interface
-   subroutine energy_sumup(irep, energies)
+   subroutine energy_sumup(irep, tempK_in, energies)
       use const, only : PREC
       use const_idx, only : ENE
       implicit none
       integer,    intent(in)  :: irep
+      real(PREC), intent(in)  :: tempK_in
       real(PREC), intent(out) :: energies(0:ENE%MAX)
    endsubroutine energy_sumup
    subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
@@ -40,7 +41,13 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
    energies(:,:)         = 0.0e0_PREC
 
    do irep = 1, nrep_proc
-      call energy_sumup(irep, energies(:,irep))
+      if (flg_repvar(REPT%TEMP)) then
+         tempK_rep = rep2val(irep2grep(irep), REPT%TEMP)
+      else
+         tempK_rep = tempK
+      endif
+
+      call energy_sumup(irep, tempK_rep, energies(:,irep))
    enddo
 
 
@@ -70,9 +77,9 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
          ! Set replica variables of counterpart
          !#########################################
          if (flg_repvar(REPT%TEMP)) then
-            tempk_rep = lab2val(label_opp, REPT%TEMP)
+            tempK_rep = lab2val(label_opp, REPT%TEMP)
          else
-            tempk_rep = tempK
+            tempK_rep = tempK
          endif
 
          !if (flg_repvar(REPT%ION)) then
@@ -90,22 +97,22 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
          ! Re-calculate replica-dependent coefficients
          !#############################################
          if (flg_ele) then
-            call set_ele(irep, tempk_rep, ionic_strength_rep)
+            call set_ele(irep, tempK_rep, ionic_strength_rep)
          endif
 
          !#############################################
          ! Calculate energy
          !#############################################
-         call energy_sumup(irep, new_energies(:))
+         call energy_sumup(irep, tempK_rep, new_energies(:))
          replica_energies(2, grep) = new_energies(ENE%TOTAL)
 
          !#########################################
          ! Set back replica variables
          !#########################################
          if (flg_repvar(REPT%TEMP)) then
-            tempk_rep = lab2val(label_own, REPT%TEMP)
+            tempK_rep = lab2val(label_own, REPT%TEMP)
          else
-            tempk_rep = tempK
+            tempK_rep = tempK
          endif
 
          !if (flg_repvar(REPT%ION)) then
@@ -123,7 +130,7 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
          ! Set back original coefficients
          !#############################################
          if (flg_ele) then
-            call set_ele(irep, tempk_rep, ionic_strength_rep)
+            call set_ele(irep, tempK_rep, ionic_strength_rep)
          endif
  
       endif

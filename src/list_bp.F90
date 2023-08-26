@@ -17,14 +17,14 @@ subroutine list_bp()
    allocate(nbp(nrep_proc))
    allocate(bp_mp(3, n, nrep_proc))
    allocate(bp_status(n, nrep_proc))
-   allocate(ene_bp(n))
+   allocate(ene_bp(n, nrep_proc))
    allocate(for_bp(3, 6, n))
    allocate(nt_bp_excess(nmp))
 
    nbp(:) = n
    bp_mp(:,:,:) = 0
    bp_status(:,:) = .False.
-   ene_bp(:) = 0.0_PREC
+   ene_bp(:,:) = 0.0_PREC
    for_bp(:,:,:) = 0.0_PREC
    nt_bp_excess(:) = 0
 

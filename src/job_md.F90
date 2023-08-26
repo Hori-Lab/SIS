@@ -202,8 +202,16 @@ subroutine job_md()
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    do irep = 1, nrep_proc
 
+      if (flg_repvar(REPT%TEMP)) then
+         grep = irep2grep(irep)
+         rep_label = rep2lab(grep)
+         tK = rep2val(grep, REPT%TEMP)
+      else
+         tK = tempK
+      endif
+
       flg_bp_energy = .False.
-      call energy_sumup(irep, energies(0:ENE%MAX, irep))
+      call energy_sumup(irep, tK, energies(0:ENE%MAX, irep))
       call energy_kinetic(irep, Ekinetic(irep))
 
       ! Open DCD file and write the header
@@ -236,14 +244,6 @@ subroutine job_md()
                                                         ! 1   23     4567890123
       endif
       write(hdl_out(irep), '(a)') ''
-
-      if (flg_replica) then
-         grep = irep2grep(irep)
-         rep_label = rep2lab(grep)
-         tK = rep2val(grep, REPT%TEMP)
-      else
-         tK = tempK
-      endif
 
       ! Output initial structure
       if (restarted) then
@@ -370,7 +370,7 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_step_save .or. flg_step_rep_exchange) then
          replica_energies(:, :) = 0.0_PREC
-         call energy_replica(energies, replica_energies, flg_replica)
+         call energy_replica(energies, replica_energies, flg_step_rep_exchange)
       endif
 
       if (flg_step_save) then

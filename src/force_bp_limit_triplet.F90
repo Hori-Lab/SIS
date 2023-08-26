@@ -55,7 +55,7 @@ subroutine force_bp_limit_triplet(irep, forces)
 
    !$omp master
    bp_status(1:nbp(irep), irep) = .False.
-   ene_bp(1:nbp(irep)) = 0.0_PREC
+   ene_bp(1:nbp(irep), irep) = 0.0_PREC
    for_bp(1:3,1:6,1:nbp(irep)) = 0.0_PREC
    nt_bp_excess(1:nmp) = -max_bp_per_nt
    !$omp end master
@@ -220,7 +220,7 @@ subroutine force_bp_limit_triplet(irep, forces)
 
       if (ene <= bp_cutoff_energy) then
          bp_status(ibp, irep) = .True.
-         ene_bp(ibp) = ene
+         ene_bp(ibp, irep) = ene
 
          for_bp(:, :, ibp) = ene * for_bp(:, :, ibp)
 
@@ -282,7 +282,7 @@ subroutine force_bp_limit_triplet(irep, forces)
       do i = 2, nbp_seq
          jbp = bp_seq(i)
 
-         ratio = exp( (ene_bp(jbp) - ene_bp(ibp_delete)) * beta )
+         ratio = exp( (ene_bp(jbp, irep) - ene_bp(ibp_delete, irep)) * beta )
          !rnd = genrand64_real1()  ! [0,1]-real-interval
          rnd = genrand_double1(mts(irep))  ! [0,1]-real-interval
 

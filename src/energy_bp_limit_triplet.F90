@@ -13,7 +13,6 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, bp_paras, bp_coef, &
                              basepair_parameters
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
-   use var_replica, only : flg_repvar, rep2val, irep2grep
 
    implicit none
   
@@ -38,14 +37,6 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    integer :: ntlist_excess(nmp)
    logical :: halt_mode
 
-   if (flg_repvar(REPT%TEMP)) then
-      tK = rep2val(irep2grep(irep), REPT%TEMP)
-      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
-   else
-      tK = tempK_in
-      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
-   endif
-
    if (temp_independent == 0) then
       tK = tempK_in
       beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
@@ -58,7 +49,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
 
       bp_status(1:nbp(irep), irep) = .False.
       nt_bp_excess(1:nmp) = -max_bp_per_nt
-      ene_bp(1:nbp(irep)) = 0.0_PREC
+      ene_bp(1:nbp(irep), irep) = 0.0_PREC
 
       !$omp barrier
 
@@ -100,7 +91,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
          ene = bpp%U0 * dG * exp(-u)
 
          if (ene <= bp_cutoff_energy) then
-            ene_bp(ibp) = ene
+            ene_bp(ibp, irep) = ene
             bp_status(ibp, irep) = .True.
 
             !$omp atomic
@@ -162,7 +153,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
          do i = 2, nbp_seq
             jbp = bp_seq(i)
 
-            ratio = exp( (ene_bp(jbp) - ene_bp(ibp_delete)) * beta )
+            ratio = exp( (ene_bp(jbp, irep) - ene_bp(ibp_delete, irep)) * beta )
             !rnd = genrand64_real1()  ! [0,1]-real-interval
             rnd = genrand_double1(mts(irep))  ! [0,1]-real-interval
 
@@ -187,7 +178,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    endif
 
    ! Sum of ene_bp masked by bp_status (Note: bp_status(1:nbp_max))
-   Ebp = sum(ene_bp(1:nbp(irep)), bp_status(1:nbp(irep), irep))
+   Ebp = sum(ene_bp(1:nbp(irep), irep), bp_status(1:nbp(irep), irep))
 
    if (flg_out_bp) then
 
@@ -202,7 +193,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
             imp = bp_mp(1, ibp, irep)
             jmp = bp_mp(2, ibp, irep)
             write(hdl_bp(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
-                                real(ene_bp(ibp), kind=KIND_OUT_BPE)
+                                real(ene_bp(ibp, irep), kind=KIND_OUT_BPE)
          endif
       enddo
 
@@ -224,7 +215,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
             imp = bp_mp(1, ibp, irep)
             jmp = bp_mp(2, ibp, irep)
             write(hdl_bpall(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
-                                   real(ene_bp(ibp), kind=KIND_OUT_BPE)
+                                   real(ene_bp(ibp, irep), kind=KIND_OUT_BPE)
          endif
       enddo
 
@@ -245,7 +236,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
          if (bp_status(ibp, irep)) then
             imp = bp_mp(1, ibp, irep)
             jmp = bp_mp(2, ibp, irep)
-            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f6.2)', advance='no') imp, jmp, ene_bp(ibp)
+            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f6.2)', advance='no') imp, jmp, ene_bp(ibp, irep)
          endif
       enddo
 

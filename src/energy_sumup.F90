@@ -1,4 +1,4 @@
-subroutine energy_sumup(irep, energies)
+subroutine energy_sumup(irep, tempK_in, energies)
 
    use const
    use const_idx, only : ENE
@@ -8,6 +8,7 @@ subroutine energy_sumup(irep, energies)
    implicit none
 
    integer, intent(in) :: irep
+   real(PREC), intent(in) :: tempK_in
    real(PREC), intent(out) :: energies(0:ENE%MAX)
 
    energies(:) = 0.0e0_PREC
@@ -28,7 +29,7 @@ subroutine energy_sumup(irep, energies)
       call energy_bp(irep, energies(ENE%BP))
    else
       if (bp_model == 4 .or. bp_model == 5) then
-         call energy_bp_limit_triplet(irep, tempK, energies(ENE%BP))
+         call energy_bp_limit_triplet(irep, tempK_in, energies(ENE%BP))
       else
          call energy_bp_limit(irep, energies(ENE%BP))
       endif

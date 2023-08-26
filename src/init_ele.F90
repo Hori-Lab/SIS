@@ -7,7 +7,7 @@ subroutine init_ele()
    use var_state, only : tempK, lambdaD, diele, ionic_strength, &
                          temp_independent, diele_dTcoef
    use var_potential, only : ele_coef, ele_cutoff_type, ele_cutoff_inp, ele_cutoff
-   use var_replica, only : flg_replica, rep2val, nrep_proc, irep2grep
+   use var_replica, only : flg_repvar, rep2val, nrep_proc, irep2grep
 
    implicit none
 
@@ -68,7 +68,7 @@ subroutine init_ele()
 
    do irep = 1, nrep_proc
 
-      if (flg_replica) then
+      if (flg_repvar(REPT%TEMP)) then
          grep = irep2grep(irep)
          tK = rep2val(grep, REPT%TEMP)
       endif

@@ -5,7 +5,7 @@ subroutine job_check_force()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_wrap
    use var_top, only : nmp
-   use var_state, only : xyz, energies, flg_bp_energy, mts
+   use var_state, only : xyz, energies, flg_bp_energy, mts, tempK
    use var_potential, only: flg_stage
    use var_io, only : hdl_out, cfile_pdb_ini, cfile_xyz_ini
    !use mt19937_64
@@ -58,11 +58,11 @@ subroutine job_check_force()
 
          xyz_save = xyz(ixyz, imp, IREP)
          xyz(ixyz, imp, IREP) = xyz_save + small
-         call energy_sumup(IREP, energies)
+         call energy_sumup(IREP, tempK, energies)
          e_save = energies(ENE%TOTAL, IREP)
 
          xyz(ixyz, imp, IREP) = xyz_save - small
-         call energy_sumup(IREP, energies)
+         call energy_sumup(IREP, tempK, energies)
 
          f_energy(ixyz) = - (e_save - energies(ENE%TOTAL, IREP)) / (2.0 * small)
          xyz(ixyz, imp, IREP) = xyz_save
