@@ -12,7 +12,7 @@ subroutine list_bp()
    integer :: n, imp, jmp
    integer :: ibp
 
-   n = count(bp_map /= 0)
+   n = count(bp3_map /= 0)
 
    allocate(nbp(nrep_proc))
    allocate(bp_mp(3, n, nrep_proc))
@@ -33,10 +33,11 @@ subroutine list_bp()
       bp_coef(:,:,:) = 0.0_PREC
    endif
 
+   ibp = 0
    do imp = 1, nmp
       do jmp = imp + bp_min_loop + 1, nmp
 
-         if (bp_map(imp, jmp) == 0) cycle
+         if (bp3_map(imp, jmp) == 0) cycle
 
          ibp = ibp + 1
 
@@ -45,8 +46,6 @@ subroutine list_bp()
          bp_mp(3, ibp, 1:nrep_proc) = bp_map(imp, jmp)
 
          if (bp_model == 5) then
-            print *, imp, jmp, bp_map(imp, jmp), bp3_map(imp, jmp)
-            flush(6)
             bp_coef(1, ibp, 1:nrep_proc) = bp3_dH(bp3_map(imp, jmp))  ! dH
             bp_coef(2, ibp, 1:nrep_proc) = bp3_dS(bp3_map(imp, jmp))  ! dS
                         ! (0.001 already multiplied to dS so that the unit is kcal/mol/K)
