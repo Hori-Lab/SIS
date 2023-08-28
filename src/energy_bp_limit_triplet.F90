@@ -15,7 +15,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
-  
+
    integer, intent(in) :: irep
    real(PREC), intent(in) :: tempK_in
    real(PREC), intent(inout) :: Ebp
@@ -42,7 +42,9 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
       beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
    else
       tK = 0.0_PREC
-      beta = HUGE(beta)   ! so that the highest energy BP will be deleted.
+      !beta = HUGE(beta)   ! so that the highest energy BP will be deleted.
+                           ! This causes numerical exception so do not use.
+      beta = 0.0_PREC   ! beta will not be used.
    endif
 
    if (.not. flg_bp_energy) then
@@ -67,7 +69,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
          d = norm2(pbc_vec_d(xyz(:,imp,irep), xyz(:, jmp,irep))) - bpp%bond_r
 
          if (abs(d) > bpp%cutoff_ddist) cycle
-      
+
          u = bpp%bond_k * d**2
 
          theta = mp_angle(imp, jmp, jmp-1)
@@ -138,29 +140,42 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
             endif
          enddo
 
-         ! Shuffle
-         do i = 1, nbp_seq
-            !rnd = genrand64_real3()   ! (0,1)-real-interval
-            rnd = genrand_double3(mts(irep))   ! (0,1)-real-interval
-            i_swap = ceiling(rnd*nbp_seq)
-            i_save = bp_seq(i)
-            bp_seq(i) = bp_seq(i_swap)
-            bp_seq(i_swap) = i_save
-         enddo
+         if (temp_independent == 0) then
+            ! Shuffle
+            do i = 1, nbp_seq
+               !rnd = genrand64_real3()   ! (0,1)-real-interval
+               rnd = genrand_double3(mts(irep))   ! (0,1)-real-interval
+               i_swap = ceiling(rnd*nbp_seq)
+               i_save = bp_seq(i)
+               bp_seq(i) = bp_seq(i_swap)
+               bp_seq(i_swap) = i_save
+            enddo
 
-         ! Randomely choose one "ibp" that will be deleted, depending on the energies
-         ibp_delete = bp_seq(1)
-         do i = 2, nbp_seq
-            jbp = bp_seq(i)
+            ! Randomely choose one "ibp" that will be deleted, depending on the energies
+            ibp_delete = bp_seq(1)
+            do i = 2, nbp_seq
+               jbp = bp_seq(i)
 
-            ratio = exp( (ene_bp(jbp, irep) - ene_bp(ibp_delete, irep)) * beta )
-            !rnd = genrand64_real1()  ! [0,1]-real-interval
-            rnd = genrand_double1(mts(irep))  ! [0,1]-real-interval
+               ratio = exp( (ene_bp(jbp, irep) - ene_bp(ibp_delete, irep)) * beta )
+               !rnd = genrand64_real1()  ! [0,1]-real-interval
+               rnd = genrand_double1(mts(irep))  ! [0,1]-real-interval
 
-            if (rnd < ratio) then
-               ibp_delete = jbp
-            endif
-         enddo
+               if (rnd < ratio) then
+                  ibp_delete = jbp
+               endif
+            enddo
+
+         else
+            ibp_delete = bp_seq(1)
+            do i = 2, nbp_seq
+               jbp = bp_seq(i)
+
+               if (ene_bp(jbp, irep) > ene_bp(ibp_delete, irep)) then
+                  ibp_delete = jbp
+               endif
+            enddo
+
+         endif
 
          ! Delete
          bp_status(ibp_delete, irep) = .False.
