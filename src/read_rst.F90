@@ -5,7 +5,10 @@ subroutine read_rst(itype_wanted)
    use var_io,  only : hdl_in_rst
    use var_top, only : nmp
    use var_state, only : xyz, velos, accels, istep, ianneal
-   use var_replica, only : nrep_all, nrep_proc, rep2lab, lab2rep, grep2rank, grep2irep
+   use var_replica, only : nrep_all, rep2lab, lab2rep, grep2rank, grep2irep
+#ifdef PAR_MPI
+   use var_replica, only : nrep_proc
+#endif
    use var_parallel
 
    implicit none

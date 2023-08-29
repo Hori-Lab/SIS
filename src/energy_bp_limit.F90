@@ -1,7 +1,5 @@
 subroutine energy_bp_limit(irep, Ebp)
 
-   use :: ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
-
    !use mt19937_64, only : genrand64_real1, genrand64_real3
    use mt_stream
    use const, only : PREC
@@ -9,7 +7,6 @@ subroutine energy_bp_limit(irep, Ebp)
    use var_top, only : nmp
    use var_state, only : xyz, kT, bp_status, ene_bp, flg_bp_energy, nt_bp_excess, mts
    use var_potential, only : max_bp_per_nt, bp_cutoff_energy, nbp, bp_mp, bp_paras, basepair_parameters
-   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
   
@@ -160,69 +157,6 @@ subroutine energy_bp_limit(irep, Ebp)
    
    ! Sum of ene_bp masked by bp_status (Note: bp_status(1:nbp_max))
    Ebp = sum(ene_bp(1:nbp(irep), irep), bp_status(1:nbp(irep), irep))
-
-   if (flg_out_bp) then
-
-      call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
-      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
-
-      do ibp = 1, nbp(irep)
-
-         !nhb = bp_type2nhb(bp_mp(3, ibp))
-         !if (ene_bp(ibp) < - nhb * kT) then
-         if (bp_status(ibp, irep)) then
-            imp = bp_mp(1, ibp, irep)
-            jmp = bp_mp(2, ibp, irep)
-            write(hdl_bp(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
-                                real(ene_bp(ibp, irep), kind=KIND_OUT_BPE)
-         endif
-      enddo
-
-      write(hdl_bp(irep)) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), &
-                          real(0.0, kind=KIND_OUT_BPE)
-
-      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
-   endif
-
-   if (flg_out_bpall) then
-
-      call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
-      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
-
-      do ibp = 1, nbp(irep)
-
-         !if (ene_bp(ibp) < -ZERO_JUDGE) then  ! To output all
-         if (bp_status(ibp, irep)) then
-            imp = bp_mp(1, ibp, irep)
-            jmp = bp_mp(2, ibp, irep)
-            write(hdl_bpall(irep)) int(imp,kind=KIND_OUT_BP), int(jmp,kind=KIND_OUT_BP), &
-                                   real(ene_bp(ibp, irep), kind=KIND_OUT_BPE)
-         endif
-      enddo
-
-      write(hdl_bpall(irep)) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), &
-                             real(0.0, kind=KIND_OUT_BPE)
-
-      call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
-   endif
-
-   if (flg_out_bpe) then
-
-      do ibp = 1, nbp(irep)
-
-         !nhb = bp_type2nhb(bp_mp(3, ibp, irep))
-
-         !if (ene_bp(ibp) < - nhb * kT) then
-         !if (ene_bp(ibp) < -ZERO_JUDGE) then  ! To output all
-         if (bp_status(ibp, irep)) then
-            imp = bp_mp(1, ibp, irep)
-            jmp = bp_mp(2, ibp, irep)
-            write(hdl_bpe(irep), '(1x,i5,1x,i5,1x,f5.2)', advance='no') imp, jmp, ene_bp(ibp, irep)
-         endif
-      enddo
-
-      write(hdl_bpe(irep), '(a)') ''
-   endif
 
 contains
 

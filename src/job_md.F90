@@ -374,6 +374,10 @@ subroutine job_md()
          call energy_replica(energies, replica_energies, flg_step_rep_exchange)
       endif
 
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Save energies and coordinates to out, dcd, bp files
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_step_save) then
          do irep = 1, nrep_proc
             if (flg_replica) then
@@ -399,6 +403,8 @@ subroutine job_md()
 #ifdef OUTFLUSH
             flush(hdl_out(irep))
 #endif
+
+            call write_bp(irep, tK)
 
             call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
          enddo

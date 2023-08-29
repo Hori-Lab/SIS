@@ -75,6 +75,7 @@ subroutine job_dcd()
       endif
       write(hdl_out(IREP), '(a)') ''
 
+      call write_bp(IREP, tempK)
    enddo
 
    write(*,*) '#nframe:', nframe
