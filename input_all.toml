@@ -119,6 +119,10 @@ stop_wall_time_hour = 47.9
     # The default is -1 thus no time limit.
     # It is recommended to set a slightly smaller value than the resource time allowed,
     # e.g. 47.9 for 48-hour job.
+nstep_check_stop = 100
+    # (optional, valid only when stop_wall_time_hour is set) default is 100.
+    # Specify the frequency to check the wall time to stop. The value has to be a positive integer.
+    # If a value less than 1 is specified, then nstep_check_stop = 1 will be used (check evey step).
 
 fix_com_origin = 0
     # (optional) Fix the translational motion of the molecule.
