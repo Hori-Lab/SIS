@@ -78,9 +78,9 @@ subroutine force_bp(irep, forces)
 
       !===== Angle of 3-1=2 (imp-1 -- imp -- jmp) =====
       cosine = d1213 / (sqrt(d1313) * a12)
-      d = acos(cosine) - bpp%angl_theta1
-      pre = 2.0e0_PREC * bpp%angl_k1 * d / sqrt(d1313*d1212 - d1213**2)
-      u = u + bpp%angl_k1 * d**2
+      d = acos(cosine) - bpp%angl_theta2
+      pre = 2.0e0_PREC * bpp%angl_k2 * d / sqrt(d1313*d1212 - d1213**2)
+      u = u + bpp%angl_k2 * d**2
 
       f_i(:) = pre * (v12(:) - (d1213 / d1313 * v13(:)))
       f_k(:) = pre * (v13(:) - (d1213over1212 * v12(:)))
@@ -104,9 +104,9 @@ subroutine force_bp(irep, forces)
 
       !===== Angle of 5-1=2 (imp+1 -- imp -- jmp) =====
       cosine = d1215 / (sqrt(d1515) * a12)
-      d = acos(cosine) - bpp%angl_theta2
-      u = u + bpp%angl_k2 * d**2
-      pre = 2.0e0_PREC * bpp%angl_k2 * d / sqrt(d1515*d1212 - d1215**2)
+      d = acos(cosine) - bpp%angl_theta4
+      u = u + bpp%angl_k4 * d**2
+      pre = 2.0e0_PREC * bpp%angl_k4 * d / sqrt(d1515*d1212 - d1215**2)
 
       f_i(:) = pre * (v12(:) - (d1215 / d1515 * v15(:)))
       f_k(:) = pre * (v15(:) - (d1215over1212 * v12(:)))
@@ -117,9 +117,9 @@ subroutine force_bp(irep, forces)
 
       !===== Angle of 1=2-6 (imp -- jmp -- jmp+1) =====
       cosine = d1262 / (a12 * sqrt(d6262))
-      d = acos(cosine) - bpp%angl_theta2
-      u = u + bpp%angl_k2 * d**2
-      pre = 2.0e0_PREC * bpp%angl_k2 * d / sqrt(d1212*d6262 - d1262**2)
+      d = acos(cosine) - bpp%angl_theta3
+      u = u + bpp%angl_k3 * d**2
+      pre = 2.0e0_PREC * bpp%angl_k3 * d / sqrt(d1212*d6262 - d1262**2)
 
       f_i(:) = - pre * (v62(:) - (d1262over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1262 / d6262 * v62(:)))

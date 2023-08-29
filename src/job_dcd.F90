@@ -15,7 +15,7 @@ subroutine job_dcd()
    integer :: i, nframe, istat, nmp_dcd, icol
    type(file_dcd) :: fdcd
    integer, parameter :: IREP = 1
-   character(len=37) :: out_fmt
+   character(len=29) :: out_fmt
 
    ! Format in .out file
    write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%ELE+2, '(1x, g13.6))'

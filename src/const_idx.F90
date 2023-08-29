@@ -49,11 +49,14 @@ module const_idx
       integer :: GC      ! 1
       integer :: AU      ! 2
       integer :: GU      ! 3
+      integer :: CG      ! 4
+      integer :: UA      ! 5
+      integer :: UG      ! 6
       integer :: MAX
    endtype bp_types
-   type(bp_types), parameter :: BPT = bp_types(0,1,2,3,3)
+   type(bp_types), parameter :: BPT = bp_types(0,1,2,3,4,5,6,6)
 
-   character(len=*), dimension(3), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU'/)
+   character(len=*), dimension(6), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU', 'CG', 'UA', 'UG'/)
 
    type rst_block
       integer :: STEP

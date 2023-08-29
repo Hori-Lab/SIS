@@ -61,8 +61,12 @@ module var_potential
       real(PREC) :: bond_r
       real(PREC) :: angl_k1
       real(PREC) :: angl_k2
+      real(PREC) :: angl_k3
+      real(PREC) :: angl_k4
       real(PREC) :: angl_theta1
       real(PREC) :: angl_theta2
+      real(PREC) :: angl_theta3
+      real(PREC) :: angl_theta4
       real(PREC) :: dihd_k1
       real(PREC) :: dihd_k2
       real(PREC) :: dihd_phi1

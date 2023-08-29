@@ -61,7 +61,6 @@ subroutine read_force_field()
       print '(2a)', '# title: ', trim(cline)
       flush(OUTPUT_UNIT)
 
-
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
       !! Potential
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
@@ -141,7 +140,6 @@ subroutine read_force_field()
          call sis_abort()
       endif
 
-
       call get_value(group, "basepair", node)
       bp_cutoff_energy = 0.01_PREC  ! Default /kcal/mol
       coef_dG = 1.0_PREC
@@ -184,12 +182,22 @@ subroutine read_force_field()
             call get_value(subnode, "bond_r", bp_paras(BPT%GC)%bond_r)
             call get_value(subnode, "angl_k1", bp_paras(BPT%GC)%angl_k1)
             call get_value(subnode, "angl_k2", bp_paras(BPT%GC)%angl_k2)
+            call get_value(subnode, "angl_k3", bp_paras(BPT%GC)%angl_k3)
+            call get_value(subnode, "angl_k4", bp_paras(BPT%GC)%angl_k4)
             call get_value(subnode, "angl_theta1", bp_paras(BPT%GC)%angl_theta1)
             call get_value(subnode, "angl_theta2", bp_paras(BPT%GC)%angl_theta2)
+            call get_value(subnode, "angl_theta3", bp_paras(BPT%GC)%angl_theta3)
+            call get_value(subnode, "angl_theta4", bp_paras(BPT%GC)%angl_theta4)
             call get_value(subnode, "dihd_k1", bp_paras(BPT%GC)%dihd_k1)
             call get_value(subnode, "dihd_k2", bp_paras(BPT%GC)%dihd_k2)
             call get_value(subnode, "dihd_phi1", bp_paras(BPT%GC)%dihd_phi1)
             call get_value(subnode, "dihd_phi2", bp_paras(BPT%GC)%dihd_phi2)
+
+            bp_paras(BPT%CG) = bp_paras(BPT%GC)
+            bp_paras(BPT%CG)%angl_k1 = bp_paras(BPT%GC)%angl_k2
+            bp_paras(BPT%CG)%angl_k2 = bp_paras(BPT%GC)%angl_k1
+            bp_paras(BPT%CG)%angl_k3 = bp_paras(BPT%GC)%angl_k4
+            bp_paras(BPT%CG)%angl_k4 = bp_paras(BPT%GC)%angl_k3
          endif
 
          call get_value(node, "AU", subnode)
@@ -199,12 +207,22 @@ subroutine read_force_field()
             call get_value(subnode, "bond_r", bp_paras(BPT%AU)%bond_r)
             call get_value(subnode, "angl_k1", bp_paras(BPT%AU)%angl_k1)
             call get_value(subnode, "angl_k2", bp_paras(BPT%AU)%angl_k2)
+            call get_value(subnode, "angl_k3", bp_paras(BPT%AU)%angl_k3)
+            call get_value(subnode, "angl_k4", bp_paras(BPT%AU)%angl_k4)
             call get_value(subnode, "angl_theta1", bp_paras(BPT%AU)%angl_theta1)
             call get_value(subnode, "angl_theta2", bp_paras(BPT%AU)%angl_theta2)
+            call get_value(subnode, "angl_theta3", bp_paras(BPT%AU)%angl_theta3)
+            call get_value(subnode, "angl_theta4", bp_paras(BPT%AU)%angl_theta4)
             call get_value(subnode, "dihd_k1", bp_paras(BPT%AU)%dihd_k1)
             call get_value(subnode, "dihd_k2", bp_paras(BPT%AU)%dihd_k2)
             call get_value(subnode, "dihd_phi1", bp_paras(BPT%AU)%dihd_phi1)
             call get_value(subnode, "dihd_phi2", bp_paras(BPT%AU)%dihd_phi2)
+
+            bp_paras(BPT%UA) = bp_paras(BPT%AU)
+            bp_paras(BPT%UA)%angl_k1 = bp_paras(BPT%AU)%angl_k2
+            bp_paras(BPT%UA)%angl_k2 = bp_paras(BPT%AU)%angl_k1
+            bp_paras(BPT%UA)%angl_k3 = bp_paras(BPT%AU)%angl_k4
+            bp_paras(BPT%UA)%angl_k4 = bp_paras(BPT%AU)%angl_k3
          endif
 
          call get_value(node, "GU", subnode)
@@ -214,12 +232,22 @@ subroutine read_force_field()
             call get_value(subnode, "bond_r", bp_paras(BPT%GU)%bond_r)
             call get_value(subnode, "angl_k1", bp_paras(BPT%GU)%angl_k1)
             call get_value(subnode, "angl_k2", bp_paras(BPT%GU)%angl_k2)
+            call get_value(subnode, "angl_k3", bp_paras(BPT%GU)%angl_k3)
+            call get_value(subnode, "angl_k4", bp_paras(BPT%GU)%angl_k4)
             call get_value(subnode, "angl_theta1", bp_paras(BPT%GU)%angl_theta1)
             call get_value(subnode, "angl_theta2", bp_paras(BPT%GU)%angl_theta2)
+            call get_value(subnode, "angl_theta3", bp_paras(BPT%GU)%angl_theta3)
+            call get_value(subnode, "angl_theta4", bp_paras(BPT%GU)%angl_theta4)
             call get_value(subnode, "dihd_k1", bp_paras(BPT%GU)%dihd_k1)
             call get_value(subnode, "dihd_k2", bp_paras(BPT%GU)%dihd_k2)
             call get_value(subnode, "dihd_phi1", bp_paras(BPT%GU)%dihd_phi1)
             call get_value(subnode, "dihd_phi2", bp_paras(BPT%GU)%dihd_phi2)
+
+            bp_paras(BPT%UG) = bp_paras(BPT%GU)
+            bp_paras(BPT%UG)%angl_k1 = bp_paras(BPT%GU)%angl_k2
+            bp_paras(BPT%UG)%angl_k2 = bp_paras(BPT%GU)%angl_k1
+            bp_paras(BPT%UG)%angl_k3 = bp_paras(BPT%GU)%angl_k4
+            bp_paras(BPT%UG)%angl_k4 = bp_paras(BPT%GU)%angl_k3
          endif
 
       else
@@ -364,7 +392,6 @@ subroutine read_force_field()
 
 #endif
 
-
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    !! Check
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
@@ -434,6 +461,9 @@ subroutine read_force_field()
    call check_bp_paras(BPT%GC)
    call check_bp_paras(BPT%AU)
    call check_bp_paras(BPT%GU)
+   call check_bp_paras(BPT%CG)
+   call check_bp_paras(BPT%UA)
+   call check_bp_paras(BPT%UG)
 
    if (wca_sigma > INVALID_JUDGE) then
       print '(a)', "INVALID wca_sigma " // trim(csource)
@@ -523,8 +553,12 @@ contains
          bp_paras(bptype)%bond_r = INVALID_VALUE
          bp_paras(bptype)%angl_k1 = INVALID_VALUE
          bp_paras(bptype)%angl_k2 = INVALID_VALUE
+         bp_paras(bptype)%angl_k3 = INVALID_VALUE
+         bp_paras(bptype)%angl_k4 = INVALID_VALUE
          bp_paras(bptype)%angl_theta1 = INVALID_VALUE
          bp_paras(bptype)%angl_theta2 = INVALID_VALUE
+         bp_paras(bptype)%angl_theta3 = INVALID_VALUE
+         bp_paras(bptype)%angl_theta4 = INVALID_VALUE
          bp_paras(bptype)%dihd_k1 = INVALID_VALUE
          bp_paras(bptype)%dihd_k2 = INVALID_VALUE
          bp_paras(bptype)%dihd_phi1 = INVALID_VALUE
@@ -575,6 +609,20 @@ contains
          print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_k2: ", bp_paras(bptype)%angl_k2
       endif
 
+      if (bp_paras(bptype)%angl_k3 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_k3 for ", BPTYPE_CHAR(bptype)
+         call sis_abort()
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_k3: ", bp_paras(bptype)%angl_k3
+      endif
+
+      if (bp_paras(bptype)%angl_k4 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_k4 for ", BPTYPE_CHAR(bptype)
+         call sis_abort()
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_k4: ", bp_paras(bptype)%angl_k4
+      endif
+
       if (bp_paras(bptype)%angl_theta1 > INVALID_JUDGE) then
          print '(3a)', "INVALID value for bp ", BPTYPE_CHAR(bptype), " angl_theta1 " // trim(csource)
          call sis_abort()
@@ -587,6 +635,20 @@ contains
          call sis_abort()
       else
          print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_theta2: ", bp_paras(bptype)%angl_theta2
+      endif
+
+      if (bp_paras(bptype)%angl_theta3 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_theta3 for ", BPTYPE_CHAR(bptype)
+         call sis_abort()
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_theta3: ", bp_paras(bptype)%angl_theta3
+      endif
+
+      if (bp_paras(bptype)%angl_theta4 > INVALID_JUDGE) then
+         print '(2a)', "INVALID value in the force field file. bp angl_theta4 for ", BPTYPE_CHAR(bptype)
+         call sis_abort()
+      else
+         print '(3a,g15.8)', "# ", BPTYPE_CHAR(bptype), " angl_theta4: ", bp_paras(bptype)%angl_theta4
       endif
 
       if (bp_paras(bptype)%dihd_k1 > INVALID_JUDGE) then
