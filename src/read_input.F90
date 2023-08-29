@@ -17,7 +17,7 @@ subroutine read_input(cfilepath)
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  tempK_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
-                         rng_seed, stop_wall_time_sec, fix_com_origin, &
+                         rng_seed, stop_wall_time_sec, nstep_check_stop, fix_com_origin, &
                          ionic_strength, length_per_charge
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
@@ -407,6 +407,12 @@ subroutine read_input(cfilepath)
             print '(a,g15.8)', '# MD stop_wall_time_hour: ', rdummy
          endif
 
+         nstep_check_stop = 100
+         if (stop_wall_time_sec > 0) then
+            call get_value(group, "nstep_check_stop", nstep_check_stop, 100, stat=istat, origin=origin)
+            print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
+         endif
+
          !----------------- fix_com_origin -----------------
          call get_value(group, "fix_com_origin", fix_com_origin, 0, stat=istat, origin=origin)
 
@@ -697,6 +703,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(nstep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(nstep_save_rst, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(stop_wall_time_sec, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nstep_check_stop, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(nl_margin, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(viscosity_Pas, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)

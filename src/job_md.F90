@@ -1,7 +1,7 @@
 !#define OUTFLUSH
 subroutine job_md()
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
+   use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64, output_unit
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
@@ -10,7 +10,8 @@ subroutine job_md()
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
    use var_state, only : restarted, flg_bp_energy, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
-                         nstep, nstep_save, nstep_save_rst, stop_wall_time_sec, fix_com_origin, &
+                         nstep, nstep_save, nstep_save_rst, &
+                         nstep_check_stop, stop_wall_time_sec, fix_com_origin, &
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
@@ -91,7 +92,7 @@ subroutine job_md()
    print '(a)', 'mass(C) = 304.182'
    print '(a)', 'mass(U) = 305.164'
    print *
-   flush(6)
+   flush(output_unit)
 
    ! Coefficients that do not depend on replicas
    do imp = 1, nmp
@@ -278,9 +279,9 @@ subroutine job_md()
       endif
    enddo
    print *
-   flush(6)
+   flush(output_unit)
 
-   if (flg_progress) then
+   if (myrank == 0 .and. flg_progress) then
       call progress_init(istep)
    endif
 
@@ -316,7 +317,7 @@ subroutine job_md()
 
          if (maxval(forces(:,:)) > 100.0) then
             print *, 'Warning: maxval(forces) > 100.0. (irep, istep, force) =', irep, istep, maxval(forces)
-            flush(6)
+            flush(output_unit)
          endif
 
          do imp= 1, nmp
@@ -474,7 +475,7 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Write progress
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (flg_progress) then
+      if (myrank == 0 .and. flg_progress) then
          if (mod(istep, step_progress) == 0) then
             call progress_update(istep, nstep)
          endif
@@ -484,11 +485,18 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Check wall time
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (stop_wall_time_sec > 0 .and. wall_time_sec() > stop_wall_time_sec) then
-         flg_stop = .True.
-         print '(a)', 'Wall-clock time limit reached. Stop the job after writing rst file.'
+      if (stop_wall_time_sec > 0) then
+         if (mod(istep, nstep_check_stop) == 0) then
+            if (myrank == 0) then
+               if (wall_time_sec() > stop_wall_time_sec) then
+                  flg_stop = .True.
+               endif
+            endif
+#ifdef PAR_MPI
+            call MPI_BCAST(flg_stop, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+#endif
+         endif
       endif
-
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Write restart file (.rst)
@@ -497,7 +505,16 @@ subroutine job_md()
          call write_rst()
       endif
 
-      if (flg_stop) exit
+      if (flg_stop) then
+         do irep = 1, nrep_proc
+            call fdcd(irep)%close()
+         enddo
+
+         print '(a,i13,a)', 'Wall-clock time limit reached at step ', istep, '. Stop the job.'
+         flush(output_unit)
+
+         exit
+      endif
 
    enddo  ! <--- Main loop for time integration
 

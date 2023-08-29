@@ -44,6 +44,7 @@ module var_state
    real(PREC), save :: dt
    integer(INT64), save :: nstep
    integer(INT64), save :: stop_wall_time_sec
+   integer, save :: nstep_check_stop
    integer, save :: fix_com_origin
 
    integer, save :: nstep_save
