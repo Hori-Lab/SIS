@@ -27,9 +27,13 @@ title = "sis force field refined parameter 2"
         bond_r = 13.7
 
         angl_k1 = 12.0
-        angl_k2 = 15.0
+        angl_k2 = 12.0
+        angl_k3 = 15.0
+        angl_k4 = 15.0
         angl_theta1 = 1.83
-        angl_theta2 = 0.95
+        angl_theta2 = 1.83
+        angl_theta3 = 0.95
+        angl_theta4 = 0.95
 
         dihd_k1 = 5.0
         dihd_k2 = 4.0
@@ -42,9 +46,13 @@ title = "sis force field refined parameter 2"
         bond_r = 13.6
 
         angl_k1 = 12.0
-        angl_k2 = 15.0
+        angl_k2 = 12.0
+        angl_k3 = 15.0
+        angl_k4 = 15.0
         angl_theta1 = 1.81
-        angl_theta2 = 0.98
+        angl_theta2 = 1.81
+        angl_theta3 = 0.98
+        angl_theta4 = 0.98
 
         dihd_k1 = 5.0
         dihd_k2 = 4.0
@@ -57,9 +65,13 @@ title = "sis force field refined parameter 2"
         bond_r = 13.5
 
         angl_k1 = 12.0
-        angl_k2 = 20.0
+        angl_k2 = 12.0
+        angl_k3 = 20.0
+        angl_k4 = 20.0
         angl_theta1 = 1.80
-        angl_theta2 = 0.98
+        angl_theta2 = 1.80
+        angl_theta3 = 0.98
+        angl_theta4 = 0.98
 
         dihd_k1 = 5.0
         dihd_k2 = 4.0
