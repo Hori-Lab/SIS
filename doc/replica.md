@@ -134,10 +134,10 @@ optional arguments:
 Here is an example.
 
 ```
-$ util/replica_to_label.py ./REMD_trajs/ md 8 ./REMD_analysis/
+$ util/replica_to_label.py ./REMD_trajs/ md 14 ./REMD_analysis/
 ```
 
-The first argument `./REMD_trajs/` is the directory where the replica simulation restuls are stored. The second argument `md` is the prefix of the simulation files. The next, `8`, is the number of replicas. The last argument `./REMD_analysis/` is the directory where the new files will be stored.
+The first argument `./REMD_trajs/` is the directory where the replica simulation restuls are stored. The second argument `md` is the prefix of the simulation files. The next, `14`, is the number of replicas. The last argument `./REMD_analysis/` is the directory where the new files will be stored.
 
 This will creat a new set of files under `REMD_analysis/`.
 
