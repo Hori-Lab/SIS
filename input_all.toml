@@ -138,10 +138,10 @@ model = 1
     # 4: Base pair potential U0 is calcualted by dG values of the nearest neighbour model.
     # 5: Base pair potential U0 is calcualted by dH and dS values of the nearest neighbour model.
 
-min_loop_size = 3
+min_loop = 3
     # Minimum loop size allowed. The default value is 3 if this option is omitted.
     # It is the number of nucleotides that must exist between a base pair.
-    # E.g., if min_loop_size = 3, then (i) and (i+4) can form a base pair, whereas (i) and (i+3) cannot.
+    # E.g., if min_loop = 3, then (i) and (i+4) can form a base pair, whereas (i) and (i+3) cannot.
 
 max_bp_per_nt = -1
     # Maximum number of base pairs simultaneously formed by one nucleotide.
