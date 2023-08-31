@@ -255,6 +255,32 @@ subroutine init_bp()
 
             endif
 
+            if (bp_model == 5) then
+               !if (ichain == jchain .and. (j+1) + bp_min_loop >= (i-1)) then
+               !   ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
+               !   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
+               !                                             SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+
+               if (i-1 == 1 .or. j+1 == nmp_chain(jchain)) then
+                  ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
+                                                            SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+
+               else if (j-1 == 1 .or. i+1 == nmp_chain(ichain)) then
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
+                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
+
+               else if (ichain == jchain .and. (i+1) + bp_min_loop >= (j-1)) then
+                  ! (i+1) and (j-1) should be treated as unpaired (represented as U-U).
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
+                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
+
+               else
+                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), seq(i+1, ichain), &
+                                                            seq(j+1, jchain), seq(j, jchain), seq(j-1, jchain)))
+
+               endif
+            endif
             !bp_map_0(imp, jmp) = bp_map(imp, jmp)
             !bp_map_0(jmp, imp) = bp_map(jmp, imp)
 
