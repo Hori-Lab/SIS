@@ -20,7 +20,7 @@ subroutine job_md()
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage, flg_ele
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
-                           nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar
+                           nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
    use dcd, only : file_dcd, DCD_OPEN_MODE
 
@@ -367,7 +367,7 @@ subroutine job_md()
       flg_step_rep_save = .False.
       flg_step_rep_exchange = .False.
       if (mod(istep, nstep_save) == 0) flg_step_save = .True.
-      if (flg_replica) then
+      if (flg_replica .and. flg_exchange) then
          if (mod(istep, nstep_rep_exchange) == 0) flg_step_rep_exchange = .True.
          if (mod(istep, nstep_rep_save) == 0) flg_step_rep_save = .True.
       endif
