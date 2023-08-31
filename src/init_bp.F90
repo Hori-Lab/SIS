@@ -17,7 +17,7 @@ subroutine init_bp()
    integer :: h, l, n, idummy
    integer :: w, x, u, z, y, v
    integer :: istat, hdl
-   real(PREC) :: bp_bond_r
+   real(PREC) :: cutoff
    real(PREC) :: dH, dS
    character(len=1) :: nt
    logical :: comp_wz, comp_uv
@@ -398,7 +398,7 @@ subroutine init_bp()
 
 
    ! Calcuate BP cutoff
-   ! If bp_cutoff_energy is not specified in ff, the default value is 0.01 (kcal/mol).
+   ! If bp_cutoff_energy is not specified in ff, the default value is 0.001 (kcal/mol).
    if (abs(bp_cutoff_energy) <= epsilon(bp_cutoff_energy)) then
       ! When bp_cutoff_energy = 0.0, treat it as in the original way Hung did.
       bp_cutoff_dist = 18.0_PREC
@@ -409,20 +409,20 @@ subroutine init_bp()
 
    else
       bp_cutoff_dist = 0.0_PREC
-      bp_bond_r = 0.0_PREC
 
       do bptype = 1, BPT%MAX
-         bp_paras(bptype)%cutoff_ddist = sqrt(log(abs(bp_paras(bptype)%U0 / bp_cutoff_energy)) / bp_paras(bptype)%bond_k)
 
-         ! To get the maximum bond_r and cutoff_ddist
-         if (bp_paras(bptype)%cutoff_ddist > bp_cutoff_dist) then
-            bp_cutoff_dist = bp_paras(bptype)%cutoff_ddist
-         endif
-         if (bp_paras(bptype)%bond_r > bp_bond_r) then
-            bp_bond_r = bp_paras(bptype)%bond_r
+         !bp_paras(bptype)%cutoff_ddist = sqrt(log(abs(bp_paras(bptype)%U0 / bp_cutoff_energy)) / bp_paras(bptype)%bond_k)
+         ! Now U0 depends on the neighbouring nucleotides and the temperature.
+         ! To be on the safe side, let us assume U0 = -10.0 kcal/mol.
+         bp_paras(bptype)%cutoff_ddist = sqrt(log(abs(10.0_PREC / bp_cutoff_energy)) / bp_paras(bptype)%bond_k)
+
+         ! To get the maximum (bond_r + cutoff_ddist) as the neighbour list cutoff
+         cutoff = bp_paras(bptype)%bond_r + bp_paras(bptype)%cutoff_ddist
+         if (cutoff > bp_cutoff_dist) then
+            bp_cutoff_dist = cutoff
          endif
       enddo
-      bp_cutoff_dist = bp_bond_r + bp_cutoff_dist
 
    endif
 
