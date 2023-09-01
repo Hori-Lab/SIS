@@ -20,7 +20,7 @@ subroutine init_replica
    nrep_all = 1
    nrep_proc = 1
    irep2grep(:) = 1
-   grep2irep(:) = 0
+   grep2irep(:) = 1
    grep2rank(:) = 0
 
    if (flg_replica) then
