@@ -146,6 +146,8 @@ subroutine read_force_field()
       dH0 = 0.0_PREC
       dS0 = 0.0_PREC
       flg_NNend = .False.
+      dHend0 = 0.0_PREC
+      dSend0 = 0.0_PREC
       if (associated(node)) then
          !call get_value(node, "min_loop", bp_min_loop)
          !call get_value(node, "cutoff", bp_cutoff_dist)
@@ -156,6 +158,8 @@ subroutine read_force_field()
          call get_value(node, "dS0", dS0)
 
          call get_value(node, "NNend", flg_NNend)
+         call get_value(node, "dHend0", dHend0)
+         call get_value(node, "dSend0", dSend0)
 
          ! older format
          !call get_value(node, "bond_k", bp_bond_k)
@@ -401,6 +405,8 @@ subroutine read_force_field()
    call MPI_BCAST(flg_NNend, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(dH0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(dS0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(dHend0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(dSend0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    sz = sizeof(bp_paras(1))
    call MPI_BCAST(bp_paras, sz*BPT%MAX, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
@@ -509,6 +515,8 @@ subroutine read_force_field()
    print '(a,g15.8)', '# dS0: ', dS0
    if (flg_NNend) then
       print '(a)', '# NNend: True'
+      print '(a,g15.8)', '# dHend0: ', dHend0
+      print '(a,g15.8)', '# dSend0: ', dSend0
    endif
 
    call check_bp_paras(BPT%GC)
@@ -577,7 +585,7 @@ subroutine read_force_field()
          print '(a)', '# dHend:'
          do i = 1, 6
             if (NNend_dH(i) > INVALID_JUDGE) then
-               print '(a)', 'Error: invalid NNend.dH value for i = ' // CHAR(i) // ' ' // trim(csource)
+               print '(a)', 'Error: invalid NNend.dH value ' // trim(csource)
                call sis_abort()
             endif
          enddo
@@ -591,7 +599,7 @@ subroutine read_force_field()
          print '(a)', '# dSend:'
          do i = 1, 6
             if (NNend_dS(i) > INVALID_JUDGE) then
-               print '(a)', 'Error: invalid NNend.dS value for i = ' // CHAR(i) // ' ' // trim(csource)
+               print '(a)', 'Error: invalid NNend.dS value ' // trim(csource)
                call sis_abort()
             endif
          enddo

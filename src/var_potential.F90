@@ -53,6 +53,7 @@ module var_potential
    real(PREC), save :: coef_dG
    real(PREC), save :: dH0
    real(PREC), save :: dS0
+   real(PREC), save :: dHend0
    real(PREC), save :: dSend0
 
    real(PREC) :: bp3_dH(1:468)
