@@ -440,6 +440,14 @@ subroutine read_force_field()
 
       !! NNend
       if (flg_NNend) then
+         if (myrank /= 0) then
+            allocate(NNend_dH(6))
+            NNend_dH(:) = INVALID_VALUE
+
+            allocate(NNend_dS(6))
+            NNend_dS(:) = INVALID_VALUE
+         endif
+
          call MPI_BCAST(NNend_dH, 6, PREC_MPI, 0, MPI_COMM_WORLD, istat)
          call MPI_BCAST(NNend_dS, 6, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       endif
