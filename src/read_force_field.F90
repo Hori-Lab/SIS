@@ -3,7 +3,7 @@ subroutine read_force_field()
    use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT
    use tomlf
 
-   use const_idx, only : NNT, nnt2char
+   use const_idx, only : NNT, nnt2char, NNENDT
    use const_phys, only : INVALID_VALUE, INVALID_JUDGE
    use var_potential
    use var_io, only : iopen_hdl, cfile_ff
@@ -145,6 +145,7 @@ subroutine read_force_field()
       coef_dG = 1.0_PREC
       dH0 = 0.0_PREC
       dS0 = 0.0_PREC
+      flg_NNend = .False.
       if (associated(node)) then
          !call get_value(node, "min_loop", bp_min_loop)
          !call get_value(node, "cutoff", bp_cutoff_dist)
@@ -153,6 +154,8 @@ subroutine read_force_field()
          call get_value(node, "coef_dG", coef_dG)
          call get_value(node, "dH0", dH0)
          call get_value(node, "dS0", dS0)
+
+         call get_value(node, "NNend", flg_NNend)
 
          ! older format
          !call get_value(node, "bond_k", bp_bond_k)
@@ -320,10 +323,50 @@ subroutine read_force_field()
             do i = 1, NNT%MAX
                call get_value(node, nnt2char(i), NN_dS(i))
             enddo
+         endif ! bp_model == 5
+      endif ! NN
 
+      if (bp_model == 5 .and. flg_NNend) then
+         call get_value(table, "NNend", group)
+         if (.not. associated(group)) then
+            print '(a)', 'Error: [NNend] required in FF file'
+            call sis_abort()
          endif
 
-      endif
+         call get_value(group, "dH", node)
+         if (.not. associated(group)) then
+            print '(a)', 'Error: [NNend.dH] required in FF file'
+            call sis_abort()
+         endif
+
+         allocate(NNend_dH(1:6))
+         NNend_dH(:) = INVALID_VALUE
+
+         call get_value(node, 'AUonAU', NNend_dH(NNENDT%AUonAU))
+         call get_value(node, 'AUonCG', NNend_dH(NNENDT%AUonCG))
+         call get_value(node, 'AUonGU', NNend_dH(NNENDT%AUonGU))
+         call get_value(node, 'GUonCG', NNend_dH(NNENDT%GUonCG))
+         call get_value(node, 'GUonAU', NNend_dH(NNENDT%GUonAU))
+         call get_value(node, 'GUonGU', NNend_dH(NNENDT%GUonGU))
+
+         call get_value(group, "dS", node)
+         if (.not. associated(group)) then
+            print '(a)', 'Error: [NNend.dS] required in FF file'
+            call sis_abort()
+         endif
+
+         allocate(NNend_dS(1:6))
+         NNend_dS(:) = INVALID_VALUE
+
+         call get_value(node, 'AUonAU', NNend_dS(NNENDT%AUonAU))
+         call get_value(node, 'AUonCG', NNend_dS(NNENDT%AUonCG))
+         call get_value(node, 'AUonGU', NNend_dS(NNENDT%AUonGU))
+         call get_value(node, 'GUonCG', NNend_dS(NNENDT%GUonCG))
+         call get_value(node, 'GUonAU', NNend_dS(NNENDT%GUonAU))
+         call get_value(node, 'GUonGU', NNend_dS(NNENDT%GUonGU))
+
+      endif ! NNend
+
    endif ! myrank == 0
 
 
@@ -355,6 +398,7 @@ subroutine read_force_field()
 
    call MPI_BCAST(bp_cutoff_energy, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(coef_dG, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_NNend, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(dH0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(dS0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
@@ -387,6 +431,12 @@ subroutine read_force_field()
 
       call MPI_BCAST(NN_dH, NNT%MAX, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       call MPI_BCAST(NN_dS, NNT%MAX, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+
+      !! NNend
+      if (flg_NNend) then
+         call MPI_BCAST(NNend_dH, 6, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(NNend_dS, 6, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      endif
 
    endif
 
@@ -457,6 +507,9 @@ subroutine read_force_field()
    print '(a,g15.8)', '# coef_dG: ', coef_dG
    print '(a,g15.8)', '# dH0: ', dH0
    print '(a,g15.8)', '# dS0: ', dS0
+   if (flg_NNend) then
+      print '(a)', '# NNend: True'
+   endif
 
    call check_bp_paras(BPT%GC)
    call check_bp_paras(BPT%AU)
@@ -518,6 +571,37 @@ subroutine read_force_field()
             print '(a3, a5, 2x, f7.3)', '#  ', nnt2char(i), NN_dS(i)
          endif
       enddo
+
+      if (flg_NNend) then
+
+         print '(a)', '# dHend:'
+         do i = 1, 6
+            if (NNend_dH(i) > INVALID_JUDGE) then
+               print '(a)', 'Error: invalid NNend.dH value for i = ' // CHAR(i) // ' ' // trim(csource)
+               call sis_abort()
+            endif
+         enddo
+         print '(a8, 2x, f7.3)', '# AUonAU', NNend_dH(NNENDT%AUonAU)
+         print '(a8, 2x, f7.3)', '# AUonCG', NNend_dH(NNENDT%AUonCG)
+         print '(a8, 2x, f7.3)', '# AUonGU', NNend_dH(NNENDT%AUonGU)
+         print '(a8, 2x, f7.3)', '# GUonCG', NNend_dH(NNENDT%GUonCG)
+         print '(a8, 2x, f7.3)', '# GUonAU', NNend_dH(NNENDT%GUonAU)
+         print '(a8, 2x, f7.3)', '# GUonGU', NNend_dH(NNENDT%GUonGU)
+
+         print '(a)', '# dSend:'
+         do i = 1, 6
+            if (NNend_dS(i) > INVALID_JUDGE) then
+               print '(a)', 'Error: invalid NNend.dS value for i = ' // CHAR(i) // ' ' // trim(csource)
+               call sis_abort()
+            endif
+         enddo
+         print '(a8, 2x, f7.3)', '# AUonAU', NNend_dS(NNENDT%AUonAU)
+         print '(a8, 2x, f7.3)', '# AUonCG', NNend_dS(NNENDT%AUonCG)
+         print '(a8, 2x, f7.3)', '# AUonGU', NNend_dS(NNENDT%AUonGU)
+         print '(a8, 2x, f7.3)', '# GUonCG', NNend_dS(NNENDT%GUonCG)
+         print '(a8, 2x, f7.3)', '# GUonAU', NNend_dS(NNENDT%GUonAU)
+         print '(a8, 2x, f7.3)', '# GUonGU', NNend_dS(NNENDT%GUonGU)
+      endif
 
    endif
 
