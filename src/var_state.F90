@@ -32,6 +32,8 @@ module var_state
    real(PREC), allocatable :: Ekinetic(:)    ! (nrep_proc)
 
    ! Base pairs
+   integer, save :: nstep_bp_MC
+   logical, save :: flg_bp_MC
    logical, save :: flg_bp_energy
    logical, allocatable, save :: bp_status(:,:)  ! (nbp_max, nrep_proc)
    integer, allocatable, save :: nt_bp_excess(:)
