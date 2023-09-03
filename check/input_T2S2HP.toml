@@ -39,6 +39,7 @@ length_per_charge = 4.38178046
 model = 5
 min_loop = 3
 max_bp_per_nt = 1
+nstep_MC = 1
 
 [Progress]
 step = 1000

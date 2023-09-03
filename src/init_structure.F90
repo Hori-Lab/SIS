@@ -9,7 +9,10 @@ subroutine init_structure()
 
    implicit none
 
-   integer :: ierr, irep
+   integer :: irep
+#ifdef PAR_MPI
+   integer :: ierr
+#endif
    real(PREC) :: origin(3) = (/0.0_PREC, 0.0_PREC, 0.0_PREC/)
 
    if (flg_gen_init_struct) then

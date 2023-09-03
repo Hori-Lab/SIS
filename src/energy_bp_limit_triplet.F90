@@ -31,19 +31,19 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    integer :: bp_seq(nbp(irep))
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
-   logical :: halt_mode
 
-   if (temp_independent == 0) then
-      tK = tempK_in
-      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
-   else
-      tK = 0.0_PREC
-      !beta = HUGE(beta)   ! so that the highest energy BP will be deleted.
-                           ! This causes numerical exception so do not use.
-      beta = 0.0_PREC   ! beta will not be used.
-   endif
 
    if (.not. flg_bp_energy) then
+
+      if (temp_independent == 0) then
+         tK = tempK_in
+         beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
+      else
+         tK = 0.0_PREC
+         !beta = HUGE(beta)   ! so that the highest energy BP will be deleted.
+                           ! This causes numerical exception so do not use.
+         beta = 0.0_PREC   ! beta will not be used.
+      endif
 
       bp_status(1:nbp(irep), irep) = .False.
       nt_bp_excess(1:nmp) = -max_bp_per_nt

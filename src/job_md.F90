@@ -15,7 +15,8 @@ subroutine job_md()
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
-                         istep, ianneal, istep_anneal_next
+                         istep, ianneal, istep_anneal_next, &
+                         nstep_bp_MC, flg_bp_MC
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage, flg_ele
@@ -203,6 +204,12 @@ subroutine job_md()
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Initial energies
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   if (nstep_bp_MC > 0) then
+      flg_bp_MC = .True.
+   else
+      flg_bp_MC = .False.
+   endif
+
    do irep = 1, nrep_proc
 
       if (flg_repvar(REPT%TEMP)) then
@@ -299,6 +306,11 @@ subroutine job_md()
    do while (istep < nstep)
 
       istep = istep + 1
+
+      flg_bp_MC = .False.
+      if (nstep_bp_MC > 0) then
+         if (mod(istep, nstep_bp_MC) == 0) flg_bp_MC = .True.
+      endif
 
       do irep = 1, nrep_proc
 
