@@ -4,7 +4,7 @@ subroutine energy_bp_triplet(irep, tempK_in, Ebp)
    use mt_stream
    use const, only : PREC
    use pbc, only : pbc_vec_d
-   use var_state, only : xyz, bp_status, ene_bp, flg_bp_energy, mts, temp_independent
+   use var_state, only : xyz, bp_status, ene_bp, flg_bp_energy, temp_independent
    use var_potential, only : bp_cutoff_energy, nbp, bp_mp, bp_paras, bp_coef, &
                              basepair_parameters
 

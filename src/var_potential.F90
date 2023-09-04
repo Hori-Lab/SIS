@@ -75,8 +75,6 @@ module var_potential
 
    type(basepair_parameters), save :: bp_paras(BPT%MAX)
 
-   integer, save :: bp_type2nhb(1:3) = (/ 3, 2, 2/)
-
    ! Basepair list
    integer, allocatable :: nbp(:)
    integer :: nbp_max  ! This defines the size of neighbor list

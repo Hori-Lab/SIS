@@ -3,7 +3,7 @@ subroutine energy_sumup(irep, tempK_in, energies)
    use const
    use const_idx, only : ENE
    use var_state, only : flg_bp_MC
-   use var_potential, only : flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, flg_stage, bp_model
+   use var_potential, only : flg_angl_ReB, flg_ele, flg_dih_cos, flg_dih_exp, flg_stage, bp_model
 
    implicit none
 

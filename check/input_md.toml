@@ -31,5 +31,10 @@ dt = 0.5
 nstep = 100
 nstep_save = 10
 
+[Basepair]
+model = 1
+min_loop = 4
+nstep_MC = 0
+
 [Progress]
 step = 10
