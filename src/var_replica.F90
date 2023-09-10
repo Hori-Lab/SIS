@@ -1,5 +1,6 @@
 module var_replica
 
+   use,intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const, only : PREC, MAX_REPLICA, MAX_REP_DIM, MAX_REP_PER_DIM
    use const_idx, only : REPT
    implicit none
@@ -14,8 +15,8 @@ module var_replica
 
    integer :: nrep(REPT%MAX)
 
-   integer :: nstep_rep_exchange
-   integer :: nstep_rep_save
+   integer(INT64) :: nstep_rep_exchange
+   integer(INT64) :: nstep_rep_save
 
    logical :: flg_exchange
 
