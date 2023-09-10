@@ -409,7 +409,7 @@ subroutine read_input(cfilepath)
 
          nstep_check_stop = 100
          if (stop_wall_time_sec > 0) then
-            call get_value(group, "nstep_check_stop", nstep_check_stop, 100, stat=istat, origin=origin)
+            call get_value(group, "nstep_check_stop", nstep_check_stop, int(100, kind=INT64), stat=istat, origin=origin)
             print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
          endif
 
