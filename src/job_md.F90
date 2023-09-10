@@ -281,6 +281,8 @@ subroutine job_md()
          endif
          write(hdl_out(irep), '(a)') ''
 
+         call write_bp(irep, tK)
+
          call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
       endif
    enddo
@@ -377,7 +379,7 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_step_save .or. flg_step_rep_exchange) then
          replica_energies(:, :) = 0.0_PREC
-         call energy_replica(energies, replica_energies, flg_step_rep_exchange)
+         call energy_replica(energies, replica_energies, flg_step_rep_exchange, flg_step_save)
       endif
 
 

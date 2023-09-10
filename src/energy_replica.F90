@@ -1,22 +1,26 @@
-subroutine energy_replica(energies, replica_energies, flg_replica)
+subroutine energy_replica(energies, replica_energies, flg_replica_exchange, flg_save_bp)
 
    use const, only : PREC
    use const_idx, only : REPT, ENE
    use var_replica, only : nrep_all, nrep_proc, irep2grep, &
                            lab2val, rep2lab, flg_repvar, get_pair, rep2val
-   use var_potential, only : flg_ele
-   use var_state, only : flg_bp_energy, tempK, ionic_strength
+   use var_potential, only : flg_ele, nbp_max
+   use var_state, only : flg_bp_energy, tempK, ionic_strength, bp_status, ene_bp
 
    implicit none
 
    real(PREC), intent(out) :: energies(0:ENE%MAX, nrep_proc)
    real(PREC), intent(out) :: replica_energies(2, nrep_all)
-   logical,    intent(in)  :: flg_replica
+   logical,    intent(in)  :: flg_replica_exchange
+   logical,    intent(in)  :: flg_save_bp
 
    integer :: irep, grep
    integer :: label_own, label_opp
    real(PREC) :: ionic_strength_rep, tempK_rep
    real(PREC) :: new_energies(0:ENE%MAX)
+
+   logical, allocatable :: bp_status_tmp(:,:)
+   real(PREC), allocatable :: ene_bp_tmp(:,:)
 
    interface
    subroutine energy_sumup(irep, tempK_in, energies)
@@ -37,7 +41,6 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
    endsubroutine set_ele
    endinterface
 
-
    energies(:,:)         = 0.0e0_PREC
 
    do irep = 1, nrep_proc
@@ -51,11 +54,19 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
    enddo
 
 
-   if (.not. flg_replica) then
+   if (.not. flg_replica_exchange) then
       return                 ! <<====== If not replica simulation, return here!
    endif
 
    !#############################################################################
+
+   if (flg_save_bp) then
+      ! Save bp information to output in write_bp
+      allocate(bp_status_tmp(nbp_max, nrep_proc))
+      allocate(ene_bp_tmp(nbp_max, nrep_proc))
+      bp_status_tmp(:,:) = bp_status(:,:)
+      ene_bp_tmp(:,:) = ene_bp(:,:)
+   endif
 
    flg_bp_energy = .False.
 
@@ -136,5 +147,12 @@ subroutine energy_replica(energies, replica_energies, flg_replica)
       endif
 
    enddo  ! irep
+
+   if (flg_save_bp) then
+      bp_status(:,:) = bp_status_tmp(:,:)
+      ene_bp(:,:) = ene_bp_tmp(:,:)
+      deallocate(bp_status_tmp)
+      deallocate(ene_bp_tmp)
+   endif
 
 end subroutine energy_replica
