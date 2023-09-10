@@ -44,11 +44,11 @@ module var_state
    real(PREC), save :: dt
    integer(INT64), save :: nstep
    integer(INT64), save :: stop_wall_time_sec
-   integer, save :: nstep_check_stop
+   integer(INT64), save :: nstep_check_stop
    integer, save :: fix_com_origin
 
-   integer, save :: nstep_save
-   integer, save :: nstep_save_rst
+   integer(INT64), save :: nstep_save
+   integer(INT64), save :: nstep_save_rst
    real(PREC), save :: nl_margin
    integer(INT64) :: istep
 
