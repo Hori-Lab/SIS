@@ -281,6 +281,8 @@ subroutine job_md()
          endif
          write(hdl_out(irep), '(a)') ''
 
+         call write_bp(irep, tK)
+
          call fdcd(irep)%write_onestep(nmp, xyz(:,:,irep), fix_com_origin)
       endif
    enddo
