@@ -31,7 +31,6 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    integer :: bp_seq(nbp(irep))
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
-   logical :: halt_mode
 
    if (temp_independent == 0) then
       tK = tempK_in

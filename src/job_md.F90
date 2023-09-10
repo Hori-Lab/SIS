@@ -377,7 +377,7 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_step_save .or. flg_step_rep_exchange) then
          replica_energies(:, :) = 0.0_PREC
-         call energy_replica(energies, replica_energies, flg_step_rep_exchange)
+         call energy_replica(energies, replica_energies, flg_step_rep_exchange, flg_step_save)
       endif
 
 
