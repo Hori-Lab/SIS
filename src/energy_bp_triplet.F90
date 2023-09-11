@@ -4,7 +4,8 @@ subroutine energy_bp_triplet(irep, tempK_in, Ebp)
    use mt_stream
    use const, only : PREC
    use pbc, only : pbc_vec_d
-   use var_state, only : xyz, bp_status, ene_bp, flg_bp_energy, temp_independent
+   use var_state, only : xyz, bp_status, nstep_bp_MC, bp_status_MC, &
+                         ene_bp, flg_bp_energy, temp_independent
    use var_potential, only : bp_cutoff_energy, nbp, bp_mp, bp_paras, bp_coef, &
                              basepair_parameters
 
@@ -20,7 +21,6 @@ subroutine energy_bp_triplet(irep, tempK_in, Ebp)
    real(PREC) :: tK, dG
    real(PREC) :: u
    real(PREC) :: d, theta, phi
-   real(PREC) :: ene
 
    if (.not. flg_bp_energy) then
 
@@ -33,10 +33,12 @@ subroutine energy_bp_triplet(irep, tempK_in, Ebp)
       bp_status(1:nbp(irep), irep) = .False.
       ene_bp(1:nbp(irep), irep) = 0.0_PREC
 
-      !$omp barrier
-
-      !$omp parallel do private(imp, jmp, d, u, theta, phi, ene, bpp, dG)
+      !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp, dG)
       do ibp = 1, nbp(irep)
+
+         if (nstep_bp_MC > 0) then
+            if (.not. bp_status_MC(ibp, irep)) cycle
+         endif
 
          imp = bp_mp(1, ibp, irep)
          jmp = bp_mp(2, ibp, irep)
@@ -70,10 +72,10 @@ subroutine energy_bp_triplet(irep, tempK_in, Ebp)
          phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
          u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
-         ene = bpp%U0 * dG * exp(-u)
+         u = bpp%U0 * dG * exp(-u)
 
-         if (ene <= bp_cutoff_energy) then
-            ene_bp(ibp, irep) = ene
+         if (u <= bp_cutoff_energy) then
+            ene_bp(ibp, irep) = u 
             bp_status(ibp, irep) = .True.
          endif
 
