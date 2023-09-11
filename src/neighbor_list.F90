@@ -3,7 +3,8 @@ subroutine neighbor_list(irep)
    use const, only : PREC
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
    use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge
-   use var_state, only : xyz, bp_status, ene_bp, for_bp, nt_bp_excess, nl_margin, lambdaD
+   use var_state, only : xyz, bp_status, bp_status_MC, &
+                         ene_bp, for_bp, nt_bp_excess, nl_margin, lambdaD
    use var_potential, only : wca_sigma, nwca, nwca_max, wca_mp, &
                              bp_cutoff_dist, bp_mp, bp_coef, nbp, nbp_max, bp_map, &
                              ele_cutoff_type, ele_cutoff, ele_cutoff_inp, &
@@ -52,6 +53,10 @@ subroutine neighbor_list(irep)
       ene_bp(:,:) = 0.0_PREC
       for_bp(:,:,:) = 0.0_PREC
       nt_bp_excess(:) = 0
+      if (nstep_bp_MC > 0) then
+         allocate(bp_status_MC(nbp_max, nrep_proc))
+         bp_status_MC(:,:) = .Flase.
+      endif
    endif
 
    ele_nl_cut2 = 0.0_PREC
@@ -241,6 +246,12 @@ contains
       bp_status(:,:) = .False.
       ene_bp(:,:) = 0.0_PREC
       for_bp(:,:,:) = 0.0_PREC
+
+      if (nstep_bp_MC > 0) then
+         deallocate(bp_status_MC)
+         allocate(bp_status_MC(nbp_max, nrep_proc))
+         bp_status_MC(:,:) = .False.
+      endif
 
    endsubroutine reallocate_bp_mp
 

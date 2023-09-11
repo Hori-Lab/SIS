@@ -36,6 +36,7 @@ module var_state
    logical, save :: flg_bp_MC
    logical, save :: flg_bp_energy
    logical, allocatable, save :: bp_status(:,:)  ! (nbp_max, nrep_proc)
+   logical, allocatable, save :: bp_status_MC(:,:)  ! (nbp_max, nrep_proc)
    integer, allocatable, save :: nt_bp_excess(:)
    real(PREC), allocatable, save :: ene_bp(:,:)  ! (nbp_max, nrep_proc)
    real(PREC), allocatable, save :: for_bp(:,:,:)

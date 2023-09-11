@@ -1,68 +1,70 @@
 subroutine energy_bp(irep, Ebp)
 
-   use :: ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
-
    use const
    use const_phys, only : ZERO_JUDGE
    use pbc, only : pbc_vec_d
-   use var_state, only : xyz, kT, bp_status, ene_bp
+   use var_state, only : xyz, bp_status, bp_status_MC, ene_bp, nstep_bp_MC, flg_bp_energy
    use var_potential, only : bp_paras, nbp, bp_mp, basepair_parameters, bp_cutoff_energy
-   use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_bp, hdl_bpall, hdl_bpe, &
-                      KIND_OUT_BP, KIND_OUT_BPE
 
    implicit none
   
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: Ebp
 
-   integer :: ibp, imp, jmp, nhb
+   integer :: ibp, imp, jmp
    type(basepair_parameters) :: bpp
    real(PREC) :: u
    real(PREC) :: d, theta, phi
-   logical :: halt_mode
 
-   ene_bp(1:nbp(irep), irep) = 0.0e0_PREC
-   bp_status(1:nbp(irep), irep) = .False.
+   if (.not. flg_bp_energy) then
 
-   !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp)
-   do ibp = 1, nbp(irep)
+      ene_bp(1:nbp(irep), irep) = 0.0e0_PREC
+      bp_status(1:nbp(irep), irep) = .False.
 
-      imp = bp_mp(1, ibp, irep)
-      jmp = bp_mp(2, ibp, irep)
-      bpp = bp_paras(bp_mp(3, ibp, irep))
+      !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp)
+      do ibp = 1, nbp(irep)
+
+         if (nstep_bp_MC > 0) then
+            if (.not. bp_status_MC(ibp, irep)) cycle
+         endif
+
+         imp = bp_mp(1, ibp, irep)
+         jmp = bp_mp(2, ibp, irep)
+         bpp = bp_paras(bp_mp(3, ibp, irep))
       
-      d = norm2(pbc_vec_d(xyz(:,imp,irep), xyz(:, jmp,irep))) - bpp%bond_r
+         d = norm2(pbc_vec_d(xyz(:,imp,irep), xyz(:, jmp,irep))) - bpp%bond_r
 
-      if (abs(d) > bpp%cutoff_ddist) cycle
+         if (abs(d) > bpp%cutoff_ddist) cycle
 
-      u = bpp%bond_k * d**2
+         u = bpp%bond_k * d**2
 
-      theta = mp_angle(imp, jmp, jmp-1)
-      u = u + bpp%angl_k1 * (theta - bpp%angl_theta1)**2
+         theta = mp_angle(imp, jmp, jmp-1)
+         u = u + bpp%angl_k1 * (theta - bpp%angl_theta1)**2
 
-      theta = mp_angle(imp-1, imp, jmp)
-      u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
+         theta = mp_angle(imp-1, imp, jmp)
+         u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
 
-      theta = mp_angle(imp, jmp, jmp+1)
-      u = u + bpp%angl_k3 * (theta - bpp%angl_theta3)**2
+         theta = mp_angle(imp, jmp, jmp+1)
+         u = u + bpp%angl_k3 * (theta - bpp%angl_theta3)**2
 
-      theta = mp_angle(imp+1, imp, jmp)
-      u = u + bpp%angl_k4 * (theta - bpp%angl_theta4)**2
+         theta = mp_angle(imp+1, imp, jmp)
+         u = u + bpp%angl_k4 * (theta - bpp%angl_theta4)**2
 
-      phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
-      u = u + bpp%dihd_k1 * (1.0_PREC + cos(phi + bpp%dihd_phi1))
+         phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
+         u = u + bpp%dihd_k1 * (1.0_PREC + cos(phi + bpp%dihd_phi1))
 
-      phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
-      u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
+         phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
+         u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
-      u = bpp%U0 * exp(-u)
-      if (u <= bp_cutoff_energy) then
-         ene_bp(ibp, irep) = u
-         bp_status(ibp, irep) = .True.
-      endif
+         u = bpp%U0 * exp(-u)
+         if (u <= bp_cutoff_energy) then
+            ene_bp(ibp, irep) = u
+            bp_status(ibp, irep) = .True.
+         endif
 
-   enddo
-   !$omp end parallel do
+      enddo
+      !$omp end parallel do
+   endif
 
    Ebp = sum(ene_bp(1:nbp(irep), irep))
 

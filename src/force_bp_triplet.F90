@@ -7,7 +7,8 @@ subroutine force_bp_triplet(irep, forces)
    use const_phys, only : BOLTZ_KCAL_MOL
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
-   use var_state, only : xyz, bp_status, ene_bp, kT, flg_bp_energy, tempK
+   use var_state, only : xyz, bp_status, ene_bp, kT, flg_bp_energy, tempK, &
+                         nstep_bp_MC, bp_status_MC
    use var_potential, only : nbp, bp_cutoff_energy, bp_mp, bp_paras, bp_coef, &
                              basepair_parameters
    use var_replica, only : flg_repvar, rep2val, irep2grep
@@ -59,6 +60,10 @@ subroutine force_bp_triplet(irep, forces)
    !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212, &
    !$omp&           dG, f_bp)
    do ibp = 1, nbp(irep)
+
+      if (nstep_bp_MC > 0) then
+         if (.not. bp_status_MC(ibp, irep)) cycle
+      endif
 
       imp1 = bp_mp(1, ibp, irep)
       imp2 = bp_mp(2, ibp, irep)
