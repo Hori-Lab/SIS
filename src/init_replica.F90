@@ -22,10 +22,12 @@ subroutine init_replica
    nrep_all = 1
    nrep_proc = 1
    irep2grep(:) = 1
-   grep2irep(:) = 1
-   grep2rank(:) = 0
 
    if (flg_replica) then
+
+      ! The followint two have to be zero in order to use MPI_ALLREDUCE below.
+      grep2irep(:) = 0
+      grep2rank(:) = 0
 
       print '(a)', 'Initializing replicas'
 
@@ -99,6 +101,11 @@ subroutine init_replica
       call make_replica_type_array()
 
       call make_replica_exchange_pair_tb()
+
+   else ! flg_replica
+
+      grep2irep(:) = 1
+      grep2rank(:) = 0
    endif
 
    print *
