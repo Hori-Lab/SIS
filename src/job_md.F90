@@ -348,7 +348,8 @@ subroutine job_md()
          endif
 
          if (maxval(forces(:,:)) > 100.0) then
-            print *, 'Warning: maxval(forces) > 100.0. (irep, istep, force) =', irep, istep, maxval(forces)
+            print *, 'Warning: maxval(forces) > 100.0. (irep, grep, istep, force) =', &
+                     irep, irep2grep(irep), istep, maxval(forces)
             flush(output_unit)
          endif
 
