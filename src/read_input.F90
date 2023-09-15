@@ -18,7 +18,7 @@ subroutine read_input(cfilepath)
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, stop_wall_time_sec, nstep_check_stop, fix_com_origin, &
-                         ionic_strength, length_per_charge
+                         ionic_strength, length_per_charge, nstep_bp_MC
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps
@@ -495,12 +495,24 @@ subroutine read_input(cfilepath)
             print '(a,i6)', '# Basepair, model: ', bp_model
          endif
 
+         !----------------- nstep_MC -----------------
+         nstep_bp_MC = 1
+         call get_value(group, "nstep_MC", nstep_bp_MC, stat=istat, origin=origin)
+         if (nstep_bp_MC < 0) then
+            print '(a)', context%report("invalid value for nstep_MC in [Basepair].", origin, "nstep_MC has to be 0 or positive value.")
+            call sis_abort()
+         endif
+
          !----------------- max_bp_per_nt -----------------
-         max_bp_per_nt = INVALID_INT_VALUE
-         call get_value(group, "max_bp_per_nt", max_bp_per_nt, stat=istat, origin=origin)
-         if (istat /= 0) then
-            print '(a)', context%report('max_bp_per_nt is not specified in [Basepair]. Default value applies.', origin=0, level=toml_level%warning)
-            max_bp_per_nt = -1   ! default
+         max_bp_per_nt = 1   ! default
+         if (nstep_bp_MC > 0) then
+            call get_value(group, "max_bp_per_nt", max_bp_per_nt, stat=istat, origin=origin)
+            if (istat /= 0) then
+               print '(a)', context%report('max_bp_per_nt is not specified in [Basepair]. Default value applies.', origin=0, level=toml_level%warning)
+            else if (max_bp_per_nt <= 0) then
+               print '(a)', context%report('invalid value for max_bp_per_nt in [Basepair].', origin=0, level=toml_level%warning)
+               call sis_abort()
+            endif
          endif
 
          !----------------- min_loop -----------------
@@ -513,6 +525,8 @@ subroutine read_input(cfilepath)
 
       else
          print '(a)', '# [Basepair] section does not exist in the input file. Default values are used.'
+         bp_model = 5
+         nstep_bp_MC = 1
          max_bp_per_nt = 1  ! default
          bp_min_loop = 3    ! default
       endif
@@ -711,6 +725,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(fix_com_origin, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(bp_model, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(nstep_bp_MC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(max_bp_per_nt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(bp_min_loop, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
@@ -812,6 +827,7 @@ subroutine read_input(cfilepath)
    print '(a,i5)', '# MD fix_com_origin: ', fix_com_origin
    print '(a)', '#'
 
+   print '(a,i6)', '# Basepair, nstep_MC: ', nstep_bp_MC
    print '(a,i6)', '# Basepair, max_bp_per_nt: ', max_bp_per_nt
    print '(a,i6)', '# Basepair, min_loop: ', bp_min_loop
    print '(a)', '#'

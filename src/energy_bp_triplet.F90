@@ -1,27 +1,39 @@
-subroutine energy_bp(irep, Ebp)
+subroutine energy_bp_triplet(irep, tempK_in, Ebp)
 
-   use const
-   use const_phys, only : ZERO_JUDGE
+   !use mt19937_64, only : genrand64_real1, genrand64_real3
+   use mt_stream
+   use const, only : PREC
    use pbc, only : pbc_vec_d
-   use var_state, only : xyz, bp_status, bp_status_MC, ene_bp, nstep_bp_MC, flg_bp_energy
-   use var_potential, only : bp_paras, nbp, bp_mp, basepair_parameters, bp_cutoff_energy
+   use var_state, only : xyz, bp_status, nstep_bp_MC, bp_status_MC, &
+                         ene_bp, flg_bp_energy, temp_independent
+   use var_potential, only : bp_cutoff_energy, nbp, bp_mp, bp_paras, bp_coef, &
+                             basepair_parameters
 
    implicit none
-  
+
    integer, intent(in) :: irep
+   real(PREC), intent(in) :: tempK_in
    real(PREC), intent(inout) :: Ebp
 
-   integer :: ibp, imp, jmp
+   integer :: ibp
+   integer :: imp, jmp
    type(basepair_parameters) :: bpp
+   real(PREC) :: tK, dG
    real(PREC) :: u
    real(PREC) :: d, theta, phi
 
    if (.not. flg_bp_energy) then
 
-      ene_bp(1:nbp(irep), irep) = 0.0e0_PREC
-      bp_status(1:nbp(irep), irep) = .False.
+      if (temp_independent == 0) then
+         tK = tempK_in
+      else
+         tK = 0.0_PREC
+      endif
 
-      !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp)
+      bp_status(1:nbp(irep), irep) = .False.
+      ene_bp(1:nbp(irep), irep) = 0.0_PREC
+
+      !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp, dG)
       do ibp = 1, nbp(irep)
 
          if (nstep_bp_MC > 0) then
@@ -31,7 +43,11 @@ subroutine energy_bp(irep, Ebp)
          imp = bp_mp(1, ibp, irep)
          jmp = bp_mp(2, ibp, irep)
          bpp = bp_paras(bp_mp(3, ibp, irep))
-      
+
+         ! dG = dH - T * dS
+         dG = bp_coef(1, ibp, irep) - tK * bp_coef(2, ibp, irep)
+         if (dG >= 0.0_PREC) cycle
+
          d = norm2(pbc_vec_d(xyz(:,imp,irep), xyz(:, jmp,irep))) - bpp%bond_r
 
          if (abs(d) > bpp%cutoff_ddist) cycle
@@ -56,14 +72,16 @@ subroutine energy_bp(irep, Ebp)
          phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
          u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
-         u = bpp%U0 * exp(-u)
+         u = bpp%U0 * dG * exp(-u)
+
          if (u <= bp_cutoff_energy) then
-            ene_bp(ibp, irep) = u
+            ene_bp(ibp, irep) = u 
             bp_status(ibp, irep) = .True.
          endif
 
       enddo
       !$omp end parallel do
+
    endif
 
    Ebp = sum(ene_bp(1:nbp(irep), irep))
@@ -113,4 +131,4 @@ contains
 
    endfunction mp_dihedral
 
-end subroutine energy_bp
+end subroutine energy_bp_triplet

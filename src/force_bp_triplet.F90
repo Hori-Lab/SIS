@@ -1,4 +1,4 @@
-subroutine force_bp_limit_triplet(irep, forces)
+subroutine force_bp_triplet(irep, forces)
 
    !use mt19937_64, only : genrand64_real1, genrand64_real3
    use mt_stream
@@ -7,8 +7,9 @@ subroutine force_bp_limit_triplet(irep, forces)
    use const_phys, only : BOLTZ_KCAL_MOL
    use pbc, only : pbc_vec_d
    use var_top, only : nmp
-   use var_state, only : xyz, bp_status, ene_bp, for_bp, kT, flg_bp_energy, nt_bp_excess, mts, tempK
-   use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, bp_paras, bp_coef, &
+   use var_state, only : xyz, bp_status, ene_bp, kT, flg_bp_energy, tempK, &
+                         nstep_bp_MC, bp_status_MC
+   use var_potential, only : nbp, bp_cutoff_energy, bp_mp, bp_paras, bp_coef, &
                              basepair_parameters
    use var_replica, only : flg_repvar, rep2val, irep2grep
 
@@ -17,16 +18,11 @@ subroutine force_bp_limit_triplet(irep, forces)
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
 
-   integer :: i, ibp, jbp, ibp_delete, nt_delete
+   integer :: ibp
    integer :: imp1, imp2, imp3, imp4, imp5, imp6
-   integer :: i_save, i_swap
-   integer :: nbp_seq
-   integer :: bp_seq(nbp(irep))
-   integer :: nnt_bp_excess
-   integer :: ntlist_excess(nmp)
    type(basepair_parameters) :: bpp
    real(PREC) :: tK, dG
-   real(PREC) :: u, pre, beta, ene, ratio, rnd
+   real(PREC) :: u, pre, beta, ene
    real(PREC) :: d, cosine, dih
    real(PREC) :: f_i(3), f_j(3), f_k(3), f_l(3)
    real(PREC) :: v12(3), v13(3), v42(3), v15(3), v62(3)
@@ -34,10 +30,7 @@ subroutine force_bp_limit_triplet(irep, forces)
    real(PREC) :: d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262
    real(PREC) :: d1213over1212, d1242over1212, d1215over1212, d1262over1212
    real(PREC) :: m(3), n(3)
-
-   !real(PREC) :: for_bp(3, 6, nbp)
-   ! In this subroutine, for_bp will be used in more than one loop.
-   ! Therefore for_bp cannot be private and it has to be stored in var_state module.
+   real(PREC) :: f_bp(3, 6)  ! This can be private in each thread. Do not have to use for_bp in var_state.
 
    !#######################################
    ! imp-1 (3) --- imp (1) --- imp+1 (5)
@@ -56,8 +49,6 @@ subroutine force_bp_limit_triplet(irep, forces)
    !$omp master
    bp_status(1:nbp(irep), irep) = .False.
    ene_bp(1:nbp(irep), irep) = 0.0_PREC
-   for_bp(1:3,1:6,1:nbp(irep)) = 0.0_PREC
-   nt_bp_excess(1:nmp) = -max_bp_per_nt
    !$omp end master
 
    ! Wait until the master initializes the arrays
@@ -67,8 +58,12 @@ subroutine force_bp_limit_triplet(irep, forces)
    !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
    !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
    !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212, &
-   !$omp&           dG)
+   !$omp&           dG, f_bp)
    do ibp = 1, nbp(irep)
+
+      if (nstep_bp_MC > 0) then
+         if (.not. bp_status_MC(ibp, irep)) cycle
+      endif
 
       imp1 = bp_mp(1, ibp, irep)
       imp2 = bp_mp(2, ibp, irep)
@@ -95,8 +90,8 @@ subroutine force_bp_limit_triplet(irep, forces)
 
       u = bpp%bond_k * d**2
       f_i(:) = (2.0e0_PREC * bpp%bond_k * d / a12) * v12(:)
-      for_bp(:, 1, ibp) = + f_i(:)
-      for_bp(:, 2, ibp) = - f_i(:)
+      f_bp(:, 1) = + f_i(:)
+      f_bp(:, 2) = - f_i(:)
 
       v13(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp3, irep))
       v15(:) = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp5, irep))
@@ -125,9 +120,9 @@ subroutine force_bp_limit_triplet(irep, forces)
       f_i(:) = pre * (v12(:) - (d1213 / d1313 * v13(:)))
       f_k(:) = pre * (v13(:) - (d1213over1212 * v12(:)))
 
-      for_bp(:, 1, ibp) = for_bp(:, 1, ibp) - f_i(:) - f_k(:)
-      for_bp(:, 2, ibp) = for_bp(:, 2, ibp) + f_k(:)
-      for_bp(:, 3, ibp) = f_i(:)
+      f_bp(:, 1) = f_bp(:, 1) - f_i(:) - f_k(:)
+      f_bp(:, 2) = f_bp(:, 2) + f_k(:)
+      f_bp(:, 3) = f_i(:)
 
       !===== Angle of 1=2-4 (imp -- jmp -- jmp-1) =====
       cosine = d1242 / (a12 * sqrt(d4242))
@@ -138,9 +133,9 @@ subroutine force_bp_limit_triplet(irep, forces)
       f_i(:) = - pre * (v42(:) - (d1242over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1242 / d4242 * v42(:)))
 
-      for_bp(:, 1, ibp) = for_bp(:, 1, ibp) + f_i(:)
-      for_bp(:, 2, ibp) = for_bp(:, 2, ibp) - f_i(:) - f_k(:)
-      for_bp(:, 4, ibp) = f_k(:)
+      f_bp(:, 1) = f_bp(:, 1) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) - f_i(:) - f_k(:)
+      f_bp(:, 4) = f_k(:)
 
       !===== Angle of 5-1=2 (imp+1 -- imp -- jmp) =====
       cosine = d1215 / (sqrt(d1515) * a12)
@@ -151,9 +146,9 @@ subroutine force_bp_limit_triplet(irep, forces)
       f_i(:) = pre * (v12(:) - (d1215 / d1515 * v15(:)))
       f_k(:) = pre * (v15(:) - (d1215over1212 * v12(:)))
 
-      for_bp(:, 1, ibp) = for_bp(:, 1, ibp) - f_i(:) - f_k(:)
-      for_bp(:, 2, ibp) = for_bp(:, 2, ibp) + f_k(:)
-      for_bp(:, 5, ibp) = f_i(:)
+      f_bp(:, 1) = f_bp(:, 1) - f_i(:) - f_k(:)
+      f_bp(:, 2) = f_bp(:, 2) + f_k(:)
+      f_bp(:, 5) = f_i(:)
 
       !===== Angle of 1=2-6 (imp -- jmp -- jmp+1) =====
       cosine = d1262 / (a12 * sqrt(d6262))
@@ -164,9 +159,9 @@ subroutine force_bp_limit_triplet(irep, forces)
       f_i(:) = - pre * (v62(:) - (d1262over1212 * v12(:)))
       f_k(:) = - pre * (v12(:) - (d1262 / d6262 * v62(:)))
 
-      for_bp(:, 1, ibp) = for_bp(:, 1, ibp) + f_i(:)
-      for_bp(:, 2, ibp) = for_bp(:, 2, ibp) - f_i(:) - f_k(:)
-      for_bp(:, 6, ibp) = f_k(:)
+      f_bp(:, 1) = f_bp(:, 1) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) - f_i(:) - f_k(:)
+      f_bp(:, 6) = f_k(:)
  
       !===== Dihedral angle among 4-2=1=3 (jmp-1 -- jmp -- imp -- imp-1) =====
       m(1) = v42(2)*v12(3) - v42(3)*v12(2)
@@ -184,12 +179,12 @@ subroutine force_bp_limit_triplet(irep, forces)
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
-      for_bp(:, 4, ibp) = for_bp(:, 4, ibp) + f_i(:)
-      for_bp(:, 2, ibp) = for_bp(:, 2, ibp) + (-1.0e0_PREC + d1242over1212) * f_i(:) &
-                                        - (              d1213over1212) * f_l(:)
-      for_bp(:, 1, ibp) = for_bp(:, 1, ibp) + (-1.0e0_PREC + d1213over1212) * f_l(:) &
-                                        - (              d1242over1212) * f_i(:)
-      for_bp(:, 3, ibp) = for_bp(:, 3, ibp) + f_l(:)
+      f_bp(:, 4) = f_bp(:, 4) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) + (-1.0e0_PREC + d1242over1212) * f_i(:) &
+                              - (              d1213over1212) * f_l(:)
+      f_bp(:, 1) = f_bp(:, 1) + (-1.0e0_PREC + d1213over1212) * f_l(:) &
+                              - (              d1242over1212) * f_i(:)
+      f_bp(:, 3) = f_bp(:, 3) + f_l(:)
  
       !===== Dihedral angle among 6-2=1=5 (jmp+1 -- jmp -- imp -- imp+1) =====
       m(1) = v62(2)*v12(3) - v62(3)*v12(2)
@@ -207,12 +202,12 @@ subroutine force_bp_limit_triplet(irep, forces)
       f_i(:) = + pre / dot_product(m, m) * m(:)
       f_l(:) = - pre / dot_product(n, n) * n(:)
 
-      for_bp(:, 6, ibp) = for_bp(:, 6, ibp) + f_i(:)
-      for_bp(:, 2, ibp) = for_bp(:, 2, ibp) + (-1.0e0_PREC + d1262over1212) * f_i(:) &
-                                        - (              d1215over1212) * f_l(:)
-      for_bp(:, 1, ibp) = for_bp(:, 1, ibp) + (-1.0e0_PREC + d1215over1212) * f_l(:) &
-                                        - (              d1262over1212) * f_i(:)
-      for_bp(:, 5, ibp) = for_bp(:, 5, ibp) + f_l(:)
+      f_bp(:, 6) = f_bp(:, 6) + f_i(:)
+      f_bp(:, 2) = f_bp(:, 2) + (-1.0e0_PREC + d1262over1212) * f_i(:) &
+                              - (              d1215over1212) * f_l(:)
+      f_bp(:, 1) = f_bp(:, 1) + (-1.0e0_PREC + d1215over1212) * f_l(:) &
+                              - (              d1262over1212) * f_i(:)
+      f_bp(:, 5) = f_bp(:, 5) + f_l(:)
 
       !===== Total =====
       !ene = bpp%U0 * bp_map_dG(imp1, imp2, irep) * exp(-u)
@@ -222,115 +217,21 @@ subroutine force_bp_limit_triplet(irep, forces)
          bp_status(ibp, irep) = .True.
          ene_bp(ibp, irep) = ene
 
-         for_bp(:, :, ibp) = ene * for_bp(:, :, ibp)
+         f_bp(:, :) = ene * f_bp(:, :)
 
-         !$omp atomic
-         nt_bp_excess(imp1) = nt_bp_excess(imp1) + 1
-         !$omp atomic
-         nt_bp_excess(imp2) = nt_bp_excess(imp2) + 1
+         forces(:, imp1) = forces(:, imp1) + f_bp(:, 1)
+         forces(:, imp2) = forces(:, imp2) + f_bp(:, 2)
+         forces(:, imp3) = forces(:, imp3) + f_bp(:, 3)
+         forces(:, imp4) = forces(:, imp4) + f_bp(:, 4)
+         forces(:, imp5) = forces(:, imp5) + f_bp(:, 5)
+         forces(:, imp6) = forces(:, imp6) + f_bp(:, 6)
       endif
+
    enddo
-   !$omp end do
-
-   !$omp master
-   do     ! loop while (nnt_bp_excess > 0)
-
-      nnt_bp_excess = 0  ! Number of nucleotides that have more than one base pair
-      ntlist_excess(:) = 0
-      do imp1 = 1, nmp
-         if (nt_bp_excess(imp1) > 0) then
-            nnt_bp_excess = nnt_bp_excess + 1
-            ntlist_excess(nnt_bp_excess) = imp1
-         endif
-      enddo
-
-      if (nnt_bp_excess == 0) exit
-
-      ! Randomely choose one nucleotide (nt) that has more than one base pair
-      !rnd = genrand64_real3()    ! (0,1)-real-interval
-      rnd = genrand_double3(mts(irep))    ! (0,1)-real-interval
-
-      nt_delete = ntlist_excess( ceiling(rnd * nnt_bp_excess) )
-      !  1 <= nt_delete <= nnt_bp_excess
-
-      ! Generate a sequence of nucleotides that form basepairs involving nt_delete
-      nbp_seq = 0
-      bp_seq(:) = 0
-      do ibp = 1, nbp(irep)
-         if (bp_status(ibp, irep)) then
-            imp1 = bp_mp(1, ibp, irep)
-            imp2 = bp_mp(2, ibp, irep)
-            if (imp1 == nt_delete .or. imp2 == nt_delete) then
-               nbp_seq = nbp_seq + 1
-               bp_seq(nbp_seq) = ibp
-            endif
-         endif
-      enddo
-
-      ! Shuffle
-      do i = 1, nbp_seq
-         !rnd = genrand64_real3()   ! (0,1)-real-interval
-         rnd = genrand_double3(mts(irep))   ! (0,1)-real-interval
-         i_swap = ceiling(rnd*nbp_seq)
-         i_save = bp_seq(i)
-         bp_seq(i) = bp_seq(i_swap)
-         bp_seq(i_swap) = i_save
-      enddo
-
-      ! Randomely choose one "ibp" that will be deleted, depending on the energies
-      ibp_delete = bp_seq(1)
-      do i = 2, nbp_seq
-         jbp = bp_seq(i)
-
-         ratio = exp( (ene_bp(jbp, irep) - ene_bp(ibp_delete, irep)) * beta )
-         !rnd = genrand64_real1()  ! [0,1]-real-interval
-         rnd = genrand_double1(mts(irep))  ! [0,1]-real-interval
-
-         if (rnd < ratio) then
-            ibp_delete = jbp
-         endif
-      enddo
-
-      ! Delete
-      bp_status(ibp_delete, irep) = .False.
-      !ene_bp(ibp_delete) = 0.0_PREC
-      !! This line is commented out because ene_bp has to be kept for CHECK_FORCE.
-      !! In normal run, ene_bp will never be refered when bp_status is False,
-      !! thus it does not have to be zero cleared.
-
-      ! Update nt_bp_excess
-      nt_bp_excess(bp_mp(1, ibp_delete, irep)) = nt_bp_excess(bp_mp(1, ibp_delete, irep)) - 1
-      nt_bp_excess(bp_mp(2, ibp_delete, irep)) = nt_bp_excess(bp_mp(2, ibp_delete, irep)) - 1
-   enddo
-
-   !$omp end master
-
-   ! Wait until the master finishes deletions
-   !$omp barrier
-
-   !$omp do private(imp1, imp2, imp3, imp4, imp5, imp6)
-   do ibp = 1, nbp(irep)
-
-      if (.not. bp_status(ibp, irep)) cycle
-
-      imp1 = bp_mp(1, ibp, irep)
-      imp2 = bp_mp(2, ibp, irep)
-      imp3 = imp1 - 1
-      imp4 = imp2 - 1
-      imp5 = imp1 + 1
-      imp6 = imp2 + 1
-
-      forces(:, imp1) = forces(:, imp1) + for_bp(:, 1, ibp)
-      forces(:, imp2) = forces(:, imp2) + for_bp(:, 2, ibp)
-      forces(:, imp3) = forces(:, imp3) + for_bp(:, 3, ibp)
-      forces(:, imp4) = forces(:, imp4) + for_bp(:, 4, ibp)
-      forces(:, imp5) = forces(:, imp5) + for_bp(:, 5, ibp)
-      forces(:, imp6) = forces(:, imp6) + for_bp(:, 6, ibp)
-   end do
    !$omp end do nowait
 
    !$omp master
    flg_bp_energy = .True.
    !$omp end master
 
-end subroutine force_bp_limit_triplet
+end subroutine force_bp_triplet

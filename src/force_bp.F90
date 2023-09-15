@@ -2,9 +2,9 @@ subroutine force_bp(irep, forces)
 
    use const, only : PREC
    use pbc, only : pbc_vec_d
-   use var_state, only : xyz
+   use var_state, only : xyz, nstep_bp_MC, bp_status_MC, bp_status, ene_bp, flg_bp_energy
    use var_top, only : nmp
-   use var_potential, only : nbp, bp_mp, basepair_parameters, bp_paras
+   use var_potential, only : nbp, bp_mp, basepair_parameters, bp_paras, bp_cutoff_energy
 
    implicit none
 
@@ -30,11 +30,22 @@ subroutine force_bp(irep, forces)
    ! jmp+1 (6) --- jmp (2) --- jmp-1 (4)
    !#######################################
 
+   !$omp master
+   bp_status(1:nbp(irep), irep) = .False.
+   ene_bp(1:nbp(irep), irep) = 0.0_PREC
+   !$omp end master
+
+   !$omp barrier
+
    !$omp do private(bpp, imp1, imp2, imp3, imp4, imp5, imp6, d, u, pre, cosine, dih, &
    !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
    !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
    !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212, f_bp)
    do ibp = 1, nbp(irep)
+
+      if (nstep_bp_MC > 0) then
+         if (.not. bp_status_MC(ibp, irep)) cycle
+      endif
 
       imp1 = bp_mp(1, ibp, irep)
       imp2 = bp_mp(2, ibp, irep)
@@ -175,15 +186,26 @@ subroutine force_bp(irep, forces)
       f_bp(:, 5) = f_bp(:, 5) + f_l(:)
 
       !===== Total =====
-      f_bp(:, :) = bpp%U0 * exp(-u) * f_bp(:, :)
+      u = bpp%U0 * exp(-u)
 
-      forces(:, imp1) = forces(:, imp1) + f_bp(:, 1)
-      forces(:, imp2) = forces(:, imp2) + f_bp(:, 2)
-      forces(:, imp3) = forces(:, imp3) + f_bp(:, 3)
-      forces(:, imp4) = forces(:, imp4) + f_bp(:, 4)
-      forces(:, imp5) = forces(:, imp5) + f_bp(:, 5)
-      forces(:, imp6) = forces(:, imp6) + f_bp(:, 6)
+      if (u <= bp_cutoff_energy) then
+         bp_status(ibp, irep) = .True.
+         ene_bp(ibp, irep) = u
+
+         f_bp(:, :) = u * f_bp(:, :)
+
+         forces(:, imp1) = forces(:, imp1) + f_bp(:, 1)
+         forces(:, imp2) = forces(:, imp2) + f_bp(:, 2)
+         forces(:, imp3) = forces(:, imp3) + f_bp(:, 3)
+         forces(:, imp4) = forces(:, imp4) + f_bp(:, 4)
+         forces(:, imp5) = forces(:, imp5) + f_bp(:, 5)
+         forces(:, imp6) = forces(:, imp6) + f_bp(:, 6)
+      endif
    enddo
    !$omp end do nowait
+
+   !$omp master
+   flg_bp_energy = .True.
+   !$omp end master
 
 end subroutine force_bp

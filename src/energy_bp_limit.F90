@@ -26,7 +26,6 @@ subroutine energy_bp_limit(irep, Ebp)
    integer :: bp_seq(nbp(irep))
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
-   logical :: halt_mode
 
    if (.not. flg_bp_energy) then
 

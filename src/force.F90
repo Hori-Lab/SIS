@@ -4,7 +4,8 @@ subroutine force(irep, forces)
    use const
    use const_idx, only : ENE
    use var_parallel, only : nthreads
-   use var_potential, only : flg_stage, flg_angl_ReB, flg_ele, max_bp_per_nt, flg_dih_cos, flg_dih_exp, bp_model
+   use var_potential, only : flg_stage, flg_angl_ReB, flg_ele, flg_dih_cos, flg_dih_exp, bp_model
+   use var_state, only: flg_bp_MC
    use var_top, only : nmp
 
    implicit none
@@ -39,13 +40,17 @@ subroutine force(irep, forces)
 
    if (flg_dih_exp) call force_dih_exp(irep, forces_t(1, 1, tn))
    
-   if (max_bp_per_nt < 1) then
-      call force_bp(irep, forces_t(1,1,tn))
-   else
-      if (bp_model == 4 .or. bp_model == 5) then
+   if (bp_model == 4 .or. bp_model == 5) then
+      if (flg_bp_MC) then
          call force_bp_limit_triplet(irep, forces_t(1,1,tn))
       else
+         call force_bp_triplet(irep, forces_t(1,1,tn))
+      endif
+   else
+      if (flg_bp_MC) then
          call force_bp_limit(irep, forces_t(1,1,tn))
+      else
+         call force_bp(irep, forces_t(1,1,tn))
       endif
    endif
 

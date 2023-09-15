@@ -5,7 +5,7 @@ subroutine job_dcd()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
    use var_top, only : nmp
-   use var_state, only : xyz, energies, flg_bp_energy, tempK
+   use var_state, only : xyz, energies, flg_bp_energy, tempK, nstep_bp_MC, flg_bp_MC
    use var_potential, only : flg_stage, flg_ele
    use var_io, only : hdl_out, cfile_dcd_in, iopen_hdl
    use dcd, only : file_dcd, DCD_OPEN_MODE
@@ -63,6 +63,9 @@ subroutine job_dcd()
                                                      ! 1   23     4567890123
    endif
    write(hdl_out(IREP), '(a)') ''
+
+   flg_bp_MC = .True.
+   if (nstep_bp_MC == 0) flg_bp_MC = .False.
 
    nframe = 0
    do

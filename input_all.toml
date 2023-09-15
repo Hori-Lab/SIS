@@ -143,11 +143,17 @@ min_loop = 3
     # It is the number of nucleotides that must exist between a base pair.
     # E.g., if min_loop = 3, then (i) and (i+4) can form a base pair, whereas (i) and (i+3) cannot.
 
-max_bp_per_nt = -1
-    # Maximum number of base pairs simultaneously formed by one nucleotide.
-    # The default is -1 if this option is omitted.
-    # If max_bp_per_nt <= 0, no limitation is applied.
+nstep_MC = 1
+    # (optional) default is 1.
+    # This variable specifies the frequency of Monte Carlo reorganisation of the base pair network.
+    # The value has to be 0 or any positive integer. If nstep_MC = 0, there will be no MC procedure. 
+    # If [Job] type = "DCD", any positive integer value of nstep_MC will be ignored and MC will be
+    # performed for every frame (i.e. nstep_MC = 1). nstep_MC = 0 is still valid and MC will not be conducted.
 
+max_bp_per_nt = 1
+    # (optional) default is 1
+    # Maximum number of base pairs simultaneously formed by one nucleotide.
+    # The value has to be positive integer. Only valid when nstep_MC > 0.
 
 [Electrostatic]
     # (optional)

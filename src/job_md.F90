@@ -15,7 +15,8 @@ subroutine job_md()
                          nl_margin, Ekinetic, &
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
-                         istep, ianneal, istep_anneal_next
+                         istep, ianneal, istep_anneal_next, &
+                         nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage, flg_ele
@@ -203,6 +204,12 @@ subroutine job_md()
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Initial energies
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   if (nstep_bp_MC > 0) then
+      flg_bp_MC = .True.
+   else
+      flg_bp_MC = .False.
+   endif
+
    do irep = 1, nrep_proc
 
       if (flg_repvar(REPT%TEMP)) then
@@ -289,6 +296,12 @@ subroutine job_md()
    print *
    flush(output_unit)
 
+   if (nstep_bp_MC > 0) then
+      bp_status_MC(:,:) = bp_status(:,:)
+   else
+      bp_status_MC(:,:) = .True.
+   endif
+
    if (myrank == 0 .and. flg_progress) then
       call progress_init(istep)
    endif
@@ -301,6 +314,11 @@ subroutine job_md()
    do while (istep < nstep)
 
       istep = istep + 1
+
+      flg_bp_MC = .False.
+      if (nstep_bp_MC > 0) then
+         if (mod(istep, nstep_bp_MC) == 0) flg_bp_MC = .True.
+      endif
 
       do irep = 1, nrep_proc
 
@@ -319,12 +337,19 @@ subroutine job_md()
          if (sqrt(d2max) + sqrt(d2max_2nd) > nl_margin) then
             call neighbor_list(irep)
             xyz_move(:, :, irep) = 0.0e0_PREC
+
+            flg_bp_MC = .True.  ! Enforce MC after updating the neighbor list
          endif
 
          call force(irep, forces(:,:))
 
+         if (flg_bp_MC) then
+            bp_status_MC(:,irep) = bp_status(:,irep)
+         endif
+
          if (maxval(forces(:,:)) > 100.0) then
-            print *, 'Warning: maxval(forces) > 100.0. (irep, istep, force) =', irep, istep, maxval(forces)
+            print *, 'Warning: maxval(forces) > 100.0. (irep, grep, istep, force) =', &
+                     irep, irep2grep(irep), istep, maxval(forces)
             flush(output_unit)
          endif
 
@@ -379,6 +404,10 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_step_save .or. flg_step_rep_exchange) then
          replica_energies(:, :) = 0.0_PREC
+         if (flg_step_rep_exchange .and. nstep_bp_MC > 0) then
+            flg_bp_MC = .True.
+            flg_bp_energy = .False.
+         endif
          call energy_replica(energies, replica_energies, flg_step_rep_exchange, flg_step_save)
       endif
 

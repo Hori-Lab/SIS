@@ -24,7 +24,6 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    real(PREC) :: tK, dG
    real(PREC) :: u, beta, ratio
    real(PREC) :: d, theta, phi
-   real(PREC) :: ene
    real(PREC) :: rnd
    integer :: nt_bp_excess(nmp)
    integer :: nbp_seq
@@ -32,17 +31,18 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
    integer :: nnt_bp_excess
    integer :: ntlist_excess(nmp)
 
-   if (temp_independent == 0) then
-      tK = tempK_in
-      beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
-   else
-      tK = 0.0_PREC
-      !beta = HUGE(beta)   ! so that the highest energy BP will be deleted.
-                           ! This causes numerical exception so do not use.
-      beta = 0.0_PREC   ! beta will not be used.
-   endif
 
    if (.not. flg_bp_energy) then
+
+      if (temp_independent == 0) then
+         tK = tempK_in
+         beta = 1.0_PREC / (BOLTZ_KCAL_MOL * tK)
+      else
+         tK = 0.0_PREC
+         !beta = HUGE(beta)   ! so that the highest energy BP will be deleted.
+                           ! This causes numerical exception so do not use.
+         beta = 0.0_PREC   ! beta will not be used.
+      endif
 
       bp_status(1:nbp(irep), irep) = .False.
       nt_bp_excess(1:nmp) = -max_bp_per_nt
@@ -50,7 +50,7 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
 
       !$omp barrier
 
-      !$omp parallel do private(imp, jmp, d, u, theta, phi, ene, bpp, dG)
+      !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp, dG)
       do ibp = 1, nbp(irep)
 
          imp = bp_mp(1, ibp, irep)
@@ -85,10 +85,10 @@ subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
          phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
          u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
-         ene = bpp%U0 * dG * exp(-u)
+         u = bpp%U0 * dG * exp(-u)
 
-         if (ene <= bp_cutoff_energy) then
-            ene_bp(ibp, irep) = ene
+         if (u <= bp_cutoff_energy) then
+            ene_bp(ibp, irep) = u
             bp_status(ibp, irep) = .True.
 
             !$omp atomic

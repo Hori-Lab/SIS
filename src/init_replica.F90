@@ -13,8 +13,10 @@ subroutine init_replica
    implicit none
 
    integer :: irep, grep
-   integer :: istat
    integer :: ivar
+#ifdef PAR_MPI
+   integer :: istat
+#endif
 
    ndim_replica = 0
    nrep_all = 1
