@@ -22,7 +22,8 @@ subroutine read_input(cfilepath)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps
-   use var_top, only : nrepeat, nchains, inp_no_charge
+   use var_top, only : nrepeat, nchains, inp_no_charge, &
+                       flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
                            replica_values, flg_replica, flg_repvar
    use var_parallel
@@ -35,7 +36,7 @@ subroutine read_input(cfilepath)
    !======= TOML
    type(toml_table), allocatable :: table
    type(toml_table), pointer :: group, node
-   type(toml_array), pointer :: array
+   type(toml_array), pointer :: array, nested_array
    type(toml_context) :: context
    type(toml_error), allocatable :: tm_err
    !======= 
@@ -43,6 +44,7 @@ subroutine read_input(cfilepath)
    integer :: i
    integer :: istat, origin
    integer :: hdl
+   integer :: len_array
 #ifdef PAR_MPI
    integer :: strlen
 #endif
@@ -663,6 +665,48 @@ subroutine read_input(cfilepath)
          endif
       endif
 
+      !################# [Freeze] #################
+      ! (optional)
+      flg_freeze = .False.
+      call get_value(table, "Freeze", group, requested=.False.)
+
+      if (associated(group)) then 
+         flg_freeze = .True.
+
+         call get_value(group, "id_ranges", array, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("invalid id_ranges value in [Freeze].", origin, "expected an array of integer pairs.")
+            call sis_abort()
+         endif
+         if (associated(array)) then
+            len_array = len(array)
+
+            if (len_array > 0) then
+               allocate(frz_ranges(2,len_array))
+               do i = 1, len_array
+                  call get_value(array, i, nested_array)
+                  if (associated(nested_array)) then
+                     if (len(nested_array) /= 2) then
+                        print '(a)', context%report("invalid id_ranges value in [Freeze].", &
+                                     origin, "array(s) have to have two elements each.")
+                        call sis_abort()
+                     endif
+                     call get_value(nested_array, 1, frz_ranges(1,i))
+                     call get_value(nested_array, 2, frz_ranges(2,i))
+                  else
+                     print '(a)', context%report("invalid id_ranges value in [Freeze].", &
+                                  origin, "expected an array of integer pairs.")
+                     call sis_abort()
+                  end if
+               end do
+            else
+               flg_freeze = .False.
+            endif
+         else
+            flg_freeze = .False.
+         end if
+      endif
+
       call table%destroy
 
    endif ! myrank == 0
@@ -763,6 +807,11 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_stage, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(stage_sigma, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(stage_eps, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+
+   call MPI_BCAST(flg_freeze, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   if (flg_freeze) then
+      call MPI_BCAST(frz_ranges, size(frz_ranges), MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   endif
 
 #endif
 
@@ -875,6 +924,15 @@ subroutine read_input(cfilepath)
    if (flg_stage) then
       print '(a,g15.8)', '# Stage sigma: ', stage_sigma
       print '(a,g15.8)', '# Stage epsilon: ', stage_eps
+      print '(a)', '#'
+   endif
+
+   if (flg_freeze) then
+      print '(a)', '# Freeze: On'
+      print '(a,i5)', '# Freeze, number of specified ranges:', size(frz_ranges, 2)
+      do i = 1, size(frz_ranges,2)
+         print '(a,i5,a,i5,x,i5)', '# Freeze, range(',i,'): ', frz_ranges(1,i), frz_ranges(2,i)
+      enddo
       print '(a)', '#'
    endif
 

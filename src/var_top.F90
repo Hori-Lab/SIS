@@ -23,4 +23,7 @@ module var_top
    logical, allocatable :: has_charge(:)
    !real(PREC), allocatable :: charge(:,:)  ! (nmp, nrep_all)
 
+   logical :: flg_freeze
+   integer, allocatable :: frz_ranges(:,:)
+
 end module var_top
