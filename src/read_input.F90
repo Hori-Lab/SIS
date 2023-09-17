@@ -693,6 +693,12 @@ subroutine read_input(cfilepath)
                      endif
                      call get_value(nested_array, 1, frz_ranges(1,i))
                      call get_value(nested_array, 2, frz_ranges(2,i))
+                     if ((frz_ranges(1,i) < 1) .or. (frz_ranges(2,i) < 1) .or. &
+                         (frz_ranges(2,i) <= frz_ranges(1,i))) then
+                        print '(a)', context%report("invalid id_ranges value in [Freeze].", &
+                                     origin, "A range has to be in the form of [i,j] where 0 < i < j.")
+                        call sis_abort()
+                     endif
                   else
                      print '(a)', context%report("invalid id_ranges value in [Freeze].", &
                                   origin, "expected an array of integer pairs.")

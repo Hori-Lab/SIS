@@ -7,7 +7,7 @@ subroutine job_md()
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
    use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
-   use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
+   use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp, flg_freeze, is_frozen
    use var_state, only : restarted, flg_bp_energy, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
@@ -382,6 +382,7 @@ subroutine job_md()
 
             dxyz(1:3) =  md_coef(3, imp) * velos(1:3, imp, irep)
             ! md_coef(3) = sqrt(b) h
+            !           (= 0 if frozen)
 
             xyz(1:3, imp, irep) = xyz(1:3, imp, irep) + dxyz(1:3)
             xyz_move(1:3, imp, irep) = xyz_move(1:3, imp, irep) + dxyz(1:3)
@@ -592,6 +593,10 @@ contains
             md_coef(2, imp) = c2 * dt / mass(imp)
             ! md_coef(3) = sqrt(b) h
             md_coef(3, imp) = c2 * dt
+
+            if (flg_freeze) then
+               if (is_frozen(imp)) md_coef(3, imp) = 0.0_PREC
+            endif
          enddo
 
          flg_first = .False.

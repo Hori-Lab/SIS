@@ -25,5 +25,6 @@ module var_top
 
    logical :: flg_freeze
    integer, allocatable :: frz_ranges(:,:)
+   logical, allocatable :: is_frozen(:)
 
 end module var_top
