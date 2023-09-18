@@ -232,14 +232,14 @@ subroutine job_md()
 
       ! .out file header
       if (flg_replica) then
-         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
-                                                   !1234567890 1234 123456 1234567890123 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe   (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
+                                                   !123456789012 1234 123456 1234567890123 1234567890123 1234567890123'
          write(hdl_out(irep), '(a)', advance='no') ' (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv     '
                                                    ! 1234567890123 1234567890123 1234567890123 1234567890123'
          icol = 10
       else
-         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
-                                                   !1234567890 123456 1234567890123 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe   (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
+                                                   !123456789012 123456 1234567890123 1234567890123 1234567890123'
          write(hdl_out(irep), '(a)', advance='no') ' (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv      '
                                                    ! 1234567890123 1234567890123 1234567890123 1234567890123'
          icol = 9
@@ -261,12 +261,12 @@ subroutine job_md()
          ! Only STDOUT if restarted. No DCD output.
          print '(a)', '##### Energies at the beginning'
          if (flg_replica) then
-            print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
+            print '(a)', '#(1)nframe   (2)R (3)T   (4)Ekin       (5)Epot       '
             print '(i12, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, rep_label, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          else
-            print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
+            print '(a)', '#(1)nframe   (2)T   (3)Ekin       (4)Epot       '
             print '(i12, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)

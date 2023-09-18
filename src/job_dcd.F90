@@ -47,8 +47,8 @@ subroutine job_dcd()
    allocate(xyz(3, nmp, IREP))
    allocate(energies(0:ENE%MAX, IREP))
 
-   write(hdl_out(IREP), '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
-                                             !1234567890 123456 1234567890123 1234567890123 1234567890123'
+   write(hdl_out(IREP), '(a)', advance='no') '#(1)nframe   (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
+                                             !123456789012 123456 1234567890123 1234567890123 1234567890123'
    write(hdl_out(IREP), '(a)', advance='no') ' (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv      '
                                              ! 1234567890123 1234567890123 1234567890123 1234567890123'
    icol = 9
