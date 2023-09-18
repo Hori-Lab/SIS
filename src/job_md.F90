@@ -267,7 +267,7 @@ subroutine job_md()
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          else
             print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
-            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
+            print '(i10, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          endif
