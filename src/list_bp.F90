@@ -20,6 +20,7 @@ subroutine list_bp()
    allocate(ene_bp(n, nrep_proc))
    allocate(for_bp(3, 6, n))
    allocate(nt_bp_excess(nmp))
+   allocate(bp_status_MC(n, nrep_proc))
 
    nbp(:) = n
    bp_mp(:,:,:) = 0
@@ -27,11 +28,7 @@ subroutine list_bp()
    ene_bp(:,:) = 0.0_PREC
    for_bp(:,:,:) = 0.0_PREC
    nt_bp_excess(:) = 0
-
-   if (nstep_bp_MC > 0) then
-      allocate(bp_status_MC(n, nrep_proc))
-      bp_status_MC(:,:) = .False.
-   endif
+   bp_status_MC(:,:) = .False.
 
    if (bp_model == 5) then
       allocate(bp_coef(2, n, nrep_proc))
