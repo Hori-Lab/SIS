@@ -46,6 +46,7 @@ subroutine neighbor_list(irep)
       allocate(ene_bp(nbp_max, nrep_proc))
       allocate(for_bp(3, 6, nbp_max))
       allocate(nt_bp_excess(nmp))
+      allocate(bp_status_MC(nbp_max, nrep_proc))
       nbp(:) = 0
       bp_mp(:,:,:) = 0
       bp_coef(:,:,:) = 0.0_PREC
@@ -53,10 +54,7 @@ subroutine neighbor_list(irep)
       ene_bp(:,:) = 0.0_PREC
       for_bp(:,:,:) = 0.0_PREC
       nt_bp_excess(:) = 0
-      if (nstep_bp_MC > 0) then
-         allocate(bp_status_MC(nbp_max, nrep_proc))
-         bp_status_MC(:,:) = .False.
-      endif
+      bp_status_MC(:,:) = .False.
    endif
 
    ele_nl_cut2 = 0.0_PREC

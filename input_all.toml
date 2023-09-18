@@ -12,11 +12,11 @@ type = "MD"
     ff = "./rna_cg1_para2.ff"
         # Force-field file. Required.
 
-     fasta = "./beta-globin.fasta"
+    fasta = "./beta-globin.fasta"
         # FASTA sequence file. Required unless [repeat] section is specified.
 
-     pdb_ini = "initial.pdb"
-     xyz_ini = "initial.xyz"
+    pdb_ini = "initial.pdb"
+    xyz_ini = "initial.xyz"
         # File for initial structure. Only one of them is required.
         # Only the coordinates will be read from these files, 
         # and any sequence information therein will be ignored.
@@ -53,15 +53,15 @@ nstep_save = 100
 ## Perform exchange? (true (default) or false)
 exchange = true
 
-   [Replica.Temperature]
-   1 = 293.15
-   2 = 303.15
-   3 = 313.15
-   4 = 323.15
-   5 = 333.15
-   6 = 343.15
-   7 = 353.15
-   8 = 363.15
+    [Replica.Temperature]
+    1 = 293.15
+    2 = 303.15
+    3 = 313.15
+    4 = 323.15
+    5 = 333.15
+    6 = 343.15
+    7 = 353.15
+    8 = 363.15
 
 [Condition]
 tempK = 310.15
@@ -198,3 +198,6 @@ change_z = -1.0
     # (optional)
 sigma = 10.0
 epsilon = 1.2
+
+[Freeze]
+id_ranges = [[1, 5], [10,14]]
