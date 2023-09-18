@@ -53,9 +53,9 @@ subroutine job_md()
 
    ! Format in .out file
    if (flg_replica) then
-      write(out_fmt, '(a23,i2,a12)') '(i10, 1x, i4, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
+      write(out_fmt, '(a23,i2,a12)') '(i12, 1x, i4, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
    else
-      write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
+      write(out_fmt, '(a15,i2,a12)') '(i12, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
    endif
 
    allocate(mass(nmp))
@@ -262,12 +262,12 @@ subroutine job_md()
          print '(a)', '##### Energies at the beginning'
          if (flg_replica) then
             print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
-            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, rep_label, tK, Ekinetic(irep), energies(0, irep)
+            print '(i12, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, rep_label, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          else
             print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
-            print '(i10, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
+            print '(i12, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          endif
@@ -496,7 +496,7 @@ subroutine job_md()
             call neighbor_list(irep)
             xyz_move(:,:,irep) = 0.0e0_PREC
 
-            print '(a,i10,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
+            print '(a,i12,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
          endif
       endif
 
