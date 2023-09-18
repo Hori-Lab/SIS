@@ -14,6 +14,7 @@ EV2 = EV * EV
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('--xyz', default='random.xyz', help='output XYZ filename')
+parser.add_argument('--nxyz', help='output XYZ filename for Kymoknot')
 group_seq = parser.add_mutually_exclusive_group(required=True)
 group_seq.add_argument('--fasta', type=argparse.FileType('r'), help='Sequence FASTA file')
 group_seq.add_argument('--Nbeads', type=int, help='Number of beads')
@@ -106,3 +107,11 @@ f.write('\n')
 for i, p in enumerate(xyz):
     f.write(f'{seq[i]}  {p[0]:10.3f}  {p[1]:10.3f}  {p[2]:10.3f}\n')
 f.close()
+
+# Output NXYZ file (optional)
+if args.nxyz is not None:
+    f = open(args.nxyz, 'w')
+    f.write(f'{N}\n')
+    for p in xyz:
+        f.write(f' {p[0]:10.3f}  {p[1]:10.3f}  {p[2]:10.3f}\n')
+    f.close()
