@@ -66,14 +66,6 @@ subroutine job_md()
    allocate(Ekinetic(nrep_proc))
    !allocate(replica_energies(2, nrep_all))
 
-   ! set PBC box
-   if (flg_pbc) then
-      do irep = 1, nrep_proc
-         fdcd(irep)%flg_unitcell = .True.
-         fdcd(irep)%box(:) = pbc_box(:)
-      enddo
-   endif
-
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Set up constants for the dynamics
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -227,6 +219,12 @@ subroutine job_md()
       ! Open DCD file and write the header
       print '(a,i5,2a)', '# Opening dcd file for irep = ', irep, ', ', trim(cfile_dcd(irep))
       fdcd(irep) = file_dcd(hdl_dcd(irep), cfile_dcd(irep), DCD_OPEN_MODE%WRITE)
+
+      ! set PBC box
+      if (flg_pbc) then
+         fdcd(irep)%flg_unitcell = .True.
+         fdcd(irep)%box(:) = pbc_box(:)
+      endif
 
       call fdcd(irep)%write_header(nmp)
 
