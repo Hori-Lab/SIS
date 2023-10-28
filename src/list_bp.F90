@@ -2,7 +2,7 @@ subroutine list_bp()
 
    use const, only : PREC
    use var_top, only : nmp
-   use var_state, only : bp_status, bp_status_MC, ene_bp, for_bp, nt_bp_excess, nstep_bp_MC
+   use var_state, only : bp_status, bp_status_MC, ene_bp, for_bp, nt_bp_excess
    use var_potential, only : bp_model, nbp, bp_mp, bp_min_loop, bp_coef, &
                              bp3_map, bp3_dH, bp3_dS, bp_map
    use var_replica, only : nrep_proc

@@ -1,10 +1,11 @@
 subroutine read_rst(itype_wanted)
 
+   use mt_stream, only : read, mt_state  !, print (for debug)
    use const
    use const_idx
    use var_io,  only : hdl_in_rst
    use var_top, only : nmp
-   use var_state, only : xyz, velos, accels, istep, ianneal
+   use var_state, only : xyz, velos, accels, istep, ianneal, mts, mts_rep
    use var_replica, only : nrep_all, rep2lab, lab2rep, grep2rank, grep2irep
 #ifdef PAR_MPI
    use var_replica, only : nrep_proc
@@ -21,7 +22,7 @@ subroutine read_rst(itype_wanted)
    integer :: idummy
    integer :: istat
    integer :: nblock_size
-   logical, allocatable :: flg_done(:)
+   logical :: flg_done(1:nrep_all)
    real(PREC), allocatable :: temp_array(:,:)
 #ifdef PAR_MPI
    integer, parameter :: TAG = 1
@@ -32,11 +33,10 @@ subroutine read_rst(itype_wanted)
       rewind(hdl_in_rst)
 
       ! For checking completion
-      allocate(flg_done(1:nrep_all))
       flg_done(:) = .false.
 
       ! Do-loop for reading restart file
-      do 
+      do
          ! Read block-identifier
          read (hdl_in_rst, iostat=istat) itype
          if (istat < 0) then
@@ -229,6 +229,57 @@ subroutine read_rst(itype_wanted)
             flush(6)
             exit
 
+         !----------------------------
+         ! PRNGREP (mts_rep for replica exchange)
+         !----------------------------
+         case(RSTBLK%PRNGREP)
+            ! mts_rep for replica exchange
+            call read(mts_rep, hdl_in_rst)
+            !print *, 'mts_rep'
+            !call print(mts_rep)
+
+#ifdef PAR_MPI
+            call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+#endif
+            flg_done(:) = .true.
+            write(6, '(a)') '## RESTART: mts_rep has been loaded.'
+            flush(6)
+            exit
+
+         !----------------------------
+         ! PRNG (mts for each process)
+         !----------------------------
+         case(RSTBLK%PRNG)
+            read (hdl_in_rst) grep
+
+            rank = grep2rank(grep)
+            irep = grep2irep(grep)
+
+            if (rank == 0) then
+               call read(mts(irep), hdl_in_rst)
+               !print *, 'mts(', irep, ')'
+               !call print(mts(irep))
+            else
+               call read(mts(0), hdl_in_rst)
+               !print *, 'mts(', 0, ')'
+               !call print(mts(0))
+            endif
+#ifdef PAR_MPI
+            if (rank == 0) then
+               ! Add local communication when necessary.
+               continue
+            else
+               call MPI_SEND(irep, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0), MTS_SIZE, MPI_BYTE, rank, TAG, MPI_COMM_WORLD, istat)
+            endif
+#endif
+            flg_done(grep) = .true.
+            if (all(flg_done)) then
+               write(6, '(a)') '## RESTART: mts data has been loaded.'
+               flush(6)
+               exit
+            endif
+
          case default
             print '(a,i3)', 'Error: Unknown block-identifier in the restart file. itype=',itype
             error stop
@@ -240,10 +291,8 @@ subroutine read_rst(itype_wanted)
 
       ! check completion
       if (.not. all(flg_done)) then
-         deallocate(flg_done)
          call sub_not_found(itype_wanted)
       endif
-      deallocate(flg_done)
 
 #ifdef PAR_MPI
    else ! myrank /= 0
@@ -317,6 +366,31 @@ subroutine read_rst(itype_wanted)
          enddo
 
          write(6, '(a)') '## RESTART: replica data has been received.'
+         flush(6)
+
+      !----------------------------
+      ! PRNGREP
+      !----------------------------
+      case(RSTBLK%PRNGREP)
+
+         call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+         !print *, 'mts_rep'
+         !call print(mts_rep)
+
+         write(6, '(a)') '## RESTART: mts_rep data has been received.'
+         flush(6)
+
+      !----------------------------
+      ! PRNG
+      !----------------------------
+      case(RSTBLK%PRNG)
+
+         call MPI_RECV(irep, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+         call MPI_RECV(mts(irep), MTS_SIZE, MPI_BYTE, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+         !print *, 'mts(', irep, ')'
+         !call print(mts(irep))
+
+         write(6, '(a)') '## RESTART: mts data has been received.'
          flush(6)
 
       case default
