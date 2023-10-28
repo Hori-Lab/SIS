@@ -336,7 +336,9 @@ subroutine job_md()
             call neighbor_list(irep)
             xyz_move(:, :, irep) = 0.0e0_PREC
 
-            flg_bp_MC = .True.  ! Enforce MC after updating the neighbor list
+            if (nstep_bp_MC > 0) then
+               flg_bp_MC = .True.  ! Enforce MC after updating the neighbor list
+            endif
          endif
 
          call force(irep, forces(:,:))
