@@ -1,6 +1,6 @@
 subroutine read_rst(itype_wanted)
 
-   use mt_stream, only : read, mt_state  !, print (for debug)
+   use mt_stream, only : read, mt_state  !, print !(for debug)
    use const
    use const_idx
    use var_io,  only : hdl_in_rst
@@ -239,7 +239,28 @@ subroutine read_rst(itype_wanted)
             !call print(mts_rep)
 
 #ifdef PAR_MPI
-            call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+            !call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+            ! This does not work because mts%state is an array of pointers
+
+            call MPI_BCAST(mts_rep%i, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%stream_id, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%istatus, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%nn, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%mm, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%rr, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%ww, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%aaa, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%wmask, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%umask, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%lmask, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%shift0, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%shift1, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%maskB, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%maskC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%shiftB, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%shiftC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%mag(0:1), 2, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+            call MPI_BCAST(mts_rep%state(0:623), 624, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 #endif
             flg_done(:) = .true.
             write(6, '(a)') '## RESTART: mts_rep has been loaded.'
@@ -270,7 +291,29 @@ subroutine read_rst(itype_wanted)
                continue
             else
                call MPI_SEND(irep, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
-               call MPI_SEND(mts(0), MTS_SIZE, MPI_BYTE, rank, TAG, MPI_COMM_WORLD, istat)
+
+               !call MPI_SEND(mts(0), MTS_SIZE, MPI_BYTE, rank, TAG, MPI_COMM_WORLD, istat)
+               ! This does not work because mts%state is an array of pointers
+
+               call MPI_SEND(mts(0)%i, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%stream_id, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%istatus, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%nn, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%mm, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%rr, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%ww, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%aaa, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%wmask, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%umask, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%lmask, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%shift0, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%shift1, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%maskB, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%maskC, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%shiftB, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%shiftC, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%mag(0:1), 2, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+               call MPI_SEND(mts(0)%state(0:623), 624, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
             endif
 #endif
             flg_done(grep) = .true.
@@ -373,7 +416,28 @@ subroutine read_rst(itype_wanted)
       !----------------------------
       case(RSTBLK%PRNGREP)
 
-         call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+         !call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+         ! This does not work because mts%state is an array of pointers
+
+         call MPI_BCAST(mts_rep%i, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%stream_id, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%istatus, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%nn, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%mm, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%rr, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%ww, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%aaa, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%wmask, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%umask, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%lmask, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%shift0, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%shift1, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%maskB, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%maskC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%shiftB, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%shiftC, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%mag(0:1), 2, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(mts_rep%state(0:623), 624, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
          !print *, 'mts_rep'
          !call print(mts_rep)
 
@@ -385,13 +449,37 @@ subroutine read_rst(itype_wanted)
       !----------------------------
       case(RSTBLK%PRNG)
 
-         call MPI_RECV(irep, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
-         call MPI_RECV(mts(irep), MTS_SIZE, MPI_BYTE, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
-         !print *, 'mts(', irep, ')'
-         !call print(mts(irep))
+         do i = 1, nrep_proc
+            call MPI_RECV(irep, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
 
-         write(6, '(a)') '## RESTART: mts data has been received.'
-         flush(6)
+            !call MPI_RECV(mts(irep), MTS_SIZE, MPI_BYTE, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            ! This does not work because mts%state is an array of pointers
+
+            call MPI_RECV(mts(irep)%i, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%stream_id, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%istatus, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%nn, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%mm, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%rr, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%ww, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%aaa, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%wmask, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%umask, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%lmask, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%shift0, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%shift1, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%maskB, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%maskC, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%shiftB, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%shiftC, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%mag(0:1), 2, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            call MPI_RECV(mts(irep)%state(0:623), 624, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            !print *, 'mts(', irep, ')'
+            !call print(mts(irep))
+
+            write(6, '(a)') '## RESTART: mts data has been received.'
+            flush(6)
+         enddo
 
       case default
          print '(a,i3)', 'Error: Logical error undefined itype_wanted used.' ,itype_wanted

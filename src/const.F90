@@ -13,7 +13,31 @@ module const
    integer, save      :: LOGIC    !< byte size of default logical
    integer, save      :: M_INT    !< byte size of default integer   (medium-size integer)
    integer, parameter :: L_INT = INT64 !< byte size of larger integer ("long long int" in C)
-   integer, parameter :: MTS_SIZE =INT32 * 19 + INT32 * 624
+
+   integer, parameter :: MT_INT32 = selected_int_kind(9)
+                         ! in mt_kind_defs.F90
+                         !integer, parameter :: INT32  = selected_int_kind(9)
+   integer, save      :: MTS_SIZE
+
+   integer, parameter :: CHAR_FILE_PATH = 1000
+   integer, parameter :: CHAR_FILE_LINE = 500
+   integer, parameter :: FILENAME_DIGIT_REPLICA = 4
+
+   integer, parameter :: MAX_REP_DIM = 1
+   integer, parameter :: MAX_REP_PER_DIM = 256
+   integer, parameter :: MAX_REPLICA = MAX_REP_PER_DIM * MAX_REP_DIM
+contains
+
+   subroutine init_const()
+
+      logical, parameter :: ldummy = .True.
+      integer, parameter :: idummy = 1
+      integer(MT_INT32), parameter :: idummy2 = 1
+
+      LOGIC = sizeof(ldummy)
+      M_INT = sizeof(idummy)
+
+      MTS_SIZE = sizeof(idummy2) * (19 + 624)
                          ! in mt_stream.F90
                          !integer(INT32) :: i = -1         ! state vector index
                          !integer(INT32) :: stream_id = -1 ! stream ID
@@ -37,23 +61,6 @@ module const
                          !    The length of the last array should be 624 because,
                          !        integer(INT32), parameter :: MT19937_N = 624
                          !        g_mt_master%nn    = MT19937_N
-
-   integer, parameter :: CHAR_FILE_PATH = 1000
-   integer, parameter :: CHAR_FILE_LINE = 500
-   integer, parameter :: FILENAME_DIGIT_REPLICA = 4
-
-   integer, parameter :: MAX_REP_DIM = 1
-   integer, parameter :: MAX_REP_PER_DIM = 256
-   integer, parameter :: MAX_REPLICA = MAX_REP_PER_DIM * MAX_REP_DIM
-contains
-
-   subroutine init_const()
-
-      logical, parameter :: ldummy = .True.
-      integer, parameter :: idummy = 1
-
-      LOGIC = sizeof(ldummy)
-      M_INT = sizeof(idummy)
 
    end subroutine init_const
 
