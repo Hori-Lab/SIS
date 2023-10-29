@@ -1,4 +1,4 @@
-subroutine read_rst(itype_wanted)
+subroutine read_rst(itype_wanted, rst_status)
 
    use mt_stream, only : read, mt_state  !, print !(for debug)
    use const
@@ -15,6 +15,7 @@ subroutine read_rst(itype_wanted)
    implicit none
 
    integer, intent(in) :: itype_wanted
+   integer, intent(out) :: rst_status
 
    integer :: i, imp, itype
    integer :: n, m
@@ -27,6 +28,8 @@ subroutine read_rst(itype_wanted)
 #ifdef PAR_MPI
    integer, parameter :: TAG = 1
 #endif
+
+   rst_status = 0
 
    if (myrank == 0) then
 
@@ -239,6 +242,9 @@ subroutine read_rst(itype_wanted)
             !call print(mts_rep)
 
 #ifdef PAR_MPI
+            ! This is to signal that PRNGREP was successfully loaded
+            call MPI_BCAST(0, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+
             !call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
             ! This does not work because mts%state is an array of pointers
 
@@ -416,6 +422,13 @@ subroutine read_rst(itype_wanted)
       !----------------------------
       case(RSTBLK%PRNGREP)
 
+         ! This is to signal that PRNGREP was successfully loaded
+         call MPI_BCAST(i, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         if (i == -1) then
+            rst_status = -1
+            return
+         endif
+
          !call MPI_BCAST(mts_rep, MTS_SIZE, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
          ! This does not work because mts%state is an array of pointers
 
@@ -451,6 +464,10 @@ subroutine read_rst(itype_wanted)
 
          do i = 1, nrep_proc
             call MPI_RECV(irep, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            if (irep == -1) then
+               rst_status = -1
+               return
+            endif
 
             !call MPI_RECV(mts(irep), MTS_SIZE, MPI_BYTE, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
             ! This does not work because mts%state is an array of pointers
@@ -502,6 +519,8 @@ contains
       use const_idx, only : RSTBLK
       integer, intent(in) :: itype_wanted
 
+      integer :: rank
+
       select case (itype_wanted)
       case(RSTBLK%STEP)
          print '(a)', 'Absence or invalid format of "STEP" block in restart file.'
@@ -513,11 +532,36 @@ contains
          print '(a)', 'Absence or invalid format of "VELO" block in restart file.'
       case(RSTBLK%ACCEL)
          print '(a)', 'Absence or invalid format of "ACCEL" block in restart file.'
+      case(RSTBLK%REPLICA)
+         print '(a)', 'Absence or invalid format of "REPLICA" block in restart file.'
+      case(RSTBLK%PRNG)
+         print '(a)', 'Absence or invalid format of "PRNG" block in restart file.'
+      case(RSTBLK%PRNGREP)
+         print '(a)', 'Absence or invalid format of "PRNGREP" block in restart file.'
       case default
-         continue
+         print '(a)', 'Absence or invalid format of unknown block in restart file.'
       endselect
+      flush(6)
 
-      error stop
+      if (itype_wanted == RSTBLK%PRNGREP) then
+#ifdef PAR_MPI
+         call MPI_BCAST(-1, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+#endif
+         rst_status = -1
+         return
+
+      else if (itype_wanted == RSTBLK%PRNG) then
+#ifdef PAR_MPI
+         do rank = 1, nprocs-1
+            call MPI_SEND(-1, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+         enddo
+#endif
+         rst_status = -1
+         return
+
+      else
+         call sis_abort()
+      endif
 
    endsubroutine sub_not_found
 

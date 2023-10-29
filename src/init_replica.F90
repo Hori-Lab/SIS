@@ -14,6 +14,7 @@ subroutine init_replica
 
    integer :: irep, grep
    integer :: ivar
+   integer :: rst_status
 #ifdef PAR_MPI
    integer :: istat
 #endif
@@ -91,7 +92,7 @@ subroutine init_replica
 #endif
 
       if (restarted) then
-         call read_rst(RSTBLK%REPLICA)
+         call read_rst(RSTBLK%REPLICA, rst_status)
          do grep = 1, nrep_all
             print '(a,i5,a,i5)', '# Replica ', grep, ', label = ', rep2lab(grep)
          enddo

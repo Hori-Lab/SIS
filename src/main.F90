@@ -20,6 +20,7 @@ program sis
    integer :: nargs
    integer :: istat
    integer :: irep
+   integer :: rst_status
    logical :: stat
 
    call init_const()
@@ -91,7 +92,7 @@ program sis
       allocate(xyz(3, nmp, nrep_proc))
 
       if (restarted) then
-         call read_rst(RSTBLK%XYZ)
+         call read_rst(RSTBLK%XYZ, rst_status)
       else
          call init_structure()
       endif

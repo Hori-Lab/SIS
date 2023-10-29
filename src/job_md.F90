@@ -29,6 +29,7 @@ subroutine job_md()
 
    integer :: i, irep, imp, icol
    integer :: grep, rep_label
+   integer :: rst_status
    real(PREC) :: tK
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp, nrep_proc)
@@ -112,8 +113,8 @@ subroutine job_md()
    !!! set up the initial state
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (restarted) then
-      call read_rst(RSTBLK%VELO)
-      call read_rst(RSTBLK%ACCEL)
+      call read_rst(RSTBLK%VELO, rst_status)
+      call read_rst(RSTBLK%ACCEL, rst_status)
 
    else
 
@@ -165,7 +166,7 @@ subroutine job_md()
    xyz_move(:,:,:) = 0.0e0_PREC
 
    if (restarted) then
-      call read_rst(RSTBLK%STEP)
+      call read_rst(RSTBLK%STEP, rst_status)
    else
       istep = 0_INT64
    endif
@@ -179,7 +180,7 @@ subroutine job_md()
          opt_anneal = 0
 
       else if (restarted) then
-         call read_rst(RSTBLK%ANNEAL)
+         call read_rst(RSTBLK%ANNEAL, rst_status)
 
       endif
 
