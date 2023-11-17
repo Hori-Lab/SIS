@@ -180,6 +180,8 @@ no_charge = [1, 27]
 length_per_charge = 4.38178046
     # Paremeter in ion-condensation theory in Angstrom.
 
+exclude_covalent_bond_pairs = true
+    # If true, no electrostatic interaction between covalent-bond pairs (i)-(i+1). (default)
 
 [Progress]
     # (optional)

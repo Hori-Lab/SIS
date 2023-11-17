@@ -8,7 +8,8 @@ subroutine neighbor_list(irep)
    use var_potential, only : wca_sigma, nwca, nwca_max, wca_mp, &
                              bp_cutoff_dist, bp_mp, bp_coef, nbp, nbp_max, bp_map, &
                              ele_cutoff_type, ele_cutoff, ele_cutoff_inp, &
-                             nele, nele_max, ele_mp, flg_ele, bp3_dH, bp3_dS, bp3_map
+                             nele, nele_max, ele_mp, flg_ele, ele_exclude_covalent_bond_pairs, &
+                             bp3_dH, bp3_dS, bp3_map
    use var_replica, only : nrep_proc
 
    implicit none
@@ -17,6 +18,7 @@ subroutine neighbor_list(irep)
 
    integer :: ichain, jchain, i, imp, j, jmp, j_start
    integer :: iwca, ibp, iele
+   logical :: flg_add
    real(PREC) :: d2, v(3)
    real(PREC) :: wca_nl_cut2, bp_nl_cut2, ele_nl_cut2
 
@@ -127,14 +129,25 @@ subroutine neighbor_list(irep)
 
                   if (has_charge(imp) .and. has_charge(jmp)) then
 
-                     iele = iele + 1
-                     if (iele > nele_max) then
-                        call reallocate_ele_mp()
+                     flg_add = .True.
+                     if (ele_exclude_covalent_bond_pairs) then
+                        if (ichain == jchain) then
+                           if (j == i+1) then
+                              flg_add = .False.
+                           endif
+                        endif
                      endif
 
-                     ele_mp(1, iele, irep) = imp
-                     ele_mp(2, iele, irep) = jmp
-                     !ele_coef(iele) = charge(i) * charge(j)
+                     if (flg_add) then
+                        iele = iele + 1
+                        if (iele > nele_max) then
+                           call reallocate_ele_mp()
+                        endif
+
+                        ele_mp(1, iele, irep) = imp
+                        ele_mp(2, iele, irep) = jmp
+                        !ele_coef(iele) = charge(i) * charge(j)
+                     endif
                   endif
                endif
 

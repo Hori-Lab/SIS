@@ -519,7 +519,9 @@ contains
       use const_idx, only : RSTBLK
       integer, intent(in) :: itype_wanted
 
+#ifdef PAR_MPI
       integer :: rank
+#endif
 
       select case (itype_wanted)
       case(RSTBLK%STEP)

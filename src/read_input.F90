@@ -19,7 +19,7 @@ subroutine read_input(cfilepath)
                          flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, stop_wall_time_sec, nstep_check_stop, fix_com_origin, &
                          ionic_strength, length_per_charge, nstep_bp_MC
-   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
+   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps
    use var_top, only : nrepeat, nchains, inp_no_charge, &
@@ -599,6 +599,16 @@ subroutine read_input(cfilepath)
                endif
             enddo
          endif
+
+         !----------------- exclude_covalent_bond_pairs -----------------
+         ! (optional) true / false
+         call get_value(group, "exclude_covalent_bond_pairs", ele_exclude_covalent_bond_pairs, .True., stat=istat, origin=origin)
+
+         if (istat /= 0) then
+            print '(a)', context%report("invalid ele_exclude_covalent_bond_pairs  in [Electrostatic].", origin, "expected either true or false.")
+            call sis_abort()
+         endif
+
       endif
 
       !################# [PBC_box] #################
@@ -784,6 +794,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(ele_cutoff_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ele_cutoff_inp, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(length_per_charge, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(ele_exclude_covalent_bond_pairs, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    if (myrank == 0) then
       i = 0
@@ -904,6 +915,7 @@ subroutine read_input(cfilepath)
             print '(a, i8, 1x, i8)', '#         ', i, inp_no_charge(i)
          enddo
       endif
+      print '(a,l1)', '# Electrostatic, exclude_covalent_bond_pairs: ', ele_exclude_covalent_bond_pairs
       print '(a)', '#'
    endif
 
