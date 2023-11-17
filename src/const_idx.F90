@@ -65,8 +65,10 @@ module const_idx
       integer :: VELO
       integer :: ACCEL
       integer :: REPLICA
+      integer :: PRNG
+      integer :: PRNGREP
    endtype rst_block
-   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6)
+   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6,7,8)
 
    type replica_type
       integer :: TEMP

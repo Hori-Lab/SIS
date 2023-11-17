@@ -6,13 +6,15 @@ subroutine init_mts()
    use mt_stream
    use mt_kind_defs
    
-   use var_state, only : mts, mts_rep, rng_seed
+   use const_idx, only : RSTBLK
+   use var_state, only : mts, mts_rep, rng_seed, restarted
    use var_replica, only : irep2grep, nrep_proc, flg_replica
 
    implicit none
 
    integer :: irep, grep
    integer :: id_offset
+   integer :: rst_status
 
    print '(a)', 'Initialising MT stream.'
    flush(6)
@@ -44,4 +46,25 @@ subroutine init_mts()
    print '(a)', 'Done: Initialising MT stream.'
    print *
    flush(6)
+
+   if (restarted) then
+      print '(a)', 'Loading MT streams from the restart file.'
+
+      if (flg_replica) call read_rst(RSTBLK%PRNGREP, rst_status)
+
+      if (rst_status /= 0) then
+         print '(a)', '... Failed to load PRNGREP from the restart file. MT state from the given seed will be used.'
+      endif
+
+      call read_rst(RSTBLK%PRNG, rst_status)
+
+      if (rst_status /= 0) then
+         print '(a)', '... Failed to load PRNG from the restart file. MT states from the given seed will be used.'
+      endif
+
+      print '(a)', 'Done: Loading MT streams from the restart file.'
+      print *
+      flush(6)
+   endif
+
 endsubroutine init_mts

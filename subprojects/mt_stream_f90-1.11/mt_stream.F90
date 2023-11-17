@@ -122,7 +122,7 @@ module mt_stream
 ! Period = 2^(N*W-R)-1
 !======================================
   type mt_state
-    private
+    !private
     integer(INT32) :: i = -1         ! state vector index
     integer(INT32) :: stream_id = -1 ! stream ID
     integer(INT32) :: istatus = -1   ! initialization status

@@ -7,7 +7,7 @@ subroutine job_md()
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
    use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
-   use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp
+   use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp, flg_freeze, is_frozen
    use var_state, only : restarted, flg_bp_energy, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
@@ -29,6 +29,7 @@ subroutine job_md()
 
    integer :: i, irep, imp, icol
    integer :: grep, rep_label
+   integer :: rst_status
    real(PREC) :: tK
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp, nrep_proc)
@@ -53,9 +54,9 @@ subroutine job_md()
 
    ! Format in .out file
    if (flg_replica) then
-      write(out_fmt, '(a23,i2,a12)') '(i10, 1x, i4, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
+      write(out_fmt, '(a23,i2,a12)') '(i12, 1x, i4, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
    else
-      write(out_fmt, '(a15,i2,a12)') '(i10, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
+      write(out_fmt, '(a15,i2,a12)') '(i12, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
    endif
 
    allocate(mass(nmp))
@@ -65,14 +66,6 @@ subroutine job_md()
    allocate(energies(0:ENE%MAX, nrep_proc))
    allocate(Ekinetic(nrep_proc))
    !allocate(replica_energies(2, nrep_all))
-
-   ! set PBC box
-   if (flg_pbc) then
-      do irep = 1, nrep_proc
-         fdcd(irep)%flg_unitcell = .True.
-         fdcd(irep)%box(:) = pbc_box(:)
-      enddo
-   endif
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Set up constants for the dynamics
@@ -120,8 +113,8 @@ subroutine job_md()
    !!! set up the initial state
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    if (restarted) then
-      call read_rst(RSTBLK%VELO)
-      call read_rst(RSTBLK%ACCEL)
+      call read_rst(RSTBLK%VELO, rst_status)
+      call read_rst(RSTBLK%ACCEL, rst_status)
 
    else
 
@@ -173,7 +166,7 @@ subroutine job_md()
    xyz_move(:,:,:) = 0.0e0_PREC
 
    if (restarted) then
-      call read_rst(RSTBLK%STEP)
+      call read_rst(RSTBLK%STEP, rst_status)
    else
       istep = 0_INT64
    endif
@@ -187,7 +180,7 @@ subroutine job_md()
          opt_anneal = 0
 
       else if (restarted) then
-         call read_rst(RSTBLK%ANNEAL)
+         call read_rst(RSTBLK%ANNEAL, rst_status)
 
       endif
 
@@ -228,18 +221,24 @@ subroutine job_md()
       print '(a,i5,2a)', '# Opening dcd file for irep = ', irep, ', ', trim(cfile_dcd(irep))
       fdcd(irep) = file_dcd(hdl_dcd(irep), cfile_dcd(irep), DCD_OPEN_MODE%WRITE)
 
+      ! set PBC box
+      if (flg_pbc) then
+         fdcd(irep)%flg_unitcell = .True.
+         fdcd(irep)%box(:) = pbc_box(:)
+      endif
+
       call fdcd(irep)%write_header(nmp)
 
       ! .out file header
       if (flg_replica) then
-         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
-                                                   !1234567890 1234 123456 1234567890123 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe   (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
+                                                   !123456789012 1234 123456 1234567890123 1234567890123 1234567890123'
          write(hdl_out(irep), '(a)', advance='no') ' (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv     '
                                                    ! 1234567890123 1234567890123 1234567890123 1234567890123'
          icol = 10
       else
-         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
-                                                   !1234567890 123456 1234567890123 1234567890123 1234567890123'
+         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe   (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
+                                                   !123456789012 123456 1234567890123 1234567890123 1234567890123'
          write(hdl_out(irep), '(a)', advance='no') ' (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv      '
                                                    ! 1234567890123 1234567890123 1234567890123 1234567890123'
          icol = 9
@@ -261,13 +260,13 @@ subroutine job_md()
          ! Only STDOUT if restarted. No DCD output.
          print '(a)', '##### Energies at the beginning'
          if (flg_replica) then
-            print '(a)', '#(1)nframe (2)R (3)T   (4)Ekin       (5)Epot       '
-            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, rep_label, tK, Ekinetic(irep), energies(0, irep)
+            print '(a)', '#(1)nframe   (2)R (3)T   (4)Ekin       (5)Epot       '
+            print '(i12, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, rep_label, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          else
-            print '(a)', '#(1)nframe (2)T   (3)Ekin       (4)Epot       '
-            print '(i10, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
+            print '(a)', '#(1)nframe   (2)T   (3)Ekin       (4)Epot       '
+            print '(i12, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
             print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele      (11)Estage'
             print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
          endif
@@ -338,7 +337,9 @@ subroutine job_md()
             call neighbor_list(irep)
             xyz_move(:, :, irep) = 0.0e0_PREC
 
-            flg_bp_MC = .True.  ! Enforce MC after updating the neighbor list
+            if (nstep_bp_MC > 0) then
+               flg_bp_MC = .True.  ! Enforce MC after updating the neighbor list
+            endif
          endif
 
          call force(irep, forces(:,:))
@@ -382,6 +383,7 @@ subroutine job_md()
 
             dxyz(1:3) =  md_coef(3, imp) * velos(1:3, imp, irep)
             ! md_coef(3) = sqrt(b) h
+            !           (= 0 if frozen)
 
             xyz(1:3, imp, irep) = xyz(1:3, imp, irep) + dxyz(1:3)
             xyz_move(1:3, imp, irep) = xyz_move(1:3, imp, irep) + dxyz(1:3)
@@ -495,7 +497,7 @@ subroutine job_md()
             call neighbor_list(irep)
             xyz_move(:,:,irep) = 0.0e0_PREC
 
-            print '(a,i10,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
+            print '(a,i12,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
          endif
       endif
 
@@ -592,6 +594,10 @@ contains
             md_coef(2, imp) = c2 * dt / mass(imp)
             ! md_coef(3) = sqrt(b) h
             md_coef(3, imp) = c2 * dt
+
+            if (flg_freeze) then
+               if (is_frozen(imp)) md_coef(3, imp) = 0.0_PREC
+            endif
          enddo
 
          flg_first = .False.

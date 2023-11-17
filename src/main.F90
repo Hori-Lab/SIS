@@ -6,7 +6,7 @@ program sis
    use const_idx, only : ENE, JOBT, REPT, RSTBLK
    use var_potential, only : flg_ele
    use var_state, only : restarted, xyz, tempK, kT, job, opt_anneal, anneal_tempK
-   use var_top, only : nmp
+   use var_top, only : nmp, flg_freeze
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
                       hdl_out, hdl_bp, hdl_bpall, hdl_bpe
    use var_parallel, only : init_parallel, end_parallel
@@ -20,6 +20,7 @@ program sis
    integer :: nargs
    integer :: istat
    integer :: irep
+   integer :: rst_status
    logical :: stat
 
    call init_const()
@@ -91,7 +92,7 @@ program sis
       allocate(xyz(3, nmp, nrep_proc))
 
       if (restarted) then
-         call read_rst(RSTBLK%XYZ)
+         call read_rst(RSTBLK%XYZ, rst_status)
       else
          call init_structure()
       endif
@@ -108,6 +109,8 @@ program sis
 
    !! Allocation and initialisation of electrostatics
    if (flg_ele) call init_ele()
+
+   if (flg_freeze) call init_freeze()
 
    !! Construct pair lists of local potentials
    call list_local()

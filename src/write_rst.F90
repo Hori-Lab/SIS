@@ -1,9 +1,11 @@
 subroutine write_rst()
 
+   use mt_stream, only : save !, print (for debug)
+   use const, only : MTS_SIZE
    use const_idx, only : RSTBLK
    use var_io,    only : hdl_rst, cfile_rst
    use var_top, only : nmp
-   use var_state, only : istep, &
+   use var_state, only : istep, mts_rep, mts, &
                          opt_anneal, ianneal, &
                          xyz, velos, accels
    use var_replica, only : nrep_proc, nrep_all, rep2lab, irep2grep
@@ -91,6 +93,25 @@ subroutine write_rst()
       do imp = 1, nmp
          write(lunout) (accels(i,imp,irep),i=1,3) ! PREC
       enddo
+
+      ! PRNGREP, mts_rep for replica exchange
+      if (myrank == 0 .and. irep == 1) then
+         if (nrep_all > 1) then
+            write(lunout) RSTBLK%PRNGREP
+            nblock_size = MTS_SIZE
+            write(lunout) nblock_size
+            call save(mts_rep, lunout)
+            !call print(mts_rep)
+         endif
+      endif
+
+      ! PRNG, mts for the process
+      write(lunout) RSTBLK%PRNG
+      nblock_size = calc_size(1, 0, 0, 0) + MTS_SIZE
+      write(lunout) nblock_size
+      write(lunout) grep    ! M_INT
+      call save(mts(irep), lunout)
+      !call print(mts(irep))
 
       close(lunout)
 

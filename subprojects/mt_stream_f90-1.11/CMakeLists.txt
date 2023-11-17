@@ -5,7 +5,13 @@ project(
   DESCRIPTION "Multiple stream Mersenne Twister PRNG"
 )
 
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-invalid-boz")
+option(MT_USE_NORANGECHECK_INSTEAD_OF_ALLOWINVALIDBOZ "Use -fno-range-check instead of -fallow-invalid-boz in MT module" OFF)
+
+if (MT_USE_NORANGECHECK_INSTEAD_OF_ALLOWINVALIDBOZ)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
+else()
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-invalid-boz")
+endif()
 
 add_library("mt_stream-lib" STATIC mt_stream.F90 mt_kind_defs.F90 f_get_coeff.F90 gf2xe.F90 f_jump_coeff.F90)
 

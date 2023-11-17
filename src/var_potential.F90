@@ -98,6 +98,7 @@ module var_potential
 
    ! Electrostatic parameters
    logical, save :: flg_ele
+   logical, save :: ele_exclude_covalent_bond_pairs
    integer, save :: ele_cutoff_type
    real(PREC), save :: ele_cutoff_inp
    real(PREC), allocatable :: ele_cutoff(:)  ! (nrep_proc)

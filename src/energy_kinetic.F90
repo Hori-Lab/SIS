@@ -1,7 +1,7 @@
 subroutine energy_kinetic(irep, Ekinetic)
       
    use const
-   use var_top, only : nmp, mass
+   use var_top, only : nmp, mass, flg_freeze, is_frozen
    use var_state, only : velos
   
    implicit none
@@ -13,6 +13,12 @@ subroutine energy_kinetic(irep, Ekinetic)
    real(PREC) :: e_kin
 
    e_kin = 0.0e0_PREC
+
+   if (flg_freeze) then
+      do imp = 1, nmp
+         if (is_frozen(imp)) velos(:,imp,irep) = 0.0_PREC
+      enddo
+   endif
   
    !$omp parallel do reduction(+:e_kin)
    do imp = 1, nmp
