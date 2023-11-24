@@ -11,6 +11,11 @@ subroutine force_bp_limit_triplet(irep, forces)
    use var_potential, only : max_bp_per_nt, nbp, bp_cutoff_energy, bp_mp, bp_paras, bp_coef, &
                              basepair_parameters
    use var_replica, only : flg_repvar, rep2val, irep2grep
+#ifdef DUMPFORCE
+   use const_idx, only : ENE
+   use var_io, only : hdl_force
+   use var_state, only: flg_step_dump_force
+#endif
 
    implicit none
 
@@ -26,7 +31,7 @@ subroutine force_bp_limit_triplet(irep, forces)
    integer :: ntlist_excess(nmp)
    type(basepair_parameters) :: bpp
    real(PREC) :: tK, dG
-   real(PREC) :: u, pre, beta, ene, ratio, rnd
+   real(PREC) :: u, pre, beta, e, ratio, rnd
    real(PREC) :: d, cosine, dih
    real(PREC) :: f_i(3), f_j(3), f_k(3), f_l(3)
    real(PREC) :: v12(3), v13(3), v42(3), v15(3), v62(3)
@@ -34,6 +39,16 @@ subroutine force_bp_limit_triplet(irep, forces)
    real(PREC) :: d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262
    real(PREC) :: d1213over1212, d1242over1212, d1215over1212, d1262over1212
    real(PREC) :: m(3), n(3)
+#ifdef DUMPFORCE
+   real(PREC) :: force_save(3, 1:nmp)
+
+   if (flg_step_dump_force) then
+      !$omp master
+      force_save(:,:) = 0.0_PREC
+      !$omp end master
+      !$omp barrier
+   endif
+#endif
 
    !real(PREC) :: for_bp(3, 6, nbp)
    ! In this subroutine, for_bp will be used in more than one loop.
@@ -63,7 +78,7 @@ subroutine force_bp_limit_triplet(irep, forces)
    ! Wait until the master initializes the arrays
    !$omp barrier
 
-   !$omp do private(bpp, imp1, imp2, imp3, imp4, imp5, imp6, d, u, ene, pre, cosine, dih, &
+   !$omp do private(bpp, imp1, imp2, imp3, imp4, imp5, imp6, d, u, e, pre, cosine, dih, &
    !$omp&           f_i, f_j, f_k, f_l, v12, v13, v42, v15, v62, a12, m, n, &
    !$omp&           d1212, d1313, d4242, d1213, d1242, d1215, d1515, d6262, d1262, &
    !$omp&           d1213over1212, d1242over1212, d1215over1212, d1262over1212, &
@@ -215,14 +230,14 @@ subroutine force_bp_limit_triplet(irep, forces)
       for_bp(:, 5, ibp) = for_bp(:, 5, ibp) + f_l(:)
 
       !===== Total =====
-      !ene = bpp%U0 * bp_map_dG(imp1, imp2, irep) * exp(-u)
-      ene = bpp%U0 * dG * exp(-u)
+      !e = bpp%U0 * bp_map_dG(imp1, imp2, irep) * exp(-u)
+      e = bpp%U0 * dG * exp(-u)
 
-      if (ene <= bp_cutoff_energy) then
+      if (e <= bp_cutoff_energy) then
          bp_status(ibp, irep) = .True.
-         ene_bp(ibp, irep) = ene
+         ene_bp(ibp, irep) = e
 
-         for_bp(:, :, ibp) = ene * for_bp(:, :, ibp)
+         for_bp(:, :, ibp) = e * for_bp(:, :, ibp)
 
          !$omp atomic
          nt_bp_excess(imp1) = nt_bp_excess(imp1) + 1
@@ -326,11 +341,42 @@ subroutine force_bp_limit_triplet(irep, forces)
       forces(:, imp4) = forces(:, imp4) + for_bp(:, 4, ibp)
       forces(:, imp5) = forces(:, imp5) + for_bp(:, 5, ibp)
       forces(:, imp6) = forces(:, imp6) + for_bp(:, 6, ibp)
+#ifdef DUMPFORCE
+      if (flg_step_dump_force) then
+         do i = 1, 3
+            !$omp atomic update
+            force_save(i, imp1) = force_save(i, imp1) + for_bp(i, 1,ibp)
+            !$omp atomic update
+            force_save(i, imp2) = force_save(i, imp2) + for_bp(i, 2,ibp)
+            !$omp atomic update
+            force_save(i, imp3) = force_save(i, imp3) + for_bp(i, 3,ibp)
+            !$omp atomic update
+            force_save(i, imp4) = force_save(i, imp4) + for_bp(i, 4,ibp)
+            !$omp atomic update
+            force_save(i, imp5) = force_save(i, imp5) + for_bp(i, 5,ibp)
+            !$omp atomic update
+            force_save(i, imp6) = force_save(i, imp6) + for_bp(i, 6,ibp)
+         enddo
+      endif
+#endif
    end do
    !$omp end do nowait
 
    !$omp master
    flg_bp_energy = .True.
    !$omp end master
+
+
+#ifdef DUMPFORCE
+   if (flg_step_dump_force) then
+      !$omp barrier
+      !$omp master
+      do imp1 = 1, nmp
+         write(hdl_force(ENE%BP), '(3(1x,e10.4))', advance='no') force_save(1:3, imp1)
+      enddo
+      write(hdl_force(ENE%BP), '(a)') ''
+      !$omp end master
+   endif
+#endif
 
 end subroutine force_bp_limit_triplet

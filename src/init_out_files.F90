@@ -140,7 +140,7 @@ subroutine init_out_files
    hdl_force(ENE%STAGE) = iopen_hdl + 7
    iopen_hdl = iopen_hdl + 7
    open(hdl_force(ENE%BOND), file='force_bond.out', status='replace', action='write', form='formatted')
-   open(hdl_force(ENE%ANGL), file='force_angl..out', status='replace', action='write', form='formatted')
+   open(hdl_force(ENE%ANGL), file='force_angl.out', status='replace', action='write', form='formatted')
    open(hdl_force(ENE%DIHE), file='force_dihe.out', status='replace', action='write', form='formatted')
    open(hdl_force(ENE%BP), file='force_bp.out', status='replace', action='write', form='formatted')
    open(hdl_force(ENE%EXV), file='force_exv.out', status='replace', action='write', form='formatted')
