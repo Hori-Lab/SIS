@@ -49,7 +49,7 @@ subroutine force_bond(irep, forces)
             !$omp atomic update
             force_save(i, imp1) = force_save(i, imp1) - f(i)
             !$omp atomic update
-            force_save(i, imp2) = force_save(i, imp2) - f(i)
+            force_save(i, imp2) = force_save(i, imp2) + f(i)
          enddo
       endif
 #endif
@@ -58,14 +58,15 @@ subroutine force_bond(irep, forces)
 
 
 #ifdef DUMPFORCE
-   !$omp master
    if (flg_step_dump_force) then
+      !$omp barrier
+      !$omp master
       do imp1 = 1, nmp
          write(hdl_force(ENE%BOND), '(3(1x,e10.4))', advance='no') force_save(1:3, imp1)
       enddo
       write(hdl_force(ENE%BOND), '(a)') ''
+      !$omp end master
    endif
-   !$omp end master
 #endif
 
 end subroutine force_bond
