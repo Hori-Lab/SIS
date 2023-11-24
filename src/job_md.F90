@@ -24,6 +24,9 @@ subroutine job_md()
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
    use dcd, only : file_dcd, DCD_OPEN_MODE
+#ifdef DUMPFORCE
+   use var_state, only : flg_step_dump_force
+#endif
 
    implicit none
 
@@ -319,6 +322,11 @@ subroutine job_md()
          if (mod(istep, nstep_bp_MC) == 0) flg_bp_MC = .True.
       endif
 
+#ifdef DUMPFORCE
+      flg_step_dump_force = .False.
+      if (mod(istep-1, nstep_save) == 0) flg_step_dump_force = .True.
+#endif
+
       do irep = 1, nrep_proc
 
          d2max = 0.0e0_PREC
@@ -565,6 +573,15 @@ subroutine job_md()
       endif
 
    enddo  ! <--- Main loop for time integration
+
+#ifdef DUMPFORCE
+   if (mod(nstep, nstep_save) == 0) then
+      flg_step_dump_force = .True.
+      do irep = 1, nrep_proc
+         call force(irep, forces(:,:))
+      enddo
+   endif
+#endif
 
    do irep = 1, nrep_proc
       call fdcd(irep)%close()

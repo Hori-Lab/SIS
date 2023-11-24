@@ -35,7 +35,13 @@ if (BUILD_MPI)
     set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO   "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DPAR_MPI")
 endif (BUILD_MPI)
 
-
+# Option to dumping force data
+option(DUMPFORCE "Use DUMPFORCE option to output force data" OFF)
+if (DUMPFORCE)
+    set(CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -DDUMPFORCE")
+    set(CMAKE_Fortran_FLAGS_RELEASE   "${CMAKE_Fortran_FLAGS_RELEASE} -DDUMPFORCE")
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO   "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DDUMPFORCE")
+endif (DUMPFORCE)
 
 find_package(OpenMP)
 if (OPENMP_FOUND)

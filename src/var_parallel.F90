@@ -46,6 +46,13 @@ contains
       nprocs = 1
 #endif
 
+#ifdef DUMPFORCE
+      if (nprocs > 1) then
+         print *, 'Error: DUMPFORCE option cannot be used with MPI.'
+         call sis_abort()
+      endif
+#endif
+
       nthreads = 1
 !$    nthreads = omp_get_max_threads()
 
