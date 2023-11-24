@@ -172,7 +172,8 @@ contains
 
    subroutine print_program_info()
 
-      use var_parallel, only : myrank, nprocs, nthreads, ncores
+      use var_parallel, only : myrank, nprocs, nthreads, ncores, &
+                               MPI_VERSION, MPI_SUBVERSION
 
       character(len=40) :: githash, git
       character(len=8) :: date
@@ -186,10 +187,11 @@ contains
       git = githash()
 
       print '(a)', '############ Program information ############'
-      print '(a)', 'SIS model simulation code by Naoto Hori'
-      print '(a)', 'Source: https://github.com/naotohori/sis'
+      print '(a)', 'SIS model simulation code'
+      print '(a)', 'Authors: N. Hori, H.T. Vu, J.A. Robins'
+      print '(a)', 'Source: https://github.com/Hori-Lab/SIS'
       if (git(1:1) == '?') then
-         print '(a)', 'Version: 0.2'
+         print '(a)', 'Version: 2023.04'
       else
          print '(2a)', 'Git commit: ', git
       endif
@@ -201,9 +203,10 @@ contains
       print '(a,i6)', 'Number of cores: ', ncores
       print '(a,i6)', 'Number of OpenMP threads: ', nthreads
       print '(a,i6)', 'Number of MPI processes: ', nprocs
-      if (nprocs > 1) then
-         print '(a,i6)', 'MPI rank: ', myrank
-      endif
+#ifdef PAR_MPI
+      print '(a,i2,a,i2)', 'MPI version: ', MPI_VERSION, '.', MPI_SUBVERSION
+      print '(a,i6)', 'MPI rank: ', myrank
+#endif
       print '(a)', '#############################################'
       print *
 

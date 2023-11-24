@@ -81,7 +81,7 @@ subroutine read_input(cfilepath)
       ! (optional)
       call get_value(table, "title", cline)
       if (allocated(cline)) then
-         print '(2a)', '# title: ', trim(cline)
+         print '(2a)', '# Title: ', trim(cline)
          flush(6)
       endif
 
@@ -118,8 +118,6 @@ subroutine read_input(cfilepath)
          print '(a)', context%report('invalid type in [Job].', origin, "expected either DCD, CHECK_FORCE, or MD.")
          call sis_abort()
       endif
-      print '(3a,i3,a)', '# Job type: ', trim(cline), ' (type = ', job,')'
-      flush(6)
 
       !################# [Files] #################
       call get_value(table, "Files", group, requested=.False.)
@@ -161,7 +159,6 @@ subroutine read_input(cfilepath)
                print '(a)', context%report("invalid dcd file name in [Files.In]. Required when Job type = DCD.", origin)
                call sis_abort()
             endif
-
          endif
 
          call get_value(node, "pdb_ini", cfile_pdb_ini)
@@ -403,16 +400,13 @@ subroutine read_input(cfilepath)
          endif
          if (rdummy < 0.0) then
             stop_wall_time_sec = -1
-            print '(a,g15.8,a)', '# MD stop_wall_time_hour: ', rdummy, ' (wall time limit not set)'
          else
             stop_wall_time_sec = int(rdummy * 3600.0_PREC, kind=INT64)
-            print '(a,g15.8)', '# MD stop_wall_time_hour: ', rdummy
          endif
 
          nstep_check_stop = 100
          if (stop_wall_time_sec > 0) then
             call get_value(group, "nstep_check_stop", nstep_check_stop, int(100, kind=INT64), stat=istat, origin=origin)
-            print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
          endif
 
          !----------------- fix_com_origin -----------------
@@ -493,8 +487,6 @@ subroutine read_input(cfilepath)
          if (istat /= 0 .or. all(bp_model /= (/1, 3, 4, 5/))) then
             print '(a)', context%report("model is not specified in [Basepair].", origin, "expected either 1, 3, 4, or 5.")
             call sis_abort()
-         else
-            print '(a,i6)', '# Basepair, model: ', bp_model
          endif
 
          !----------------- nstep_MC -----------------
@@ -549,7 +541,6 @@ subroutine read_input(cfilepath)
             print '(a)', context%report("invalid ionic_strength in [Electrostatic].", origin, "expected a positive real value.")
             call sis_abort()
          endif
-         print '(a,g15.8)', '# Electrostatic, ionic strength: ', ionic_strength
 
          !----------------- cutoff_type -----------------
          ! How to specify the cutoff distance for electrostatic interactions.
@@ -572,7 +563,6 @@ subroutine read_input(cfilepath)
             print '(a)', context%report("invalid cutoff value in [Electrostatic].", origin, "expected a positive real value.")
             call sis_abort()
          endif
-         print '(a,g15.8)', '# Electrostatic, cutoff: ', ele_cutoff_inp
 
          !----------------- length_per_charge -----------------
          ! Paremeter in ion-condensation theory in Angstrom.
@@ -581,7 +571,6 @@ subroutine read_input(cfilepath)
             print '(a)', context%report("invalid length_per_charge value in [Electrostatic].", origin, "expected a positive real value.")
             call sis_abort()
          endif
-         print '(a,g15.8)', '# Electrostatic, length per charge: ', length_per_charge
 
          !----------------- no_charge -----------------
          ! (optional) array of positive integeres.
@@ -589,7 +578,6 @@ subroutine read_input(cfilepath)
          call get_value(group, "no_charge", array)
 
          if (len(array) > 0) then
-            print '(a)', "# Electrostatic, no charges on the following particles:"
             allocate(inp_no_charge(len(array)))
             do i = 1, len(array)
                call get_value(array, i, inp_no_charge(i), stat=istat, origin=origin)
@@ -841,24 +829,42 @@ subroutine read_input(cfilepath)
    endif
 
    if (job == JOBT%DCD) then
-      print '(a,i3,a)', '# job type: DCD (job = ', job,')'
+      print '(a,i3,a)', '# Job type: DCD (job = ', job,')'
    else if (job == JOBT%CHECK_FORCE) then
-      print '(a,i3,a)', '# job type: CHECK_FORCE (job = ', job,')'
+      print '(a,i3,a)', '# Job type: CHECK_FORCE (job = ', job,')'
    else if (job == JOBT%MD) then
-      print '(a,i3,a)', '# job type: MD (job = ', job,')'
+      print '(a,i3,a)', '# Job type: MD (job = ', job,')'
    endif
+   print '(a)', '#'
 
    if (flg_replica) then
       print '(a,i16)', '# Replica, nrep_temp: ', nrep(REPT%TEMP)
       print '(a,i16)', '# Replica, nstep_exchange: ', nstep_rep_exchange
       print '(a,i16)', '# Replica, nstep_save: ', nstep_rep_save
-      if (flg_exchange) then
-         print '(a)', '# Replica, exchange: True'
-      else
-         print '(a)', '# Replica, exchange: False'
-      endif
+      print '(a,L1)', '# Replica, exchange: ', flg_exchange
       print '(a)', '#'
    endif
+
+   print '(a,a)', '# Files.In, ff: ', trim(cfile_ff)
+   if (job == JOBT%DCD) then
+      print '(a,a)', '# Files.In, dcd: ', trim(cfile_dcd_in)
+   endif
+   if (flg_in_pdb) print '(a,a)', '# Files.In, pdb: ', trim(cfile_pdb_ini)
+   if (flg_in_xyz) print '(a,a)', '# Files.In, xyz: ', trim(cfile_xyz_ini)
+   if (flg_in_fasta) print '(a,a)', '# Files.In, fasta: ', trim(cfile_fasta_in)
+   if (flg_in_ct) print '(a,a)', '# Files.In, ct: ', trim(cfile_ct_in)
+   if (flg_in_bpseq) print '(a,a)', '# Files.In, bpseq: ', trim(cfile_bpseq_in)
+   if (myrank == 0) then
+      if (opt_anneal > 0) print '(a,a)', '# Files.In, anneal: ', trim(cfile_anneal_in)
+   endif
+   print '(a)', '#'
+
+   print '(a,a)', '# Files.Out, prefix: ', trim(cfile_prefix)
+   print '(a,L)', '# Files.Out, bpcoef: ', flg_out_bpcoef
+   print '(a,L)', '# Files.Out, bp: ', flg_out_bp
+   print '(a,L)', '# Files.Out, bpall: ', flg_out_bpall
+   print '(a,L)', '# Files.Out, bpe: ', flg_out_bpe
+   print '(a)', '#'
 
    print '(a,g15.8)', '# Condition, tempK: ', tempK
    print '(a,i16)', '# Condition, rng_seed: ', rng_seed
@@ -888,11 +894,13 @@ subroutine read_input(cfilepath)
       print '(a,g15.8,a)', '# MD stop_wall_time_hour: -1 (wall time limit not set)'
    else
       print '(a,g15.8)', '# MD stop_wall_time_hour: ', real(stop_wall_time_sec, kind=PREC) / 3600.0_PREC
+      print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
    endif
 
    print '(a,i5)', '# MD fix_com_origin: ', fix_com_origin
    print '(a)', '#'
 
+   print '(a,i6)', '# Basepair, model: ', bp_model
    print '(a,i6)', '# Basepair, nstep_MC: ', nstep_bp_MC
    print '(a,i6)', '# Basepair, max_bp_per_nt: ', max_bp_per_nt
    print '(a,i6)', '# Basepair, min_loop: ', bp_min_loop
