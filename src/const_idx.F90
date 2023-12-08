@@ -103,6 +103,15 @@ module const_idx
    type(nn_types), parameter :: NNT = nn_types(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, &
                                                16,17,18,19,20,21,21)
 
+   type nnend_types
+      integer :: AUonAU
+      integer :: AUonCG
+      integer :: AUonGU
+      integer :: GUonCG
+      integer :: GUonAU
+      integer :: GUonGU
+   endtype nnend_types
+   type(nnend_types), parameter :: NNENDT = nnend_types(1,2,3,4,5,6)
 
 contains
    function seqt2char(i) result(c)

@@ -2,12 +2,13 @@ subroutine init_bp()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const, only : PREC
-   use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt
+   use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt, NNENDT
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
    use var_potential, only : bp_model, bp_map, bp_min_loop, & !bp_map_dG, bp_map_0, &
                              bp_paras, bp_cutoff_energy, bp_cutoff_dist, bp3_map, &
-                             NN_dH, NN_dS, dH0, dS0, bp3_dH, bp3_dS
+                             NN_dH, NN_dS, dH0, dS0, bp3_dH, bp3_dS, &
+                             flg_NNend, NNend_dH, NNend_dS, dHend0, dSend0
    !use var_replica, only : nrep_proc
 
    implicit none
@@ -86,6 +87,77 @@ subroutine init_bp()
                            bp3_dH(h) = dH
                            bp3_dS(h) = dS * 1.0e-3_PREC
                         endif
+
+                        ! End effects
+                        if (flg_NNend) then
+                           ! u-v is not paired
+                           if (comp_wz .and. (.not. comp_uv)) then
+                              ! AU on AU/CG/GU
+                              if ((x == SEQT%A .and. y == SEQT%U) .or. (x == SEQT%U .and. y == SEQT%A)) then
+                                 if ((w == SEQT%A .and. z == SEQT%U) .or. (w == SEQT%U .and. z == SEQT%A)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%AUonAU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%AUonAU) - dSend0) * 1.0e-3_PREC
+                                 else if ((w == SEQT%G .and. z == SEQT%C) .or. (w == SEQT%C .and. z == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%AUonCG) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%AUonCG) - dSend0) * 1.0e-3_PREC
+                                 else if ((w == SEQT%G .and. z == SEQT%U) .or. (w == SEQT%U .and. z == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%AUonGU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%AUonGU) - dSend0) * 1.0e-3_PREC
+                                 else
+                                    print '(a)', 'logical error in init_bp'
+                                    call sis_abort()
+                                 endif
+
+                              ! GU on AU/CG/GU
+                              else if ((x == SEQT%G .and. y == SEQT%U) .or. (x == SEQT%U .and. y == SEQT%G)) then
+                                 if ((w == SEQT%A .and. z == SEQT%U) .or. (w == SEQT%U .and. z == SEQT%A)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%GUonAU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%GUonAU) - dSend0) * 1.0e-3_PREC
+                                 else if ((w == SEQT%G .and. z == SEQT%C) .or. (w == SEQT%C .and. z == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%GUonCG) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%GUonCG) - dSend0) * 1.0e-3_PREC
+                                 else if ((w == SEQT%G .and. z == SEQT%U) .or. (w == SEQT%U .and. z == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%GUonGU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%GUonGU) - dSend0) * 1.0e-3_PREC
+                                 else
+                                    print '(a)', 'logical error in init_bp'
+                                 endif
+                              endif
+
+                           ! w-z is not paired
+                           else if ((.not. comp_wz) .and. comp_uv) then
+                              ! AU on AU/CG/GU
+                              if ((x == SEQT%A .and. y == SEQT%U) .or. (x == SEQT%U .and. y == SEQT%A)) then
+                                 if ((u == SEQT%A .and. v == SEQT%U) .or. (u == SEQT%U .and. v == SEQT%A)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%AUonAU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%AUonAU) - dSend0) * 1.0e-3_PREC
+                                 else if ((u == SEQT%G .and. v == SEQT%C) .or. (u == SEQT%C .and. v == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%AUonCG) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%AUonCG) - dSend0) * 1.0e-3_PREC
+                                 else if ((u == SEQT%G .and. v == SEQT%U) .or. (u == SEQT%U .and. v == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%AUonGU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%AUonGU) - dSend0) * 1.0e-3_PREC
+                                 else
+                                    print '(a)', 'logical error in init_bp'
+                                 endif
+
+                              ! GU on AU/CG/GU
+                              else if ((x == SEQT%G .and. y == SEQT%U) .or. (x == SEQT%U .and. y == SEQT%G)) then
+                                 if ((u == SEQT%A .and. v == SEQT%U) .or. (u == SEQT%U .and. v == SEQT%A)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%GUonAU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%GUonAU) - dSend0) * 1.0e-3_PREC
+                                 else if ((u == SEQT%G .and. v == SEQT%C) .or. (u == SEQT%C .and. v == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%GUonCG) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%GUonCG) - dSend0) * 1.0e-3_PREC
+                                 else if ((u == SEQT%G .and. v == SEQT%U) .or. (u == SEQT%U .and. v == SEQT%G)) then
+                                    bp3_dH(h) = bp3_dH(h) + NNend_dH(NNENDT%GUonGU) - dHend0
+                                    bp3_dS(h) = bp3_dS(h) + (NNend_dS(NNENDT%GUonGU) - dSend0) * 1.0e-3_PREC
+                                 else
+                                    print '(a)', 'logical error in init_bp'
+                                 endif
+                              endif
+                           endif
+                        endif ! flg_NNend
 
                      enddo
                   enddo

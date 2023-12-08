@@ -29,8 +29,11 @@ module var_potential
 
    ! Nearest neighbour parameters
    real(PREC), allocatable :: NN_dG(:)  ! (1:NNT%MAX) if bp_model == 4
-   real(PREC), allocatable :: NN_dH(:)  ! (1:NNT%MAX) if bp_model == 4
-   real(PREC), allocatable :: NN_dS(:)  ! (1:NNT%MAX) if bp_model == 4
+   real(PREC), allocatable :: NN_dH(:)  ! (1:NNT%MAX) if bp_model == 5
+   real(PREC), allocatable :: NN_dS(:)  ! (1:NNT%MAX) if bp_model == 5
+   logical, save :: flg_NNend
+   real(PREC), allocatable :: NNend_dH(:)  ! (1:6) if flg_NNend
+   real(PREC), allocatable :: NNend_dS(:)  ! (1:6) if flg_NNend
 
    ! Basepair
    integer,    save :: max_bp_per_nt
@@ -47,9 +50,11 @@ module var_potential
       ! = 0 (Default): No sequence dependence. Only U0_GC, U0_AU, U0_GU are required.
       ! = 1: Sequence dependent parameters. All possible combinations of trinucleotide-dimer are required.
 
-   real(PREC) :: coef_dG
-   real(PREC) :: dH0
-   real(PREC) :: dS0
+   real(PREC), save :: coef_dG
+   real(PREC), save :: dH0
+   real(PREC), save :: dS0
+   real(PREC), save :: dHend0
+   real(PREC), save :: dSend0
 
    real(PREC) :: bp3_dH(1:468)
    real(PREC) :: bp3_dS(1:468)
