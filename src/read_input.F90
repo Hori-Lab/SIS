@@ -22,7 +22,7 @@ subroutine read_input(cfilepath)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps
-   use var_top, only : nrepeat, nchains, inp_no_charge, &
+   use var_top, only : nrepeat, nchains, inp_no_charge, inp_no_basepair,&
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
                            replica_values, flg_replica, flg_repvar
@@ -517,12 +517,29 @@ subroutine read_input(cfilepath)
             bp_min_loop = 3    ! default
          endif
 
+         !----------------- no_basepair -----------------
+         ! (optional) array of positive integeres.
+         ! Nucleotides that do not participate in base pairs.
+         call get_value(group, "no_basepair", array)
+
+         if (len(array) > 0) then
+            allocate(inp_no_basepair(len(array)))
+            do i = 1, len(array)
+               call get_value(array, i, inp_no_basepair(i), stat=istat, origin=origin)
+               if (istat /= 0 .or. inp_no_basepair(i) < 1) then
+                  print '(a)', context%report("invalid particle ID in no_basepair, [Basepair].", origin, "expected a positive integer.")
+                  call sis_abort()
+               endif
+            enddo
+         endif
+
       else
          print '(a)', '# [Basepair] section does not exist in the input file. Default values are used.'
          bp_model = 5
          nstep_bp_MC = 1
          max_bp_per_nt = 1  ! default
          bp_min_loop = 3    ! default
+
       endif
 
       !################# [Electrostatic] #################
@@ -777,6 +794,21 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(max_bp_per_nt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(bp_min_loop, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
+   if (myrank == 0) then
+      i = 0
+      if (allocated(inp_no_basepair)) then
+         i = size(inp_no_basepair)
+      endif
+   endif
+   call MPI_BCAST(i, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+
+   if (i > 0) then
+      if (myrank /= 0) then
+         allocate(inp_no_basepair(i))
+      endif
+      call MPI_BCAST(inp_no_basepair, i, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   endif
+
    call MPI_BCAST(flg_ele, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ionic_strength, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ele_cutoff_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -904,6 +936,12 @@ subroutine read_input(cfilepath)
    print '(a,i6)', '# Basepair, nstep_MC: ', nstep_bp_MC
    print '(a,i6)', '# Basepair, max_bp_per_nt: ', max_bp_per_nt
    print '(a,i6)', '# Basepair, min_loop: ', bp_min_loop
+   if (allocated(inp_no_basepair)) then
+      print '(a)', "# Basepair, no basepair on the following particles:"
+      do i = 1, size(inp_no_basepair)
+         print '(a, i8, 1x, i8)', '#         ', i, inp_no_basepair(i)
+      enddo
+   endif
    print '(a)', '#'
 
    if (flg_ele) then

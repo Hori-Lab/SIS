@@ -4,7 +4,7 @@ subroutine init_bp()
    use const, only : PREC
    use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt, NNENDT
    use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
-   use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
+   use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain, inp_no_basepair
    use var_potential, only : bp_model, bp_map, bp_min_loop, & !bp_map_dG, bp_map_0, &
                              bp_paras, bp_cutoff_energy, bp_cutoff_dist, bp3_map, &
                              NN_dH, NN_dS, dH0, dS0, bp3_dH, bp3_dS, &
@@ -22,7 +22,7 @@ subroutine init_bp()
    real(PREC) :: dH, dS
    character(len=1) :: nt
    logical :: comp_wz, comp_uv
-   integer :: bp3_hash(1:4**6)   ! 4**6 = 4096
+   integer :: bp3_hash(0:4**6)   ! 4**6 = 4096   bp3_hash(0) = 0
 
    allocate(bp_map(nmp, nmp))
    allocate(bp3_map(nmp, nmp))
@@ -467,6 +467,15 @@ subroutine init_bp()
    endif
 
    !call set_bp_map()
+
+
+   !! Delete specific bps
+   if (allocated(inp_no_basepair)) then
+      do i = 1, size(inp_no_basepair)
+         bp3_map(inp_no_basepair(i), :                 ) = 0
+         bp3_map(:,                  inp_no_basepair(i)) = 0
+      enddo
+   endif
 
 
    ! Calcuate BP cutoff

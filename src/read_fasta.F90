@@ -80,7 +80,9 @@ subroutine read_fasta()
 
             nlen = len(trim(cline))
             do i = 1, nlen
-               if (char2seqt(cline(i:i)) /= SEQT%UNDEF) then
+               if (char2seqt(cline(i:i)) == SEQT%UNDEF) then
+                  print '(a)', 'WARNING: undefined letter ' // cline(i:i) // ' in the FASTA file, '//trim(cfile_fasta_in)
+               else
                   n = n + 1
                endif
             enddo

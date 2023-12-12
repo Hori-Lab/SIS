@@ -155,6 +155,8 @@ max_bp_per_nt = 1
     # Maximum number of base pairs simultaneously formed by one nucleotide.
     # The value has to be positive integer. Only valid when nstep_MC > 0.
 
+no_basepair = [3, 27]
+
 [Electrostatic]
     # (optional)
     # If this section is given, electrostatic interaction is enabled.

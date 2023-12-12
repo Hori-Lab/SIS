@@ -19,6 +19,8 @@ module var_top
    integer, allocatable :: seq(:,:)
    real(PREC), allocatable :: mass(:)
 
+   integer, allocatable :: inp_no_basepair(:)
+
    integer, allocatable :: inp_no_charge(:)
    logical, allocatable :: has_charge(:)
    !real(PREC), allocatable :: charge(:,:)  ! (nmp, nrep_all)

@@ -24,9 +24,11 @@ module const_idx
       integer :: U   ! 1
       integer :: G   ! 2
       integer :: C   ! 3
+      integer :: N   ! 4
       integer :: MAX
    endtype seq_types
-   type(seq_types), parameter :: SEQT = seq_types(-1,0,1,2,3,3)
+   type(seq_types), parameter :: SEQT = seq_types(-1,0,1,2,3,4,4)
+   !! Note: A,U,G,C have to be 0-3 as these numbers are used as bp3_hash in init_bp.F90.
 
    type job_types
       integer :: DEBUG       ! 0
@@ -150,6 +152,9 @@ contains
 
       else if (c == 'C' .or. c == 'c') then
          i = SEQT%C
+
+      else if (c == 'N' .or. c == 'n') then
+         i = SEQT%N
 
       else
          i = SEQT%UNDEF
