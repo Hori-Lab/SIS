@@ -203,3 +203,8 @@ epsilon = 1.2
 
 [Freeze]
 id_ranges = [[1, 5], [10,14]]
+
+[Pulling]
+id_pairs = [[1, 5],]
+forces_pN = [[5.0, 0.0, 0.0],]
+

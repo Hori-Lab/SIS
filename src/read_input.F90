@@ -21,7 +21,8 @@ subroutine read_input(cfilepath)
                          ionic_strength, length_per_charge, nstep_bp_MC
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
-                             flg_stage, stage_sigma, stage_eps
+                             flg_stage, stage_sigma, stage_eps, &
+                             flg_pull, pull_CF_pairs, pull_CF_forces
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
@@ -711,6 +712,89 @@ subroutine read_input(cfilepath)
          end if
       endif
 
+      !################# [Pulling] #################
+      ! (optional)
+      flg_pull = .False.
+      call get_value(table, "Pulling", group, requested=.False.)
+
+      if (associated(group)) then
+         flg_pull = .True.
+
+         call get_value(group, "id_pairs", array, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("invalid id_pairs value in [Pulling].", origin, "expected an array of integer pairs.")
+            call sis_abort()
+         endif
+         if (associated(array)) then
+            len_array = len(array)
+
+            if (len_array > 0) then
+               allocate(pull_CF_pairs(2,len_array))
+               do i = 1, len_array
+                  call get_value(array, i, nested_array)
+                  if (associated(nested_array)) then
+                     if (len(nested_array) /= 2) then
+                        print '(a)', context%report("invalid id_pairs value in [Pulling].", &
+                                     origin, "array(s) have to have two elements each.")
+                        call sis_abort()
+                     endif
+                     call get_value(nested_array, 1, pull_CF_pairs(1,i))
+                     call get_value(nested_array, 2, pull_CF_pairs(2,i))
+                     if ((pull_CF_pairs(1,i) < 1) .or. (pull_CF_pairs(2,i) < 1)) then
+                        print '(a)', context%report("invalid id_pairs value in [Pulling].", &
+                           origin, "expected an array of integer pairs.")
+                        call sis_abort()
+                     endif
+                  else
+                     print '(a)', context%report("invalid id_pairs value in [Pulling].", &
+                                  origin, "expected an array of integer pairs.")
+                     call sis_abort()
+                  endif
+               enddo
+            else
+               flg_pull = .False.
+            endif
+         else
+            flg_pull = .False.
+         endif
+
+         ! Forces
+         if (flg_pull) then
+            call get_value(group, "forces_pN", array, stat=istat, origin=origin)
+            if (istat /= 0) then
+               print '(a)', context%report("invalid forces_pN in [Pulling].", origin, "expected an array of vectors.")
+               call sis_abort()
+            endif
+         endif
+         if (associated(array)) then
+            if (len(array) /= len_array) then
+               print '(a)', context%report("invalid forces_pN in [Pulling].", &
+                            origin, "the array has to have the same numbe of vectors (fx, fy, yz) as id_pairs.")
+               call sis_abort()
+            endif
+
+            allocate(pull_CF_forces(3, len_array))
+
+            do i = 1, len_array
+               call get_value(array, i, nested_array)
+               if (associated(nested_array)) then
+                  if (len(nested_array) /= 3) then
+                     print '(a)', context%report("invalid forces_pN vector in [Pulling].", &
+                                  origin, "array(s) have to be a vector (fx, fy, fz).")
+                     call sis_abort()
+                  endif
+                  call get_value(nested_array, 1, pull_CF_forces(1,i))
+                  call get_value(nested_array, 2, pull_CF_forces(2,i))
+                  call get_value(nested_array, 3, pull_CF_forces(3,i))
+               else
+                  print '(a)', context%report("invalid forces_pN vector in [Pulling].", &
+                               origin, "array(s) have to be a vector (fx, fy, fz).")
+                  call sis_abort()
+               endif
+            enddo
+         endif
+      endif
+
       call table%destroy
 
    endif ! myrank == 0
@@ -816,6 +900,12 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_freeze, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_freeze) then
       call MPI_BCAST(frz_ranges, size(frz_ranges), MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   endif
+
+   call MPI_BCAST(flg_pull, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   if (flg_pull) then
+      call MPI_BCAST(pull_CF_pairs, size(pull_CF_pairs), MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(pull_CF_forces, size(pull_CF_forces), PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
 #endif
@@ -958,6 +1048,17 @@ subroutine read_input(cfilepath)
       print '(a,i5)', '# Freeze, number of specified ranges:', size(frz_ranges, 2)
       do i = 1, size(frz_ranges,2)
          print '(a,i5,a,i5,x,i5)', '# Freeze, range(',i,'): ', frz_ranges(1,i), frz_ranges(2,i)
+      enddo
+      print '(a)', '#'
+   endif
+
+   if (flg_pull) then
+      print '(a)', '# Pulling: On'
+      print '(a,i5)', '# Pulling, number of pairs:', size(pull_CF_pairs, 2)
+      print '(a)', '# Pulling, mode pair  imp1  imp2   fx      fy      fz'
+      do i = 1, size(pull_CF_pairs,2)
+         print '(a,i3,x,i5,x,i5,3(x,f7.2))', '# Pulling,  CF  ',i, pull_CF_pairs(1,i), pull_CF_pairs(2,i),&
+               pull_CF_forces(1,i), pull_CF_forces(2,i), pull_CF_forces(3,i)
       enddo
       print '(a)', '#'
    endif

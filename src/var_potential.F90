@@ -114,5 +114,11 @@ module var_potential
    real(PREC), save :: stage_sigma ! = wca_sigma = 10.0 Angstrom for now
    real(PREC), save :: stage_eps ! = 1.2 kcal/mol
 
+   ! Pulling
+   logical, save :: flg_pull
+   integer, allocatable :: pull_CF_pairs(:,:)
+   real(PREC), allocatable :: pull_CF_forces(:,:)
+
+
 
 end module var_potential
