@@ -19,7 +19,7 @@ subroutine job_md()
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
-                             ele_cutoff, flg_stage, flg_ele
+                             ele_cutoff, flg_stage, flg_ele, flg_pull
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -245,34 +245,42 @@ subroutine job_md()
       endif
       if (flg_ele) then
          icol = icol + 1
-         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Eele     '
                                                         ! 1   23     4567890123
+         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Eele     '
       endif
       if (flg_stage) then
          icol = icol + 1
          write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Estage   '
-                                                        ! 1   23     4567890123
+      endif
+      if (flg_pull) then
+         icol = icol + 1
+         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Epull    '
       endif
       write(hdl_out(irep), '(a)') ''
 
-      ! Output initial structure
-      if (restarted) then
-         ! Only STDOUT if restarted. No DCD output.
-         print '(a)', '##### Energies at the beginning'
-         if (flg_replica) then
-            print '(a)', '#(1)nframe   (2)R (3)T   (4)Ekin       (5)Epot       '
-            print '(i12, 1x, i4, 1x, f6.2, 2(1x,g13.6))', istep, rep_label, tK, Ekinetic(irep), energies(0, irep)
-            print '(a)', '(6)Ebond      (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv      (11)Eele      (11)Estage'
-            print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
-         else
-            print '(a)', '#(1)nframe   (2)T   (3)Ekin       (4)Epot       '
-            print '(i12, 1x, f6.2, 2(1x,g13.6))', istep, tK, Ekinetic(irep), energies(0, irep)
-            print '(a)', '(5)Ebond      (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv       (10)Eele      (11)Estage'
-            print '(7(1x,g13.6))', (energies(i, irep), i=1, ENE%MAX)
-         endif
-         print *
+      ! Output initial states
 
-      else
+      ! STDOUT
+      print '(a)', '##### Initial state'
+      print '(a, i12)', 'Step ', istep
+      if (flg_replica) then
+         print '(a, i4)', 'Replica ID (in-process) ', irep
+         print '(a, i4)', 'Replica ID (global) ', grep
+         print '(a, i4)', 'Replica label ', rep_label
+      endif
+      print '(a, f6.2)',  'Temperature  ', tK
+      print '(a, g13.6)', 'E_kinetic ', Ekinetic(irep)
+      print '(a, g13.6)', 'E_total   ', energies(ENE%TOTAL, irep)
+      print '(a, g13.6)', 'E_bond    ', energies(ENE%BOND, irep)
+      print '(a, g13.6)', 'E_angl    ', energies(ENE%ANGL, irep)
+      print '(a, g13.6)', 'E_dih     ', energies(ENE%ANGL, irep)
+      print '(a, g13.6)', 'E_bp      ', energies(ENE%BP, irep)
+      if (flg_ele  ) print '(a, g13.6)', 'E_ele     ', energies(ENE%ELE, irep)
+      if (flg_stage) print '(a, g13.6)', 'E_stage   ', energies(ENE%STAGE, irep)
+      if (flg_pull ) print '(a, g13.6)', 'E_pull    ', energies(ENE%PULL, irep)
+      print *
+
+      if (.not. restarted) then
          ! At istep = 0 (not restarted), write both .out and DCD
          if (flg_replica) then
             write(hdl_out(irep), out_fmt, advance='no') istep, rep_label, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%EXV)
@@ -284,6 +292,9 @@ subroutine job_md()
          endif
          if (flg_stage) then
             write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
+         endif
+         if (flg_pull) then
+            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%PULL, irep)
          endif
          write(hdl_out(irep), '(a)') ''
 
@@ -439,7 +450,10 @@ subroutine job_md()
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%ELE, irep)
             endif
             if (flg_stage) then
-               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%ELE, irep)
+               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
+            endif
+            if (flg_pull) then
+               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%PULL, irep)
             endif
             write(hdl_out(irep), '(a)') ''
 #ifdef OUTFLUSH

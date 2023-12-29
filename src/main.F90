@@ -172,9 +172,9 @@ contains
 
    subroutine print_program_info()
 
-      use var_parallel, only : myrank, nprocs, nthreads, ncores
+      use var_parallel, only : nprocs, nthreads, ncores
 #ifdef PAR_MPI
-      use var_parallel, only : MPI_VERSION, MPI_SUBVERSION
+      use var_parallel, only : myrank, MPI_VERSION, MPI_SUBVERSION
 #endif
 
       character(len=40) :: githash, git

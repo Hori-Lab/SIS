@@ -4,7 +4,8 @@ subroutine force(irep, forces)
    use const
    use const_idx, only : ENE
    use var_parallel, only : nthreads
-   use var_potential, only : flg_stage, flg_angl_ReB, flg_ele, flg_dih_cos, flg_dih_exp, bp_model
+   use var_potential, only : flg_angl_ReB, flg_ele, flg_dih_cos, flg_dih_exp, bp_model, &
+                             flg_stage, flg_pull
    use var_state, only: flg_bp_MC
    use var_top, only : nmp
 
@@ -59,6 +60,7 @@ subroutine force(irep, forces)
    if (flg_ele) call force_ele_DH(irep, forces_t(1,1,tn))
 
    if (flg_stage) call force_stage(irep, forces_t(1,1,tn))
+   if (flg_pull) call force_pull(irep, forces_t(1,1,tn))
 
 !$omp end parallel
 

@@ -4,7 +4,8 @@ subroutine read_input(cfilepath)
    use tomlf
 
    use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA
-   use const_phys, only : BOLTZ_KCAL_MOL, INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
+   use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
+                          INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
    use const_idx, only : JOBT, INTGRT, REPT, MAX_REP_PER_DIM
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
@@ -22,7 +23,7 @@ subroutine read_input(cfilepath)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
-                             flg_pull, pull_CF_pairs, pull_CF_forces
+                             flg_pull, npull_CF, pull_CF_pairs, pull_CF_forces
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
@@ -726,11 +727,11 @@ subroutine read_input(cfilepath)
             call sis_abort()
          endif
          if (associated(array)) then
-            len_array = len(array)
+            npull_CF = len(array)
 
-            if (len_array > 0) then
-               allocate(pull_CF_pairs(2,len_array))
-               do i = 1, len_array
+            if (npull_CF > 0) then
+               allocate(pull_CF_pairs(2,npull_CF))
+               do i = 1, npull_CF
                   call get_value(array, i, nested_array)
                   if (associated(nested_array)) then
                      if (len(nested_array) /= 2) then
@@ -767,15 +768,15 @@ subroutine read_input(cfilepath)
             endif
          endif
          if (associated(array)) then
-            if (len(array) /= len_array) then
+            if (len(array) /= npull_CF) then
                print '(a)', context%report("invalid forces_pN in [Pulling].", &
                             origin, "the array has to have the same numbe of vectors (fx, fy, yz) as id_pairs.")
                call sis_abort()
             endif
 
-            allocate(pull_CF_forces(3, len_array))
+            allocate(pull_CF_forces(3, npull_CF))
 
-            do i = 1, len_array
+            do i = 1, npull_CF
                call get_value(array, i, nested_array)
                if (associated(nested_array)) then
                   if (len(nested_array) /= 3) then
@@ -786,12 +787,16 @@ subroutine read_input(cfilepath)
                   call get_value(nested_array, 1, pull_CF_forces(1,i))
                   call get_value(nested_array, 2, pull_CF_forces(2,i))
                   call get_value(nested_array, 3, pull_CF_forces(3,i))
+
                else
                   print '(a)', context%report("invalid forces_pN vector in [Pulling].", &
                                origin, "array(s) have to be a vector (fx, fy, fz).")
                   call sis_abort()
                endif
             enddo
+
+            ! Convert the unit from pN to kcal/mol/A
+            pull_CF_forces(:,:) = pull_CF_forces(:,:) * (JOUL2KCAL_MOL * 1.0e-22)
          endif
       endif
 
@@ -1054,11 +1059,12 @@ subroutine read_input(cfilepath)
 
    if (flg_pull) then
       print '(a)', '# Pulling: On'
-      print '(a,i5)', '# Pulling, number of pairs:', size(pull_CF_pairs, 2)
+      print '(a,i5)', '# Pulling, number of pairs:', npull_CF
       print '(a)', '# Pulling, mode pair  imp1  imp2   fx      fy      fz'
-      do i = 1, size(pull_CF_pairs,2)
+      do i = 1, npull_CF
          print '(a,i3,x,i5,x,i5,3(x,f7.2))', '# Pulling,  CF  ',i, pull_CF_pairs(1,i), pull_CF_pairs(2,i),&
-               pull_CF_forces(1,i), pull_CF_forces(2,i), pull_CF_forces(3,i)
+               pull_CF_forces(1,i) / (JOUL2KCAL_MOL*1.0e-22), pull_CF_forces(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
+               pull_CF_forces(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
       enddo
       print '(a)', '#'
    endif

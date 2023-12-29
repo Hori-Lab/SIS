@@ -116,6 +116,7 @@ module var_potential
 
    ! Pulling
    logical, save :: flg_pull
+   integer, save :: npull_CF
    integer, allocatable :: pull_CF_pairs(:,:)
    real(PREC), allocatable :: pull_CF_forces(:,:)
 
