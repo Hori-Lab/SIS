@@ -120,6 +120,9 @@ module var_potential
    integer, allocatable :: pull_CF_pairs(:,:)
    real(PREC), allocatable :: pull_CF_forces(:,:)
 
+   ! Bias_SS
+   logical, save :: flg_bias_ss
+   real(PREC), save :: bias_ss_force
 
 
 end module var_potential

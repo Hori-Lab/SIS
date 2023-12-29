@@ -9,7 +9,8 @@ subroutine neighbor_list(irep)
                              bp_cutoff_dist, bp_mp, bp_coef, nbp, nbp_max, bp_map, &
                              ele_cutoff_type, ele_cutoff, ele_cutoff_inp, &
                              nele, nele_max, ele_mp, flg_ele, ele_exclude_covalent_bond_pairs, &
-                             bp3_dH, bp3_dS, bp3_map
+                             bp3_dH, bp3_dS, bp3_map, &
+                             flg_bias_ss
    use var_replica, only : nrep_proc
 
    implicit none
@@ -83,7 +84,11 @@ subroutine neighbor_list(irep)
 
    ! Cutoff
    wca_nl_cut2 = (wca_sigma + nl_margin) ** 2
-   bp_nl_cut2 = (bp_cutoff_dist + nl_margin) ** 2
+   if (flg_bias_ss) then
+      bp_nl_cut2 = 9999999999.9
+   else
+      bp_nl_cut2 = (bp_cutoff_dist + nl_margin) ** 2
+   endif
 
    iwca = 0
    ibp = 0

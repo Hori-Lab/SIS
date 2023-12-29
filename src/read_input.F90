@@ -23,7 +23,8 @@ subroutine read_input(cfilepath)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
-                             flg_pull, npull_CF, pull_CF_pairs, pull_CF_forces
+                             flg_pull, npull_CF, pull_CF_pairs, pull_CF_forces, &
+                             flg_bias_ss, bias_ss_force
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
@@ -800,6 +801,30 @@ subroutine read_input(cfilepath)
          endif
       endif
 
+      !################# [Bias_SS] #################
+      ! (optional)
+      flg_bias_ss = .False.
+      call get_value(table, "Bias_SS", group, requested=.False.)
+
+      if (associated(group)) then
+         flg_bias_ss = .True.
+
+         if (.not. (flg_in_ct .or. flg_in_bpseq)) then
+            print '(a)', "Incompatible setup in [Bias_SS]. To use Bias_SS, either a ct or bpseq file is required in [Files.In]."
+            call sis_abort()
+         endif
+
+         !----------------- force_pN -----------------
+         call get_value(group, "force_pN", bias_ss_force, stat=istat, origin=origin)
+         if (istat /= 0 .or. bias_ss_force < 0.0_PREC) then
+            print '(a)', context%report("invalid bias_ss_force value in [Bias_SS].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+
+         ! Convert the unit from pN to kcal/mol/A
+         bias_ss_force = bias_ss_force * (JOUL2KCAL_MOL * 1.0e-22)
+      endif
+
       call table%destroy
 
    endif ! myrank == 0
@@ -909,8 +934,14 @@ subroutine read_input(cfilepath)
 
    call MPI_BCAST(flg_pull, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_pull) then
-      call MPI_BCAST(pull_CF_pairs, size(pull_CF_pairs), MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(pull_CF_forces, size(pull_CF_forces), PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(npull_CF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(pull_CF_pairs, 2*npull_CF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(pull_CF_forces, npull_CF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   endif
+
+   call MPI_BCAST(flg_bias_ss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   if (flg_bias_ss) then
+      call MPI_BCAST(bias_ss_force, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
 #endif
@@ -1066,6 +1097,12 @@ subroutine read_input(cfilepath)
                pull_CF_forces(1,i) / (JOUL2KCAL_MOL*1.0e-22), pull_CF_forces(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
                pull_CF_forces(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
       enddo
+      print '(a)', '#'
+   endif
+
+   if (flg_bias_ss) then
+      print '(a)', '# Bias_SS: On'
+      print '(a,x,f7.2)', '# Bias_SS, force', bias_ss_force / (JOUL2KCAL_MOL*1.0e-22)  ! in pN
       print '(a)', '#'
    endif
 

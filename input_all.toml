@@ -208,3 +208,5 @@ id_ranges = [[1, 5], [10,14]]
 id_pairs = [[1, 5],]
 forces_pN = [[5.0, 0.0, 0.0],]
 
+[Bias_SS]
+force_pN = 20.0
