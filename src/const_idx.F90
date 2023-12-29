@@ -14,7 +14,7 @@ module const_idx
       integer :: EXV    ! 5
       integer :: ELE    ! 6
       integer :: STAGE  ! 7
-      integer :: PULL   ! 8
+      integer :: TWZ    ! 8
       integer :: MAX
    endtype energy_types
    type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,8)

@@ -4,7 +4,7 @@ subroutine energy_sumup(irep, tempK_in, energies)
    use const_idx, only : ENE
    use var_state, only : flg_bp_MC
    use var_potential, only : flg_angl_ReB, flg_ele, flg_dih_cos, flg_dih_exp, flg_stage, bp_model, &
-                             flg_pull
+                             flg_twz
 
    implicit none
 
@@ -45,7 +45,7 @@ subroutine energy_sumup(irep, tempK_in, energies)
    if (flg_ele) call energy_ele_DH(irep, energies(ENE%ELE))
 
    if (flg_stage) call energy_stage(irep, energies(ENE%STAGE))
-   if (flg_pull) call energy_pull(irep, energies(ENE%PULL))
+   if (flg_twz) call energy_tweezers(irep, energies(ENE%TWZ))
 
    energies(ENE%TOTAL) = sum(energies(1:ENE%MAX))
 

@@ -19,7 +19,7 @@ subroutine job_md()
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
-                             ele_cutoff, flg_stage, flg_ele, flg_pull
+                             ele_cutoff, flg_stage, flg_ele, flg_twz
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -252,9 +252,9 @@ subroutine job_md()
          icol = icol + 1
          write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Estage   '
       endif
-      if (flg_pull) then
+      if (flg_twz) then
          icol = icol + 1
-         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Epull    '
+         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Etweezers'
       endif
       write(hdl_out(irep), '(a)') ''
 
@@ -277,7 +277,7 @@ subroutine job_md()
       print '(a, g13.6)', 'E_bp      ', energies(ENE%BP, irep)
       if (flg_ele  ) print '(a, g13.6)', 'E_ele     ', energies(ENE%ELE, irep)
       if (flg_stage) print '(a, g13.6)', 'E_stage   ', energies(ENE%STAGE, irep)
-      if (flg_pull ) print '(a, g13.6)', 'E_pull    ', energies(ENE%PULL, irep)
+      if (flg_twz  ) print '(a, g13.6)', 'E_tweezers', energies(ENE%TWZ, irep)
       print *
 
       if (.not. restarted) then
@@ -293,8 +293,8 @@ subroutine job_md()
          if (flg_stage) then
             write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
          endif
-         if (flg_pull) then
-            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%PULL, irep)
+         if (flg_twz) then
+            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%TWZ, irep)
          endif
          write(hdl_out(irep), '(a)') ''
 
@@ -452,8 +452,8 @@ subroutine job_md()
             if (flg_stage) then
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
             endif
-            if (flg_pull) then
-               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%PULL, irep)
+            if (flg_twz) then
+               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%TWZ, irep)
             endif
             write(hdl_out(irep), '(a)') ''
 #ifdef OUTFLUSH
