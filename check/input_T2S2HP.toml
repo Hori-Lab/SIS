@@ -10,6 +10,8 @@ type = "MD"
       fasta = "T2S2HP.fasta"
       xyz_ini = "T2S2HP_random.xyz"
 
+      #ct = './T2S2HP.ct'
+
       [Files.Out]
       types = ["bpcoef", "bp", "bpe", "bpall"]
       prefix = "./test_T2S2HP"
@@ -43,3 +45,10 @@ nstep_MC = 1
 
 [Progress]
 step = 1000
+
+#[Pulling]
+#id_pairs = [[1, 27],]
+#forces_pN = [[10.0, 0.0, 0.0],]
+
+#[Bias_SS]
+#force_pN = 20.0

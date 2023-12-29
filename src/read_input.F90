@@ -23,7 +23,7 @@ subroutine read_input(cfilepath)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
-                             flg_pull, npull_CF, pull_CF_pairs, pull_CF_forces, &
+                             flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_forces, &
                              flg_bias_ss, bias_ss_force
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
@@ -714,91 +714,101 @@ subroutine read_input(cfilepath)
          end if
       endif
 
-      !################# [Pulling] #################
+      !################# [Tweezers] #################
       ! (optional)
-      flg_pull = .False.
-      call get_value(table, "Pulling", group, requested=.False.)
+      flg_twz = .False.
+      call get_value(table, "Tweezers", group, requested=.False.)
 
       if (associated(group)) then
-         flg_pull = .True.
 
-         call get_value(group, "id_pairs", array, stat=istat, origin=origin)
-         if (istat /= 0) then
-            print '(a)', context%report("invalid id_pairs value in [Pulling].", origin, "expected an array of integer pairs.")
-            call sis_abort()
-         endif
-         if (associated(array)) then
-            npull_CF = len(array)
+         !================= [Tweezers.Dual_Constnat_Force] =================
+         call get_value(group, "Dual_Constant_Force", node, requested=.False.)
+         if (associated(node)) then
 
-            if (npull_CF > 0) then
-               allocate(pull_CF_pairs(2,npull_CF))
-               do i = 1, npull_CF
-                  call get_value(array, i, nested_array)
-                  if (associated(nested_array)) then
-                     if (len(nested_array) /= 2) then
-                        print '(a)', context%report("invalid id_pairs value in [Pulling].", &
-                                     origin, "array(s) have to have two elements each.")
-                        call sis_abort()
-                     endif
-                     call get_value(nested_array, 1, pull_CF_pairs(1,i))
-                     call get_value(nested_array, 2, pull_CF_pairs(2,i))
-                     if ((pull_CF_pairs(1,i) < 1) .or. (pull_CF_pairs(2,i) < 1)) then
-                        print '(a)', context%report("invalid id_pairs value in [Pulling].", &
-                           origin, "expected an array of integer pairs.")
-                        call sis_abort()
-                     endif
-                  else
-                     print '(a)', context%report("invalid id_pairs value in [Pulling].", &
-                                  origin, "expected an array of integer pairs.")
-                     call sis_abort()
-                  endif
-               enddo
-            else
-               flg_pull = .False.
-            endif
-         else
-            flg_pull = .False.
-         endif
+            flg_twz = .True.
 
-         ! Forces
-         if (flg_pull) then
-            call get_value(group, "forces_pN", array, stat=istat, origin=origin)
+            call get_value(node, "id_pairs", array, stat=istat, origin=origin)
             if (istat /= 0) then
-               print '(a)', context%report("invalid forces_pN in [Pulling].", origin, "expected an array of vectors.")
+               print '(a)', context%report("invalid id_pairs value in [Tweezers.Dual_Constant_Force].", &
+                            origin, "expected an array of integer pairs [imp1, imp2].")
                call sis_abort()
             endif
-         endif
-         if (associated(array)) then
-            if (len(array) /= npull_CF) then
-               print '(a)', context%report("invalid forces_pN in [Pulling].", &
-                            origin, "the array has to have the same numbe of vectors (fx, fy, yz) as id_pairs.")
-               call sis_abort()
-            endif
+            if (associated(array)) then
+               ntwz_DCF = len(array)
 
-            allocate(pull_CF_forces(3, npull_CF))
-
-            do i = 1, npull_CF
-               call get_value(array, i, nested_array)
-               if (associated(nested_array)) then
-                  if (len(nested_array) /= 3) then
-                     print '(a)', context%report("invalid forces_pN vector in [Pulling].", &
-                                  origin, "array(s) have to be a vector (fx, fy, fz).")
-                     call sis_abort()
-                  endif
-                  call get_value(nested_array, 1, pull_CF_forces(1,i))
-                  call get_value(nested_array, 2, pull_CF_forces(2,i))
-                  call get_value(nested_array, 3, pull_CF_forces(3,i))
-
+               if (ntwz_DCF > 0) then
+                  allocate(twz_DCF_pairs(2, ntwz_DCF))
+                  do i = 1, ntwz_DCF
+                     call get_value(array, i, nested_array)
+                     if (associated(nested_array)) then
+                        if (len(nested_array) /= 2) then
+                           print '(a)', context%report("invalid id_pairs value in [Tweezers.Dual_Constant_Force].", &
+                                        origin, "array(s) have to have two elements each.")
+                           call sis_abort()
+                        endif
+                        call get_value(nested_array, 1, twz_DCF_pairs(1, i))
+                        call get_value(nested_array, 2, twz_DCF_pairs(2, i))
+                        if ((twz_DCF_pairs(1, i) < 1) .or. (twz_DCF_pairs(2, i) < 1)) then
+                           print '(a)', context%report("invalid id_pairs value in [Tweezers.Dual_Constant_Force].", &
+                              origin, "expected an array of integer pairs.")
+                           call sis_abort()
+                        endif
+                     else
+                        print '(a)', context%report("invalid id_pairs value in [Tweezers.Dual_Constant_Force].", &
+                                     origin, "expected an array of integer pairs.")
+                        call sis_abort()
+                     endif
+                  enddo
                else
-                  print '(a)', context%report("invalid forces_pN vector in [Pulling].", &
-                               origin, "array(s) have to be a vector (fx, fy, fz).")
+                  flg_twz = .False.
+               endif
+            else
+               flg_twz = .False.
+            endif
+
+            ! Forces
+            if (flg_twz) then
+               call get_value(node, "forces_pN", array, stat=istat, origin=origin)
+               if (istat /= 0) then
+                  print '(a)', context%report("invalid forces_pN in [Tweezers.Dual_Constant_Force].", &
+                               origin, "expected an array of vectors.")
                   call sis_abort()
                endif
-            enddo
 
-            ! Convert the unit from pN to kcal/mol/A
-            pull_CF_forces(:,:) = pull_CF_forces(:,:) * (JOUL2KCAL_MOL * 1.0e-22)
+               if (associated(array)) then
+                  if (len(array) /= ntwz_DCF) then
+                     print '(a)', context%report("invalid forces_pN in [Tweezers.Dual_Constant_Force].", &
+                                  origin, "the array has to have the same numbe of vectors (fx, fy, yz) as id_pairs.")
+                     call sis_abort()
+                  endif
+
+                  allocate(twz_DCF_forces(3, ntwz_DCF))
+
+                  do i = 1, ntwz_DCF
+                     call get_value(array, i, nested_array)
+                     if (associated(nested_array)) then
+                        if (len(nested_array) /= 3) then
+                           print '(a)', context%report("invalid forces_pN vector in [Tweezers.Dual_Constant_Force].", &
+                                        origin, "array(s) have to be a vector (fx, fy, fz).")
+                           call sis_abort()
+                        endif
+                        call get_value(nested_array, 1, twz_DCF_forces(1,i))
+                        call get_value(nested_array, 2, twz_DCF_forces(2,i))
+                        call get_value(nested_array, 3, twz_DCF_forces(3,i))
+
+                     else
+                        print '(a)', context%report("invalid forces_pN vector in [Tweezers.Dual_Constant_Force].", &
+                                     origin, "array(s) have to be a vector (fx, fy, fz).")
+                        call sis_abort()
+                     endif
+                  enddo
+
+                  ! Convert the unit from pN to kcal/mol/A
+                  twz_DCF_forces(:,:) = twz_DCF_forces(:,:) * (JOUL2KCAL_MOL * 1.0e-22)
+               endif
+            endif
          endif
+
       endif
 
       !################# [Bias_SS] #################
@@ -932,11 +942,11 @@ subroutine read_input(cfilepath)
       call MPI_BCAST(frz_ranges, size(frz_ranges), MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    endif
 
-   call MPI_BCAST(flg_pull, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
-   if (flg_pull) then
-      call MPI_BCAST(npull_CF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(pull_CF_pairs, 2*npull_CF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(pull_CF_forces, npull_CF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_twz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   if (flg_twz) then
+      call MPI_BCAST(ntwz_DCF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(twz_DCF_pairs, 2*ntwz_DCF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(twz_DCF_forces, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
    call MPI_BCAST(flg_bias_ss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
@@ -1088,14 +1098,14 @@ subroutine read_input(cfilepath)
       print '(a)', '#'
    endif
 
-   if (flg_pull) then
-      print '(a)', '# Pulling: On'
-      print '(a,i5)', '# Pulling, number of pairs:', npull_CF
-      print '(a)', '# Pulling, mode pair  imp1  imp2   fx      fy      fz'
-      do i = 1, npull_CF
-         print '(a,i3,x,i5,x,i5,3(x,f7.2))', '# Pulling,  CF  ',i, pull_CF_pairs(1,i), pull_CF_pairs(2,i),&
-               pull_CF_forces(1,i) / (JOUL2KCAL_MOL*1.0e-22), pull_CF_forces(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
-               pull_CF_forces(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
+   if (flg_twz) then
+      print '(a)', '# Tweezers: On'
+      print '(a,i5)', '# Tweezers, number of pairs:', ntwz_DCF
+      print '(a)', '# Tweezers, mode pair  imp1  imp2   fx      fy      fz'
+      do i = 1, ntwz_DCF
+         print '(a,i3,x,i5,x,i5,3(x,f7.2))', '# Tweezers,  DCF ',i, twz_DCF_pairs(1,i), twz_DCF_pairs(2,i),&
+               twz_DCF_forces(1,i) / (JOUL2KCAL_MOL*1.0e-22), twz_DCF_forces(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
+               twz_DCF_forces(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
       enddo
       print '(a)', '#'
    endif

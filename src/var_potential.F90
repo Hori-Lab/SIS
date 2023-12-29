@@ -114,15 +114,14 @@ module var_potential
    real(PREC), save :: stage_sigma ! = wca_sigma = 10.0 Angstrom for now
    real(PREC), save :: stage_eps ! = 1.2 kcal/mol
 
-   ! Pulling
-   logical, save :: flg_pull
-   integer, save :: npull_CF
-   integer, allocatable :: pull_CF_pairs(:,:)
-   real(PREC), allocatable :: pull_CF_forces(:,:)
+   ! Tweezers
+   logical, save :: flg_twz
+   integer, save :: ntwz_DCF  !!! Dual Constant Force
+   integer, allocatable :: twz_DCF_pairs(:,:)  ! (2, ntwz_DCF), pair IDs imp1 and imp2
+   real(PREC), allocatable :: twz_DCF_forces(:,:)  ! (3, ntwz_DCF), force vectors
 
    ! Bias_SS
    logical, save :: flg_bias_ss
    real(PREC), save :: bias_ss_force
-
 
 end module var_potential
