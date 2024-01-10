@@ -24,7 +24,8 @@ subroutine read_input(cfilepath)
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_forces, &
-                             flg_bias_ss, bias_ss_force
+                             flg_bias_ss, bias_ss_force, &
+                             flg_bias_rg, bias_rg_k, bias_rg_0
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
@@ -835,6 +836,30 @@ subroutine read_input(cfilepath)
          bias_ss_force = bias_ss_force * (JOUL2KCAL_MOL * 1.0e-22)
       endif
 
+      !################# [Bias_Rg] #################
+      ! (optional)
+      flg_bias_rg = .False.
+      call get_value(table, "Bias_Rg", group, requested=.False.)
+
+      if (associated(group)) then
+         flg_bias_rg = .True.
+
+         !----------------- k -----------------
+         call get_value(group, "k", bias_rg_k, stat=istat, origin=origin)
+         if (istat /= 0 .or. bias_rg_k < 0.0_PREC) then
+            print '(a)', context%report("invalid k value in [Bias_Rg].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+
+         !----------------- Rg0 -----------------
+         call get_value(group, "Rg0", bias_rg_0, stat=istat, origin=origin)
+         if (istat /= 0 .or. bias_rg_0 < 0.0_PREC) then
+            print '(a)', context%report("invalid Rg0 value in [Bias_Rg].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+      endif
+
+      !#############################################
       call table%destroy
 
    endif ! myrank == 0
@@ -952,6 +977,12 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_bias_ss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_bias_ss) then
       call MPI_BCAST(bias_ss_force, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   endif
+
+   call MPI_BCAST(flg_bias_rg, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   if (flg_bias_rg) then
+      call MPI_BCAST(bias_rg_k, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(bias_rg_0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
 #endif
@@ -1113,6 +1144,13 @@ subroutine read_input(cfilepath)
    if (flg_bias_ss) then
       print '(a)', '# Bias_SS: On'
       print '(a,x,f7.2)', '# Bias_SS, force', bias_ss_force / (JOUL2KCAL_MOL*1.0e-22)  ! in pN
+      print '(a)', '#'
+   endif
+
+   if (flg_bias_rg) then
+      print '(a)', '# Bias_Rg: On'
+      print '(a,x,f7.2)', '# Bias_Rg, k', bias_rg_k
+      print '(a,x,f7.2)', '# Bias_Rg, Rg0', bias_rg_0
       print '(a)', '#'
    endif
 

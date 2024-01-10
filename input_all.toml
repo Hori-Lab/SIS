@@ -211,3 +211,8 @@ id_ranges = [[1, 5], [10,14]]
 
 [Bias_SS]
 force_pN = 20.0
+
+[Bias_Rg]
+potential = 'harmonic'
+k = 1.0
+Rg0 = 12.0

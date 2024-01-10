@@ -124,4 +124,9 @@ module var_potential
    logical, save :: flg_bias_ss
    real(PREC), save :: bias_ss_force
 
+   ! Bias_Rg
+   logical, save :: flg_bias_rg
+   real(PREC), save :: bias_rg_k
+   real(PREC), save :: bias_rg_0
+
 end module var_potential

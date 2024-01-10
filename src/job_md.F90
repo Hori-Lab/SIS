@@ -19,7 +19,7 @@ subroutine job_md()
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
-                             ele_cutoff, flg_stage, flg_ele, flg_twz
+                             ele_cutoff, flg_stage, flg_ele, flg_twz, flg_bias_rg
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -256,6 +256,10 @@ subroutine job_md()
          icol = icol + 1
          write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Etweezers'
       endif
+      if (flg_bias_rg) then
+         icol = icol + 1
+         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Erg      '
+      endif
       write(hdl_out(irep), '(a)') ''
 
       ! Output initial states
@@ -278,6 +282,7 @@ subroutine job_md()
       if (flg_ele  ) print '(a, g13.6)', 'E_ele     ', energies(ENE%ELE, irep)
       if (flg_stage) print '(a, g13.6)', 'E_stage   ', energies(ENE%STAGE, irep)
       if (flg_twz  ) print '(a, g13.6)', 'E_tweezers', energies(ENE%TWZ, irep)
+      if (flg_bias_rg) print '(a, g13.6)', 'E_rg      ', energies(ENE%RG, irep)
       print *
 
       if (.not. restarted) then
@@ -295,6 +300,9 @@ subroutine job_md()
          endif
          if (flg_twz) then
             write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%TWZ, irep)
+         endif
+         if (flg_bias_rg) then
+            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%RG, irep)
          endif
          write(hdl_out(irep), '(a)') ''
 
@@ -454,6 +462,9 @@ subroutine job_md()
             endif
             if (flg_twz) then
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%TWZ, irep)
+            endif
+            if (flg_bias_rg) then
+               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%RG, irep)
             endif
             write(hdl_out(irep), '(a)') ''
 #ifdef OUTFLUSH

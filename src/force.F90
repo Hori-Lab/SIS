@@ -5,7 +5,7 @@ subroutine force(irep, forces)
    use const_idx, only : ENE
    use var_parallel, only : nthreads
    use var_potential, only : flg_angl_ReB, flg_ele, flg_dih_cos, flg_dih_exp, bp_model, &
-                             flg_stage, flg_twz
+                             flg_stage, flg_twz, flg_bias_rg
    use var_state, only: flg_bp_MC
    use var_top, only : nmp
 
@@ -61,6 +61,8 @@ subroutine force(irep, forces)
 
    if (flg_stage) call force_stage(irep, forces_t(1,1,tn))
    if (flg_twz) call force_tweezers(irep, forces_t(1,1,tn))
+
+   if (flg_bias_rg) call force_rg(irep, forces_t(1,1,tn))
 
 !$omp end parallel
 
