@@ -70,6 +70,6 @@ subroutine force(irep, forces)
 
    if (flg_twz) call force_tweezers(irep, forces)
 
-   if (flg_bias_rg) call force_rg(irep, forces_t(1,1,tn))
+   if (flg_bias_rg) call force_rg(irep, forces)
 
 end subroutine force
