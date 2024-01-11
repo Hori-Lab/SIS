@@ -1,7 +1,7 @@
 subroutine force_rg(irep, forces)
 
    use const, only : PREC
-   use var_state, only : xyz, rg
+   use var_state, only : xyz
    use var_top, only : nmp
    use var_potential, only : bias_rg_k, bias_rg_0
 
@@ -11,7 +11,7 @@ subroutine force_rg(irep, forces)
    real(PREC), intent(inout) :: forces(3, nmp)
 
    integer :: imp
-   real(PREC) :: s2, v(3), cm(3), factor
+   real(PREC) :: s2, v(3), cm(3), factor, r_g
 
    ! Center of mass
    cm(:) = sum(xyz(:,:,irep), 2) / real(nmp, kind=PREC)
@@ -23,9 +23,9 @@ subroutine force_rg(irep, forces)
       s2 = s2 + dot_product(v,v)
    enddo
 
-   rg(irep) = sqrt(s2 / real(nmp, kind=PREC))
+   r_g = sqrt(s2 / real(nmp, kind=PREC))
 
-   factor = - bias_rg_k * (rg(irep) - bias_rg_0) / (rg(irep) * nmp)
+   factor = - bias_rg_k * (r_g - bias_rg_0) / (r_g * nmp)
 
    do imp = 1, nmp
       forces(:, imp) = forces(:, imp) + factor * (xyz(:, imp, irep) - cm(:))

@@ -260,6 +260,8 @@ subroutine job_md()
       if (flg_bias_rg) then
          icol = icol + 1
          write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Erg      '
+         icol = icol + 1
+         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Rg       '
       endif
       write(hdl_out(irep), '(a)') ''
 
@@ -284,6 +286,7 @@ subroutine job_md()
       if (flg_stage) print '(a, g13.6)', 'E_stage   ', energies(ENE%STAGE, irep)
       if (flg_twz  ) print '(a, g13.6)', 'E_tweezers', energies(ENE%TWZ, irep)
       if (flg_bias_rg) print '(a, g13.6)', 'E_rg      ', energies(ENE%RG, irep)
+      if (flg_bias_rg) print '(a, g13.6)', 'Rg        ', rg(irep)
       print *
 
       if (.not. restarted) then
@@ -304,6 +307,7 @@ subroutine job_md()
          endif
          if (flg_bias_rg) then
             write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%RG, irep)
+            write(hdl_out(irep), '(1x, g13.6)', advance='no') rg(irep)
          endif
          write(hdl_out(irep), '(a)') ''
 
@@ -466,6 +470,7 @@ subroutine job_md()
             endif
             if (flg_bias_rg) then
                write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%RG, irep)
+               write(hdl_out(irep), '(1x, g13.6)', advance='no') rg(irep)
             endif
             write(hdl_out(irep), '(a)') ''
 #ifdef OUTFLUSH
