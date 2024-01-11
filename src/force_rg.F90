@@ -1,9 +1,10 @@
 subroutine force_rg(irep, forces)
 
    use const, only : PREC
+   use const_idx, only : POTT
    use var_state, only : xyz
    use var_top, only : nmp
-   use var_potential, only : bias_rg_k, bias_rg_0
+   use var_potential, only : bias_rg_k, bias_rg_0, bias_rg_pott
 
    implicit none
 
@@ -24,6 +25,12 @@ subroutine force_rg(irep, forces)
    enddo
 
    r_g = sqrt(s2 / real(nmp, kind=PREC))
+
+   if (bias_rg_pott == POTT%FLATBOTTOMED) then
+      if (r_g <= bias_rg_0) then
+         return
+      endif
+   endif
 
    factor = - bias_rg_k * (r_g - bias_rg_0) / (r_g * nmp)
 

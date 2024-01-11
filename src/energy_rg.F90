@@ -1,9 +1,10 @@
 subroutine energy_rg(irep, Erg)
 
    use const, only : PREC
+   use const_idx, only : POTT
    use var_top, only : nmp
    use var_state, only : xyz, rg
-   use var_potential, only : bias_rg_k, bias_rg_0
+   use var_potential, only : bias_rg_k, bias_rg_0, bias_rg_pott
 
    implicit none
 
@@ -23,6 +24,13 @@ subroutine energy_rg(irep, Erg)
    enddo
 
    rg(irep) = sqrt(s2 / real(nmp, kind=PREC))
+
+   if (bias_rg_pott == POTT%FLATBOTTOMED) then
+      if (rg(irep) <= bias_rg_0) then
+         Erg = 0.0_PREC
+         return
+      endif
+   endif
 
    Erg = 0.5_PREC * bias_rg_k * (rg(irep) - bias_rg_0)**2
 

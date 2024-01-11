@@ -6,7 +6,7 @@ subroutine read_input(cfilepath)
    use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT, MAX_REP_PER_DIM
+   use const_idx, only : JOBT, INTGRT, REPT, MAX_REP_PER_DIM, POTT
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &
@@ -25,7 +25,7 @@ subroutine read_input(cfilepath)
                              flg_stage, stage_sigma, stage_eps, &
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_forces, &
                              flg_bias_ss, bias_ss_force, &
-                             flg_bias_rg, bias_rg_k, bias_rg_0
+                             flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
@@ -844,6 +844,24 @@ subroutine read_input(cfilepath)
       if (associated(group)) then
          flg_bias_rg = .True.
 
+         !----------------- potential -----------------
+         bias_rg_pott = POTT%HARMONIC  ! Default
+         call get_value(group, "potential", cline, stat=istat, origin=origin)
+         !if (istat < 0) then
+         !   print '(a)', context%report("invalid potential in [Bias_Rg].", origin, "expected either harmonic or flat-bottomed!.")
+         !   call sis_abort()
+         !endif
+         if (istat == 0) then
+            if (cline == 'harmonic') then
+               bias_rg_pott = POTT%HARMONIC
+            else if (cline == 'flat-bottomed') then
+               bias_rg_pott = POTT%FLATBOTTOMED
+            else
+               print '(a)', context%report("invalid potential in [Bias_Rg].", origin, "expected either harmonic or flat-bottomed.")
+               call sis_abort()
+            endif
+         endif
+
          !----------------- k -----------------
          call get_value(group, "k", bias_rg_k, stat=istat, origin=origin)
          if (istat /= 0 .or. bias_rg_k < 0.0_PREC) then
@@ -981,6 +999,7 @@ subroutine read_input(cfilepath)
 
    call MPI_BCAST(flg_bias_rg, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_bias_rg) then
+      call MPI_BCAST(bias_rg_pott, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       call MPI_BCAST(bias_rg_k, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       call MPI_BCAST(bias_rg_0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
@@ -1149,8 +1168,13 @@ subroutine read_input(cfilepath)
 
    if (flg_bias_rg) then
       print '(a)', '# Bias_Rg: On'
-      print '(a,x,f7.2)', '# Bias_Rg, k', bias_rg_k
-      print '(a,x,f7.2)', '# Bias_Rg, Rg0', bias_rg_0
+      if (bias_rg_pott == POTT%HARMONIC) then
+         print '(a)', '# Bias_Rg, potential: harmonic'
+      else if (bias_rg_pott == POTT%FLATBOTTOMED) then
+         print '(a)', '# Bias_Rg, potential: flat-bottomed'
+      endif
+      print '(a,x,f7.2)', '# Bias_Rg, k:', bias_rg_k
+      print '(a,x,f7.2)', '# Bias_Rg, Rg0:', bias_rg_0
       print '(a)', '#'
    endif
 

@@ -115,6 +115,12 @@ module const_idx
    endtype nnend_types
    type(nnend_types), parameter :: NNENDT = nnend_types(1,2,3,4,5,6)
 
+   type potential_types
+      integer :: HARMONIC
+      integer :: FLATBOTTOMED
+   endtype potential_types
+   type(potential_types), parameter :: POTT = potential_types(1,2)
+
 contains
    function seqt2char(i) result(c)
       integer, intent(in) :: i

@@ -126,6 +126,7 @@ module var_potential
 
    ! Bias_Rg
    logical, save :: flg_bias_rg
+   integer, save :: bias_rg_pott  ! potential type (POTT%HARMONIC or POTT%FLATBOTTOMED)
    real(PREC), save :: bias_rg_k
    real(PREC), save :: bias_rg_0
 
