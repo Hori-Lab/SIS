@@ -8,9 +8,9 @@ subroutine force_tweezers(irep, forces)
 
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3,nmp)
-  
+
    integer :: ipair, imp1, imp2
-   
+
    do ipair = 1, ntwz_DCF
 
       imp1 = twz_DCF_pairs(1, ipair)

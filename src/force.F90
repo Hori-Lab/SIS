@@ -60,7 +60,6 @@ subroutine force(irep, forces)
    if (flg_ele) call force_ele_DH(irep, forces_t(1,1,tn))
 
    if (flg_stage) call force_stage(irep, forces_t(1,1,tn))
-   if (flg_twz) call force_tweezers(irep, forces_t(1,1,tn))
 
    if (flg_bias_rg) call force_rg(irep, forces_t(1,1,tn))
 
@@ -70,5 +69,7 @@ subroutine force(irep, forces)
       forces_t(:,:,0) = forces_t(:,:,0) + forces_t(:,:,tn)
    enddo
    forces(:,:) = forces_t(:,:,0)
+
+   if (flg_twz) call force_tweezers(irep, forces)
 
 end subroutine force
