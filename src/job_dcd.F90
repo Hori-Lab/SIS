@@ -5,7 +5,7 @@ subroutine job_dcd()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
    use var_top, only : nmp
-   use var_state, only : xyz, energies, flg_bp_energy, tempK, nstep_bp_MC, flg_bp_MC
+   use var_state, only : xyz, energies, flg_bp_energy, tempK, nstep_bp_MC, flg_bp_MC, rg
    use var_potential, only : flg_stage, flg_ele
    use var_io, only : hdl_out, cfile_dcd_in, iopen_hdl
    use dcd, only : file_dcd, DCD_OPEN_MODE
@@ -46,6 +46,7 @@ subroutine job_dcd()
 
    allocate(xyz(3, nmp, IREP))
    allocate(energies(0:ENE%MAX, IREP))
+   allocate(rg(IREP))
 
    write(hdl_out(IREP), '(a)', advance='no') '#(1)nframe   (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
                                              !123456789012 123456 1234567890123 1234567890123 1234567890123'

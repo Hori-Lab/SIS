@@ -61,8 +61,6 @@ subroutine force(irep, forces)
 
    if (flg_stage) call force_stage(irep, forces_t(1,1,tn))
 
-   if (flg_bias_rg) call force_rg(irep, forces_t(1,1,tn))
-
 !$omp end parallel
 
    do tn = 1, nthreads-1
@@ -71,5 +69,7 @@ subroutine force(irep, forces)
    forces(:,:) = forces_t(:,:,0)
 
    if (flg_twz) call force_tweezers(irep, forces)
+
+   if (flg_bias_rg) call force_rg(irep, forces_t(1,1,tn))
 
 end subroutine force

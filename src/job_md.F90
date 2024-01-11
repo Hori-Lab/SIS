@@ -16,7 +16,7 @@ subroutine job_md()
                          flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next, &
-                         nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
+                         nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status, rg
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage, flg_ele, flg_twz, flg_bias_rg
@@ -66,6 +66,7 @@ subroutine job_md()
    allocate(energies(0:ENE%MAX, nrep_proc))
    allocate(Ekinetic(nrep_proc))
    !allocate(replica_energies(2, nrep_all))
+   allocate(rg(nrep_proc))
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Set up constants for the dynamics

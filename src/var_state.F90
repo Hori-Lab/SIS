@@ -79,4 +79,6 @@ module var_state
    integer(INT64), save :: variable_box_step
    real(PREC), save :: variable_box_change(3)
 
+   real(PREC), allocatable :: rg(:)
+
 end module var_state
