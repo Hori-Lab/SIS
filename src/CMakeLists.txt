@@ -1,5 +1,7 @@
 set(SIS_EXE sis)
 
+option(BP_HALT_IEEE_EXCEPTIONS "Use ieee halting mode functions in write_bp" ON)
+
 add_executable(${SIS_EXE}
     const.F90 const_idx.F90 const_phys.F90
     rnd_boxmuller.F90

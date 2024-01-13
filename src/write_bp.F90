@@ -1,6 +1,8 @@
 subroutine write_bp(irep, tempK_in)
 
+#ifdef BP_HALT_IEEE_EXCEPTIONS
    use ieee_exceptions, only : IEEE_GET_HALTING_MODE, IEEE_SET_HALTING_MODE, IEEE_UNDERFLOW
+#endif
    use const, only : PREC
    use const_phys, only : BOLTZ_KCAL_MOL
    use var_state, only : bp_status, ene_bp
@@ -24,8 +26,10 @@ subroutine write_bp(irep, tempK_in)
 
    if (flg_out_bp) then
 
+#ifdef BP_HALT_IEEE_EXCEPTIONS
       call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
+#endif
 
       do ibp = 1, nbp(irep)
 
@@ -42,13 +46,17 @@ subroutine write_bp(irep, tempK_in)
       write(hdl_bp(irep)) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), &
                           real(0.0, kind=KIND_OUT_BPE)
 
+#ifdef BP_HALT_IEEE_EXCEPTIONS
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
+#endif
    endif
 
    if (flg_out_bpall) then
 
+#ifdef BP_HALT_IEEE_EXCEPTIONS
       call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
+#endif
 
       do ibp = 1, nbp(irep)
 
@@ -63,7 +71,9 @@ subroutine write_bp(irep, tempK_in)
       write(hdl_bpall(irep)) int(0,kind=KIND_OUT_BP), int(0,kind=KIND_OUT_BP), &
                              real(0.0, kind=KIND_OUT_BPE)
 
+#ifdef BP_HALT_IEEE_EXCEPTIONS
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=halt_mode)
+#endif
    endif
 
    if (flg_out_bpe) then

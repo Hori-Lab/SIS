@@ -5,11 +5,13 @@ project(
   DESCRIPTION "Multiple stream Mersenne Twister PRNG"
 )
 
-option(MT_USE_NORANGECHECK_INSTEAD_OF_ALLOWINVALIDBOZ "Use -fno-range-check instead of -fallow-invalid-boz in MT module" OFF)
+option(MT_USE_NORANGECHECK "Use -fno-range-check in MT module" OFF)
+option(MT_USE_ALLOWINVALIDBOZ "Use -fallow-invalid-boz in MT module" ON)
 
-if (MT_USE_NORANGECHECK_INSTEAD_OF_ALLOWINVALIDBOZ)
+if (MT_USE_NORANGECHECK)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fno-range-check")
-else()
+endif()
+if (MT_USE_ALLOWINVALIDBOZ)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-invalid-boz")
 endif()
 
