@@ -1,6 +1,6 @@
 module var_state
 
-   use,intrinsic :: ISO_FORTRAN_ENV, only: INT64
+   use, intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const
    use const_idx, only : ENE
    use mt_stream, only : mt_state

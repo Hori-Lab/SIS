@@ -1,5 +1,6 @@
 module var_potential
 
+   use, intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const, only : PREC
    use const_idx, only : BPT
 
@@ -129,5 +130,14 @@ module var_potential
    integer, save :: bias_rg_pott  ! potential type (POTT%HARMONIC or POTT%FLATBOTTOMED)
    real(PREC), save :: bias_rg_k
    real(PREC), save :: bias_rg_0
+
+   ! Time-dependent Bias-Rg
+   logical, save :: flg_timed_bias_rg
+   integer, save :: ntimed_bias_rg
+   integer(INT64), allocatable, save :: timed_bias_rg_step(:)
+   real(PREC), allocatable, save :: timed_bias_rg_k(:)
+   real(PREC), allocatable, save :: timed_bias_rg_0(:)
+   integer :: itimed_bias_rg
+   integer(INT64) :: istep_timed_bias_rg_next
 
 end module var_potential

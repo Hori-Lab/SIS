@@ -1,7 +1,7 @@
 !#define OUTFLUSH
 subroutine job_md()
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64, output_unit
+   use, intrinsic :: iso_fortran_env, Only : output_unit
    use const
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
@@ -19,7 +19,10 @@ subroutine job_md()
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status, rg
    use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
-                             ele_cutoff, flg_stage, flg_ele, flg_twz, flg_bias_rg
+                             ele_cutoff, flg_stage, flg_ele, flg_twz, flg_bias_rg, &
+                             flg_timed_bias_rg, ntimed_bias_rg, timed_bias_rg_k, timed_bias_rg_0, &
+                             istep_timed_bias_rg_next, timed_bias_rg_step, itimed_bias_rg, &
+                             bias_rg_k, bias_rg_0
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -192,6 +195,38 @@ subroutine job_md()
 
       if (ianneal < nanneal) then
          istep_anneal_next = anneal_step(ianneal+1)
+      endif
+   endif
+
+   ! Setting up Timed bias-Rg
+   if (flg_timed_bias_rg) then
+
+      call read_timed_bias_rg()
+
+      itimed_bias_rg = 1
+
+      if (istep >= timed_bias_rg_step(ntimed_bias_rg)) then
+         itimed_bias_rg = ntimed_bias_rg
+         flg_timed_bias_rg = .False.
+
+      else if (restarted) then
+
+         do while (timed_bias_rg_step(itimed_bias_rg + 1) <= istep)
+
+            itimed_bias_rg = itimed_bias_rg + 1
+
+            if (itimed_bias_rg == ntimed_bias_rg) then
+               flg_timed_bias_rg = .False.
+               exit
+            endif
+         enddo
+      endif
+
+      bias_rg_k = timed_bias_rg_k(itimed_bias_rg)
+      bias_rg_0 = timed_bias_rg_0(itimed_bias_rg)
+
+      if (itimed_bias_rg < ntimed_bias_rg) then
+         istep_timed_bias_rg_next = timed_bias_rg_step(itimed_bias_rg + 1)
       endif
    endif
 
@@ -483,7 +518,6 @@ subroutine job_md()
          enddo
       endif
 
-
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Replica exchange
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -550,6 +584,20 @@ subroutine job_md()
          endif
       endif
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Timed bias-Rg
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (flg_timed_bias_rg .and. istep + 1 == istep_timed_bias_rg_next) then
+         itimed_bias_rg = itimed_bias_rg + 1
+         bias_rg_k = timed_bias_rg_k(itimed_bias_rg)
+         bias_rg_0 = timed_bias_rg_0(itimed_bias_rg)
+
+         if (itimed_bias_rg < ntimed_bias_rg) then
+            istep_timed_bias_rg_next = timed_bias_rg_step(itimed_bias_rg + 1)
+         else
+            flg_timed_bias_rg = .False.
+         endif
+      endif
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Write progress

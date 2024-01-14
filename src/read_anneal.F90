@@ -1,6 +1,6 @@
 subroutine read_anneal(stat)
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end
+   use,intrinsic :: ISO_FORTRAN_ENV, only: INT64
 
    use const
    use var_state, only : nanneal, anneal_step, anneal_tempK
@@ -13,7 +13,7 @@ subroutine read_anneal(stat)
    ! ---------------------------------------------------------------------
    integer :: istep
    integer :: istat, hdl
-   integer :: s
+   integer(INT64):: s
    real(PREC) :: t
 
    stat = .False.

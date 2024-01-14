@@ -28,6 +28,10 @@ type = "MD"
         # Annealing-schedule file.
         # Required only when opt_anneal > 0 in [Condition].
 
+    bias_Rg = "./bias_Rg_schedule.txt"
+        # Schedule file for bias_Rg.
+        # Required only when potential = 'timed-flat-bottomed' in [Bias_Rg].
+
     ## Specific secondary structure.
     ## If either 'ct' or 'bpseq' is given, only base pairs that constitute 
     ## the secondary structure are enabled.
@@ -215,5 +219,6 @@ force_pN = 20.0
 [Bias_Rg]
 potential = 'harmonic'
 #potential = 'flat-bottomed'
+#potential = 'timed-flat-bottomed'
 k = 1.0
 Rg0 = 12.0
