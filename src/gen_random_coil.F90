@@ -1,7 +1,7 @@
-subroutine gen_random_coil(nmp, xyz, origin)
+subroutine gen_random_coil(nmp, origin, xyz)
 
    !use mt19937_64
-   use mt_stream
+   use mt_stream, only : genrand_double1
    use const, only : PREC
    use const_phys, only : PI
    use var_state, only : mts
@@ -9,8 +9,8 @@ subroutine gen_random_coil(nmp, xyz, origin)
    implicit none
 
    integer, intent(in) :: nmp
+   real(PREC), intent(in) :: origin(3)
    real(PREC), intent(out) :: xyz(3, nmp)
-   real(PREC), intent(out) :: origin(3)
 
    integer :: imp, jmp
    real(PREC) :: trial(3), v(3)

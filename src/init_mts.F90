@@ -2,9 +2,8 @@ subroutine init_mts()
 
    ! Use Multiple stream Mersenne Twister PRNG  (mt_stream)
    ! http://theo.phys.sci.hiroshima-u.ac.jp/~ishikawa/PRNG/mt_stream_en.html
-
-   use mt_stream
-   use mt_kind_defs
+   !use mt_kind_defs
+   use mt_stream, only : set_mt19937, new, init, create_stream
    
    use const_idx, only : RSTBLK
    use var_state, only : mts, mts_rep, rng_seed, restarted

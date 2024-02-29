@@ -10,6 +10,9 @@ cmake -DCMAKE_BUILD_TYPE=Debug ..
 #cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_Fortran_FLAGS="-heap-arrays" ..
 #cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS="-O0 -g -traceback -check all -heap-arrays" ..
 
+## Archer2
+#FC=ftn cmake .. -DCMAKE_BUILD_TYPE=Debug -DMT_USE_ALLOWINVALIDBOZ=OFF -DBP_HALT_IEEE_EXCEPTIONS=OFF
+
 make VERBOSE=1
 #make -j12 VERBOSE=1
 #

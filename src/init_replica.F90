@@ -1,7 +1,8 @@
 subroutine init_replica
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
-   use const_idx, only : REPT, MAX_REPLICA, RSTBLK
+   use const, only : MAX_REPLICA
+   use const_idx, only : REPT, RSTBLK
    use var_state, only : restarted
    use var_replica, only : flg_replica, nrep_all, rep2val, nrep_proc, &
                            irep2grep, grep2irep, grep2rank, &

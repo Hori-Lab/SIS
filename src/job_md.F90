@@ -2,7 +2,7 @@
 subroutine job_md()
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64, output_unit
-   use const
+   use const, only : PREC
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
    use progress, only : progress_init, progress_update, wall_time_sec

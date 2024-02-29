@@ -3,10 +3,10 @@ subroutine read_input(cfilepath)
    use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT, INT64
    use tomlf
 
-   use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA
+   use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT, MAX_REP_PER_DIM
+   use const_idx, only : JOBT, INTGRT, REPT
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &

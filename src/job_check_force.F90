@@ -9,7 +9,7 @@ subroutine job_check_force()
    use var_potential, only: flg_stage
    use var_io, only : hdl_out, cfile_pdb_ini, cfile_xyz_ini
    !use mt19937_64
-   use mt_stream
+   use mt_stream, only : genrand_double3
 
    implicit none
 

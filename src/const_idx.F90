@@ -1,7 +1,6 @@
 module const_idx
 
    use,intrinsic :: ISO_FORTRAN_ENV, only: REAL64, INT64
-   use :: const
 
    implicit none
 

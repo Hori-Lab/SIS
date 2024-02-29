@@ -18,7 +18,7 @@ subroutine init_structure()
    if (flg_gen_init_struct) then
 
       do irep = 1, nrep_proc
-         call gen_random_coil(nmp, xyz(:,:,irep), origin)
+         call gen_random_coil(nmp, origin, xyz(:,:,irep))
       enddo
 
    else
