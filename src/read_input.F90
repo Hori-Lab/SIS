@@ -125,27 +125,15 @@ subroutine read_input(cfilepath)
       !################# [Files] #################
       call get_value(table, "Files", group, requested=.False.)
       if (.not. associated(group)) then
-         call get_value(table, "files", group, origin=origin, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Files] section required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[files] is deprecated. Please use [Files].", origin, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Files] section required.", 0)
+         call sis_abort()
       endif
 
       !================= [Files.In] =================
       call get_value(group, "In", node, requested=.False.)
       if (.not. associated(node)) then
-         call get_value(group, "in", node, origin=origin, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Files.In] section required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[files.in] is deprecated. Please use [Files.In].", origin, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Files.In] section required.", 0)
+         call sis_abort()
       endif
 
       if (associated(node)) then
@@ -203,14 +191,8 @@ subroutine read_input(cfilepath)
       !================= [Files.Out] =================
       call get_value(group, "Out", node, requested=.False.)
       if (.not. associated(node)) then
-         call get_value(group, "out", node, origin=origin, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Files.Out] section required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[files.out] is deprecated. Please use [Files.Out].", origin, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Files.Out] section required.", 0)
+         call sis_abort()
       endif
 
       if (associated(node)) then
@@ -257,14 +239,8 @@ subroutine read_input(cfilepath)
       !################# [Condition] #################
       call get_value(table, "Condition", group, requested=.False.)
       if (.not. associated(group)) then
-         call get_value(table, "condition", group, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Condition] section is required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[condition] is deprecated. Please use [Condition].", 0, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Condition] section is required.", 0)
+         call sis_abort()
       endif
 
       !----------------- rng_seed -----------------
@@ -273,7 +249,7 @@ subroutine read_input(cfilepath)
       ! Set a 64-bit integer. If omitted, it will be set based on SYSTEM_CLOCK.
       call get_value(group, "rng_seed", rng_seed, stat=istat, origin=origin)
       if (istat /= 0) then
-         print '(a)', context%report("rng_seed (random-number seed value) is not set in [condition].", 0, "a value is set by SYSTEM_CLOCK.", level=toml_level%warning)
+         print '(a)', context%report("rng_seed (random-number seed value) is not set in [Condition].", 0, "a value is set by SYSTEM_CLOCK.", level=toml_level%warning)
          print '(a)', context%report("a value is set by SYSTEM_CLOCK.", origin=0, level=toml_level%warning)
          call SYSTEM_CLOCK(rng_seed)
       endif
@@ -284,7 +260,7 @@ subroutine read_input(cfilepath)
       ! 1: Annealing ("anneal" is required in [files.in])
       call get_value(group, "opt_anneal", opt_anneal, 0, stat=istat, origin=origin)
       if (istat /= 0 .or. all(opt_anneal /= (/0, 1/))) then
-         print '(a)', context%report("invalid opt_anneal in [condition].", origin, "expected either 0 or 1")
+         print '(a)', context%report("invalid opt_anneal in [Condition].", origin, "expected either 0 or 1")
          call sis_abort()
       endif
 
@@ -299,7 +275,7 @@ subroutine read_input(cfilepath)
       tempK = -1.0
       call get_value(group, "tempK", tempK, stat=istat, origin=origin)
       if (istat /= 0 .or. (opt_anneal == 0 .and. tempK < 0.0)) then
-         print '(a)', context%report("Error: invalid tempK in [condition]", origin, "expected real positive value")
+         print '(a)', context%report("Error: invalid tempK in [Condition]", origin, "expected real positive value")
          call sis_abort()
       endif
 
@@ -310,21 +286,21 @@ subroutine read_input(cfilepath)
       call get_value(group, "temp_independent", temp_independent, 0, stat=istat, origin=origin)
 
       if (istat /= 0 .or. all(temp_independent /= (/0, 1/))) then
-         print '(a)', context%report("Error: invalid temp_independent in [condition]", origin, "expected either 0 or 1.")
+         print '(a)', context%report("Error: invalid temp_independent in [Condition]", origin, "expected either 0 or 1.")
          call sis_abort()
       endif
 
       if (temp_independent > 0) then
          call get_value(group, "tempK_ref", tempK_ref, stat=istat, origin=origin)
          if (istat /= 0 .or. tempK_ref <= 0.0_PREC) then
-            print '(a)', context%report("Error: invalid tempK_ref in [condition]", origin, "expected positive real value.")
+            print '(a)', context%report("Error: invalid tempK_ref in [Condition]", origin, "expected positive real value.")
             call sis_abort()
          endif
       endif
 
       !################# Repeat sequence #################
       if (.not. allocated(cfile_fasta_in)) then
-         call get_value(table, "repeat", group)
+         call get_value(table, "Repeat", group)
          if (associated(group)) then
             call get_value(group, "n_repeat", nrepeat)
             call get_value(group, "n_chain", nchains)
@@ -617,7 +593,7 @@ subroutine read_input(cfilepath)
       !################# [variable_box] #################
       ! (optional)
       flg_variable_box = .False.
-      call get_value(table, "variable_box", group, requested=.False.)
+      call get_value(table, "Variable_box", group, requested=.False.)
       if (associated(group)) then 
          flg_variable_box = .True.
          call get_value(group, "step", variable_box_step)

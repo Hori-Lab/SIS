@@ -1,0 +1,5 @@
+*.dcd
+*.out
+err*
+out*
+*.rst

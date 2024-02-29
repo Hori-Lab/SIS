@@ -13,7 +13,7 @@ type = "MD"
         # Force-field file. Required.
 
     fasta = "./beta-globin.fasta"
-        # FASTA sequence file. Required unless [repeat] section is specified.
+        # FASTA sequence file. Required unless [Repeat] section is specified.
 
     pdb_ini = "initial.pdb"
     xyz_ini = "initial.xyz"
@@ -76,7 +76,7 @@ rng_seed = 123
 opt_anneal = 0
     # (optional) flag for simulated annealing.
     # 0: No annealing (default)
-    # 1: Annealing ("anneal" is required in [files.in])
+    # 1: Annealing ("anneal" is required in [Files.In])
 
 temp_independent = 0
     # (optional) temperature independent potential
@@ -84,7 +84,7 @@ temp_independent = 0
     # 1: Use temperature-independent potential. temp_ref is required.
 tempK_ref = 328.15
 
-[repeat]
+[Repeat]
 n_repeat = 47
 n_chain = 64
 
@@ -189,7 +189,7 @@ exclude_covalent_bond_pairs = true
 step = 1000
 
 
-[variable_box]
+[Variable_box]
     # (optional)
 step = 1000
 change_x = -1.0
