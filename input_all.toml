@@ -63,6 +63,18 @@ exchange = true
     7 = 353.15
     8 = 363.15
 
+    [Replica.TWZ_DCF]
+    ## External force using Tweezers.Dual_Constant_Force
+    1 = 0.0
+    2 = 2.0
+    3 = 4.0
+    4 = 6.0
+    5 = 8.0
+    6 = 10.0
+    7 = 12.0
+    8 = 14.0
+
+
 [Condition]
 tempK = 310.15
     # Specify the simulation temperature in Kelvin.

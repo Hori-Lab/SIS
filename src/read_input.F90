@@ -413,7 +413,16 @@ subroutine read_input(cfilepath)
          call get_value(group, "nrep_temp", nrep(REPT%TEMP))
 
          if (nrep(REPT%TEMP) > MAX_REP_PER_DIM) then
-            print '(a)', 'Error in input file: Number of replicas exceeds MAX_REP_PER_DIM in [Replica.Temperature].'
+            print '(a)', 'Error in input file: Number of replicas (nrep_temp) exceeds MAX_REP_PER_DIM in [Replica.].'
+            print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
+         nrep(REPT%TWZDCF) = 0
+         call get_value(group, "nrep_twzdcf", nrep(REPT%TWZDCF))
+
+         if (nrep(REPT%TWZDCF) > MAX_REP_PER_DIM) then
+            print '(a)', 'Error in input file: Number of replicas (nrep_twzdcf) exceeds MAX_REP_PER_DIM in [Replica.].'
             print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
             call sis_abort()
          endif
@@ -424,6 +433,8 @@ subroutine read_input(cfilepath)
          flg_exchange = .True.
          call get_value(group, "exchange", flg_exchange)
 
+         flg_repvar(:)= .False.
+
          if (nrep(REPT%TEMP) > 0) then
 
             flg_repvar(REPT%TEMP) = .True.
@@ -433,23 +444,39 @@ subroutine read_input(cfilepath)
                do i = 1, nrep(REPT%TEMP)
                   write(cquery, '(i0)') i
                   call get_value(node, cquery, replica_values(i, REPT%TEMP))
+
+                  if (replica_values(i, REPT%TEMP) > INVALID_JUDGE) then
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Temperature].'
+                     call sis_abort()
+                  endif
                enddo
             else
                print '(a)', 'Error in input file: [Replica.Temperature] is required.'
                call sis_abort()
             endif
 
-         else
-            print '(a)', 'Error in input file: nrep_temp has to be more than zero in [Replica].'
-            call sis_abort()
          endif
 
-         do i = 1, nrep(REPT%TEMP)
-            if (replica_values(i, REPT%TEMP) > INVALID_JUDGE) then
-               print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Temperature].'
+         if (nrep(REPT%TWZDCF) > 0) then
+
+            flg_repvar(REPT%TWZDCF) = .True.
+
+            call get_value(group, "TWZDCF", node, requested=.False.)
+            if (associated(node)) then
+               do i = 1, nrep(REPT%TWZDCF)
+                  write(cquery, '(i0)') i
+                  call get_value(node, cquery, replica_values(i, REPT%TWZDCF))
+
+                  if (replica_values(i, REPT%TWZDCF) > INVALID_JUDGE) then
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.TWZDCF].'
+                     call sis_abort()
+                  endif
+               enddo
+            else
+               print '(a)', 'Error in input file: [Replica.TWZDCF] is required.'
                call sis_abort()
             endif
-         enddo
+         endif
 
       else
          nrep(REPT%TEMP) = 1
