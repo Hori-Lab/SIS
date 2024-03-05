@@ -16,8 +16,8 @@ subroutine force_tweezers(irep, forces)
       imp1 = twz_DCF_pairs(1, ipair)
       imp2 = twz_DCF_pairs(2, ipair)
 
-      forces(:, imp1) = forces(:, imp1) + twz_DCF_forces(:, ipair)
-      forces(:, imp2) = forces(:, imp2) - twz_DCF_forces(:, ipair)
+      forces(:, imp1) = forces(:, imp1) + twz_DCF_forces(:, ipair, irep)
+      forces(:, imp2) = forces(:, imp2) - twz_DCF_forces(:, ipair, irep)
    enddo
 
 end subroutine force_tweezers

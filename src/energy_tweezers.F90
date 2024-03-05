@@ -24,7 +24,7 @@ subroutine energy_tweezers(irep, Etwz)
 
       v = pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))
 
-      e_twz = e_twz - dot_product(v, twz_DCF_forces(1:3,ipair))
+      e_twz = e_twz - dot_product(v, twz_DCF_forces(1:3,ipair,irep))
    enddo
    !!$omp end parallel do
 

@@ -23,7 +23,7 @@ subroutine read_input(cfilepath)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
-                             flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_forces, &
+                             flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
                              flg_bias_ss, bias_ss_force
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
@@ -435,7 +435,7 @@ subroutine read_input(cfilepath)
 
          flg_repvar(:)= .False.
 
-         if (nrep(REPT%TEMP) > 0) then
+         if (nrep(REPT%TEMP) > 1) then
 
             flg_repvar(REPT%TEMP) = .True.
 
@@ -455,9 +455,12 @@ subroutine read_input(cfilepath)
                call sis_abort()
             endif
 
+         else
+            ! Ignore if nrep_temp = 0 or 1
+            nrep(REPT%TEMP) = 1
          endif
 
-         if (nrep(REPT%TWZDCF) > 0) then
+         if (nrep(REPT%TWZDCF) > 1) then
 
             flg_repvar(REPT%TWZDCF) = .True.
 
@@ -465,7 +468,10 @@ subroutine read_input(cfilepath)
             if (associated(node)) then
                do i = 1, nrep(REPT%TWZDCF)
                   write(cquery, '(i0)') i
-                  call get_value(node, cquery, replica_values(i, REPT%TWZDCF))
+                  call get_value(node, cquery, rdummy)
+
+                  ! Convert the unit from pN to kcal/mol/A
+                  replica_values(i, REPT%TWZDCF) = rdummy * (JOUL2KCAL_MOL * 1.0e-22)
 
                   if (replica_values(i, REPT%TWZDCF) > INVALID_JUDGE) then
                      print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.TWZDCF].'
@@ -476,10 +482,14 @@ subroutine read_input(cfilepath)
                print '(a)', 'Error in input file: [Replica.TWZDCF] is required.'
                call sis_abort()
             endif
+
+         else
+            ! Ignore if nrep_twzcdf = 0 or 1
+            nrep(REPT%TWZDCF) = 1
          endif
 
       else
-         nrep(REPT%TEMP) = 1
+         nrep(:) = 1
          flg_exchange = .False.
       endif
 
@@ -785,7 +795,7 @@ subroutine read_input(cfilepath)
                      call sis_abort()
                   endif
 
-                  allocate(twz_DCF_forces(3, ntwz_DCF))
+                  allocate(twz_DCF_direction(3, ntwz_DCF))
 
                   do i = 1, ntwz_DCF
                      call get_value(array, i, nested_array)
@@ -795,9 +805,9 @@ subroutine read_input(cfilepath)
                                         origin, "array(s) have to be a vector (fx, fy, fz).")
                            call sis_abort()
                         endif
-                        call get_value(nested_array, 1, twz_DCF_forces(1,i))
-                        call get_value(nested_array, 2, twz_DCF_forces(2,i))
-                        call get_value(nested_array, 3, twz_DCF_forces(3,i))
+                        call get_value(nested_array, 1, twz_DCF_direction(1,i))
+                        call get_value(nested_array, 2, twz_DCF_direction(2,i))
+                        call get_value(nested_array, 3, twz_DCF_direction(3,i))
 
                      else
                         print '(a)', context%report("invalid forces_pN vector in [Tweezers.Dual_Constant_Force].", &
@@ -807,7 +817,7 @@ subroutine read_input(cfilepath)
                   enddo
 
                   ! Convert the unit from pN to kcal/mol/A
-                  twz_DCF_forces(:,:) = twz_DCF_forces(:,:) * (JOUL2KCAL_MOL * 1.0e-22)
+                  twz_DCF_direction(:,:) = twz_DCF_direction(:,:) * (JOUL2KCAL_MOL * 1.0e-22)
                endif
             endif
          endif
@@ -949,7 +959,7 @@ subroutine read_input(cfilepath)
    if (flg_twz) then
       call MPI_BCAST(ntwz_DCF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
       call MPI_BCAST(twz_DCF_pairs, 2*ntwz_DCF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(twz_DCF_forces, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(twz_DCF_direction, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
    call MPI_BCAST(flg_bias_ss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
@@ -1107,8 +1117,8 @@ subroutine read_input(cfilepath)
       print '(a)', '# Tweezers, mode pair  imp1  imp2   fx      fy      fz'
       do i = 1, ntwz_DCF
          print '(a,i3,x,i5,x,i5,3(x,f7.2))', '# Tweezers,  DCF ',i, twz_DCF_pairs(1,i), twz_DCF_pairs(2,i),&
-               twz_DCF_forces(1,i) / (JOUL2KCAL_MOL*1.0e-22), twz_DCF_forces(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
-               twz_DCF_forces(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
+               twz_DCF_direction(1,i) / (JOUL2KCAL_MOL*1.0e-22), twz_DCF_direction(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
+               twz_DCF_direction(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
       enddo
       print '(a)', '#'
    endif

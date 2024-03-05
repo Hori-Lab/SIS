@@ -3,6 +3,7 @@ subroutine init_replica
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const, only : MAX_REPLICA
    use const_idx, only : REPT, RSTBLK
+   use const_phys, only : INVALID_VALUE, JOUL2KCAL_MOL
    use var_state, only : restarted
    use var_replica, only : flg_replica, nrep_all, rep2val, nrep_proc, &
                            irep2grep, grep2irep, grep2rank, &
@@ -24,6 +25,7 @@ subroutine init_replica
    nrep_all = 1
    nrep_proc = 1
    irep2grep(:) = 1
+   lab2val(:,:) = INVALID_VALUE
 
    if (flg_replica) then
 
@@ -43,14 +45,15 @@ subroutine init_replica
       print *, 'nrep_all=',nrep_all
       print *, 'nprocs=',nprocs
       print *, 'nrep(REPT%TEMP)=', nrep(REPT%TEMP)
+      print *, 'nrep(REPT%TWZDCF)=', nrep(REPT%TWZDCF)
 
-      if (nprocs > nrep(REPT%TEMP)) then
+      if (nprocs > nrep_all) then
          print *, 'Error: the number of MPI processes should be equal to or smaller than the number of replicas.'
          call sis_abort()
       endif
 
 #ifdef PAR_MPI
-      if (mod(nrep(REPT%TEMP), nprocs) /= 0) then
+      if (mod(nrep_all, nprocs) /= 0) then
          print *, 'Error: the number of replicas has to be a multiple of the number of MPI processes.'
          call sis_abort()
       endif
@@ -64,8 +67,16 @@ subroutine init_replica
       do grep = 1, nrep_all
          rep2lab(grep) = grep
          lab2rep(grep) = grep
-         lab2val(grep, REPT%TEMP) = replica_values(grep, REPT%TEMP)
-         print '(a,i5,a,f8.3)', '# Replica ', grep, ', temp = ', lab2val(grep, REPT%TEMP)
+
+         if (flg_repvar(REPT%TEMP)) then 
+            lab2val(grep, REPT%TEMP) = replica_values(grep, REPT%TEMP)
+            print '(a,i5,a,f8.3)', '# Replica ', grep, ', temp = ', lab2val(grep, REPT%TEMP)
+         endif
+
+         if (flg_repvar(REPT%TWZDCF)) then 
+            lab2val(grep, REPT%TWZDCF) = replica_values(grep, REPT%TWZDCF)
+            print '(a,i5,a,f8.3)', '# Replica ', grep, ', force = ', lab2val(grep, REPT%TWZDCF) / (JOUL2KCAL_MOL * 1.0e-22)
+         endif
       enddo
       print '(a)', '#'
 
