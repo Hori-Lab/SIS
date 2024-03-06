@@ -205,9 +205,12 @@ subroutine job_md()
 
    do irep = 1, nrep_proc
 
-      if (flg_repvar(REPT%TEMP)) then
+      if (flg_replica) then
          grep = irep2grep(irep)
          rep_label = rep2lab(grep)
+      endif
+
+      if (flg_repvar(REPT%TEMP)) then
          tK = rep2val(grep, REPT%TEMP)
       else
          tK = tempK
@@ -430,9 +433,12 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (flg_step_save) then
          do irep = 1, nrep_proc
-            if (flg_repvar(REPT%TEMP)) then
+            if (flg_replica) then
                grep = irep2grep(irep)
                rep_label = rep2lab(grep)
+            endif
+
+            if (flg_repvar(REPT%TEMP)) then
                tK = rep2val(grep, REPT%TEMP)
             else
                tK = tempK
