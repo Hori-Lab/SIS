@@ -3,7 +3,7 @@ subroutine read_input(cfilepath)
    use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT, INT64
    use tomlf
 
-   use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM
+   use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM, MAX_REP_DIM
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
    use const_idx, only : JOBT, INTGRT, REPT
@@ -45,6 +45,7 @@ subroutine read_input(cfilepath)
    !======= 
 
    integer :: i
+   integer :: nrepdim
    integer :: istat, origin
    integer :: hdl
    integer :: len_array
@@ -413,7 +414,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "nrep_temp", nrep(REPT%TEMP))
 
          if (nrep(REPT%TEMP) > MAX_REP_PER_DIM) then
-            print '(a)', 'Error in input file: Number of replicas (nrep_temp) exceeds MAX_REP_PER_DIM in [Replica.].'
+            print '(a)', 'Error in input file: Number of replicas (nrep_temp) exceeds MAX_REP_PER_DIM in [Replica].'
             print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
             call sis_abort()
          endif
@@ -422,7 +423,7 @@ subroutine read_input(cfilepath)
          call get_value(group, "nrep_force", nrep(REPT%TWZDCF))
 
          if (nrep(REPT%TWZDCF) > MAX_REP_PER_DIM) then
-            print '(a)', 'Error in input file: Number of replicas (nrep_force) exceeds MAX_REP_PER_DIM in [Replica.].'
+            print '(a)', 'Error in input file: Number of replicas (nrep_force) exceeds MAX_REP_PER_DIM in [Replica].'
             print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
             call sis_abort()
          endif
@@ -440,10 +441,12 @@ subroutine read_input(cfilepath)
 
          flg_repvar(:)= .False.
 
+         nrepdim = 0
          !----------------- Replica.Temperature -----------------
          if (nrep(REPT%TEMP) > 1) then
 
             flg_repvar(REPT%TEMP) = .True.
+            nrepdim = nrepdim + 1
 
             call get_value(group, "Temperature", node, requested=.False.)
             if (associated(node)) then
@@ -470,6 +473,7 @@ subroutine read_input(cfilepath)
          if (nrep(REPT%TWZDCF) > 1) then
 
             flg_repvar(REPT%TWZDCF) = .True.
+            nrepdim = nrepdim + 1
 
             call get_value(group, "Force", node, requested=.False.)
             if (associated(node)) then
@@ -496,6 +500,11 @@ subroutine read_input(cfilepath)
             nrep(REPT%TWZDCF) = 1
          endif
 
+         if (nrepdim > MAX_REP_DIM) then
+            print '(a)', 'Error in input file: Number of replica dimensions exceeds MAX_REP_DIM in [Replica].'
+            print '(a)', 'Please increase MAX_REP_DIM in const.F90.'
+            call sis_abort()
+         endif
       else
          nrep(:) = 1
          flg_exchange = .False.
