@@ -495,7 +495,7 @@ subroutine read_rst(itype_wanted, rst_status)
             !print *, 'mts(', irep, ')'
             !call print(mts(irep))
 
-            write(6, '(a)') '## RESTART: mts data has been received.'
+            write(6, '(a,i5,a)') '## RESTART: mts data has been received for irep = ',irep,'.'
             flush(6)
          enddo
 

@@ -17,6 +17,8 @@ subroutine init_replica
    integer :: irep, grep
    integer :: ivar
    integer :: rst_status
+   integer :: l_grep2irep(MAX_REPLICA) !! See comments for MPI_ALLREDUCE below.
+   integer :: l_grep2rank(MAX_REPLICA)
 #ifdef PAR_MPI
    integer :: istat
 #endif
@@ -30,8 +32,10 @@ subroutine init_replica
    if (flg_replica) then
 
       ! The followint two have to be zero in order to use MPI_ALLREDUCE below.
-      grep2irep(:) = 0
-      grep2rank(:) = 0
+      !grep2irep(:) = 0
+      !grep2rank(:) = 0
+      l_grep2irep(:) = 0
+      l_grep2rank(:) = 0
 
       print '(a)', 'Initializing replicas'
 
@@ -79,16 +83,23 @@ subroutine init_replica
       do irep = 1, nrep_proc
          grep = myrank * nrep_proc + irep
          irep2grep(irep) = grep
-         grep2irep(grep) = irep
-         grep2rank(grep) = myrank
+         !grep2irep(grep) = irep
+         !grep2rank(grep) = myrank
+         l_grep2irep(grep) = irep
+         l_grep2rank(grep) = myrank
          print '(a,i5,a,i5)', '# irep = ', irep, ' ==> grep = ', grep
       enddo
       print '(a)', '#'
       flush(output_unit)
 
 #ifdef PAR_MPI
-      call MPI_ALLREDUCE(MPI_IN_PLACE, grep2irep, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
-      call MPI_ALLREDUCE(MPI_IN_PLACE, grep2rank, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+      !call MPI_ALLREDUCE(MPI_IN_PLACE, grep2irep, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+      !call MPI_ALLREDUCE(MPI_IN_PLACE, grep2rank, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+
+      !! Somehow MPI_IN_PLACE does not work properly and all elements become zero after this. (only issue in Mac?). 
+      !! For now, the workaround is just use temporal variable l_grep2rank and l_grep2irep.
+      call MPI_ALLREDUCE(l_grep2irep, grep2irep, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+      call MPI_ALLREDUCE(l_grep2rank, grep2rank, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
 
       do irep = 1, nrep_all
          print '(a,i5,a,i5)', "# MPI grep2irep(", irep, ") = ", grep2irep(irep)
