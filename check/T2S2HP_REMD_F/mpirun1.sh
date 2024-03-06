@@ -1,11 +1,16 @@
 #!/bin/sh
 
-## OpenMPI
-#rank=$OMPI_COMM_WORLD_RANK
+mpiver=`mpirun --version`
 
-## mpich
-rank=$PMI_RANK
+if [[ ${mpiver:8:8} == 'Open MPI' ]]; then
+    ## OpenMPI
+    rank=$OMPI_COMM_WORLD_RANK
+else
+    ## mpich
+    rank=$PMI_RANK
+fi
 
 suffix=`printf "%3.3d" $rank`
+echo $suffix
 
 ../../sis.mpi input_REMD1.toml 1> ./out1.$suffix 2> ./err1.$suffix

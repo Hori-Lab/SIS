@@ -440,6 +440,7 @@ subroutine read_input(cfilepath)
 
          flg_repvar(:)= .False.
 
+         !----------------- Replica.Temperature -----------------
          if (nrep(REPT%TEMP) > 1) then
 
             flg_repvar(REPT%TEMP) = .True.
@@ -465,6 +466,7 @@ subroutine read_input(cfilepath)
             nrep(REPT%TEMP) = 1
          endif
 
+         !----------------- Replica.Force -----------------
          if (nrep(REPT%TWZDCF) > 1) then
 
             flg_repvar(REPT%TWZDCF) = .True.
@@ -473,15 +475,16 @@ subroutine read_input(cfilepath)
             if (associated(node)) then
                do i = 1, nrep(REPT%TWZDCF)
                   write(cquery, '(i0)') i
+                  rdummy = INVALID_VALUE
                   call get_value(node, cquery, rdummy)
 
-                  ! Convert the unit from pN to kcal/mol/A
-                  replica_values(i, REPT%TWZDCF) = rdummy * (JOUL2KCAL_MOL * 1.0e-22)
-
-                  if (replica_values(i, REPT%TWZDCF) > INVALID_JUDGE) then
+                  if (rdummy > INVALID_JUDGE) then
                      print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Force].'
                      call sis_abort()
                   endif
+
+                  ! Convert the unit from pN to kcal/mol/A
+                  replica_values(i, REPT%TWZDCF) = rdummy * (JOUL2KCAL_MOL * 1.0e-22)
                enddo
             else
                print '(a)', 'Error in input file: [Replica.Force] is required.'
