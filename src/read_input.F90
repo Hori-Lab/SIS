@@ -419,11 +419,16 @@ subroutine read_input(cfilepath)
          endif
 
          nrep(REPT%TWZDCF) = 0
-         call get_value(group, "nrep_twzdcf", nrep(REPT%TWZDCF))
+         call get_value(group, "nrep_force", nrep(REPT%TWZDCF))
 
          if (nrep(REPT%TWZDCF) > MAX_REP_PER_DIM) then
-            print '(a)', 'Error in input file: Number of replicas (nrep_twzdcf) exceeds MAX_REP_PER_DIM in [Replica.].'
+            print '(a)', 'Error in input file: Number of replicas (nrep_force) exceeds MAX_REP_PER_DIM in [Replica.].'
             print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
+         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2) then
+            print '(a)', 'Error in input file: There should be more than one replica specified either or both in nrep_temp or nrep_force.'
             call sis_abort()
          endif
 
@@ -464,7 +469,7 @@ subroutine read_input(cfilepath)
 
             flg_repvar(REPT%TWZDCF) = .True.
 
-            call get_value(group, "TWZDCF", node, requested=.False.)
+            call get_value(group, "Force", node, requested=.False.)
             if (associated(node)) then
                do i = 1, nrep(REPT%TWZDCF)
                   write(cquery, '(i0)') i
@@ -474,17 +479,17 @@ subroutine read_input(cfilepath)
                   replica_values(i, REPT%TWZDCF) = rdummy * (JOUL2KCAL_MOL * 1.0e-22)
 
                   if (replica_values(i, REPT%TWZDCF) > INVALID_JUDGE) then
-                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.TWZDCF].'
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Force].'
                      call sis_abort()
                   endif
                enddo
             else
-               print '(a)', 'Error in input file: [Replica.TWZDCF] is required.'
+               print '(a)', 'Error in input file: [Replica.Force] is required.'
                call sis_abort()
             endif
 
          else
-            ! Ignore if nrep_twzcdf = 0 or 1
+            ! Ignore if nrep_force = 0 or 1
             nrep(REPT%TWZDCF) = 1
          endif
 
@@ -729,7 +734,9 @@ subroutine read_input(cfilepath)
 
       !################# [Tweezers] #################
       ! (optional)
+      ! If nrep_force > 1, this is necessary.
       flg_twz = .False.
+      ntwz_DCF = 0
       call get_value(table, "Tweezers", group, requested=.False.)
 
       if (associated(group)) then
@@ -822,6 +829,12 @@ subroutine read_input(cfilepath)
             endif
          endif
 
+      endif
+
+      ! If f-REMD
+      if (flg_repvar(REPT%TWZDCF) .and. ntwz_DCF /= 1) then
+         print '(a)', 'Error in input file: A force pair should be specified in [Tweezers.Dual_Constant_Force].'
+         call sis_abort()
       endif
 
       !################# [Bias_SS] #################
@@ -988,6 +1001,7 @@ subroutine read_input(cfilepath)
 
    if (flg_replica) then
       print '(a,i16)', '# Replica, nrep_temp: ', nrep(REPT%TEMP)
+      print '(a,i16)', '# Replica, nrep_force: ', nrep(REPT%TWZDCF)
       print '(a,i16)', '# Replica, nstep_exchange: ', nstep_rep_exchange
       print '(a,i16)', '# Replica, nstep_save: ', nstep_rep_save
       print '(a,L1)', '# Replica, exchange: ', flg_exchange

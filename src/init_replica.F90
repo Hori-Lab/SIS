@@ -42,11 +42,6 @@ subroutine init_replica
          endif
       enddo
 
-      print *, 'nrep_all=',nrep_all
-      print *, 'nprocs=',nprocs
-      print *, 'nrep(REPT%TEMP)=', nrep(REPT%TEMP)
-      print *, 'nrep(REPT%TWZDCF)=', nrep(REPT%TWZDCF)
-
       if (nprocs > nrep_all) then
          print *, 'Error: the number of MPI processes should be equal to or smaller than the number of replicas.'
          call sis_abort()

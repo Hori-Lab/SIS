@@ -46,6 +46,7 @@ type = "MD"
 
 [Replica]
 nrep_temp = 8
+nrep_force = 0
 
 nstep_exchange = 10
 nstep_save = 100
@@ -63,7 +64,7 @@ exchange = true
     7 = 353.15
     8 = 363.15
 
-    [Replica.TWZ_DCF]
+    [Replica.Force]
     ## External force using Tweezers.Dual_Constant_Force
     1 = 0.0
     2 = 2.0
