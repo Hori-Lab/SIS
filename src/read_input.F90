@@ -898,7 +898,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(nstep_rep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_exchange, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(replica_values, MAX_REPLICA, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(replica_values, MAX_REP_PER_DIM*REPT%MAX, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(rng_seed, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(opt_anneal, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -971,8 +971,14 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_twz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_twz) then
       call MPI_BCAST(ntwz_DCF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(twz_DCF_pairs, 2*ntwz_DCF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(twz_DCF_direction, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      if (ntwz_DCF > 0) then
+         if (myrank /= 0) then
+            allocate(twz_DCF_pairs(2, ntwz_DCF))
+            allocate(twz_DCF_direction(3, ntwz_DCF))
+         endif
+         call MPI_BCAST(twz_DCF_pairs, 2*ntwz_DCF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(twz_DCF_direction, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      endif
    endif
 
    call MPI_BCAST(flg_bias_ss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)

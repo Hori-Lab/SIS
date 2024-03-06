@@ -84,6 +84,7 @@ subroutine init_replica
          print '(a,i5,a,i5)', '# irep = ', irep, ' ==> grep = ', grep
       enddo
       print '(a)', '#'
+      flush(output_unit)
 
 #ifdef PAR_MPI
       call MPI_ALLREDUCE(MPI_IN_PLACE, grep2irep, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
