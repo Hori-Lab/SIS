@@ -105,7 +105,7 @@ subroutine init_replica
          print '(a,i5,a,i5)', "# MPI grep2irep(", irep, ") = ", grep2irep(irep)
       enddo
       do irep = 1, nrep_all
-         print '(a,i5,a,i5)', "# MPI irep2rank(", irep, ") = ", grep2rank(irep)
+         print '(a,i5,a,i5)', "# MPI grep2rank(", irep, ") = ", grep2rank(irep)
       enddo
       print '(a)', '#'
 #endif
