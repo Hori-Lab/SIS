@@ -15,10 +15,11 @@ subroutine init_replica
    implicit none
 
    integer :: irep, grep
-   integer :: ivar
    integer :: rst_status
+   integer :: ivar, label, n_division, n_division_pre, n_continue, n_skip, ido, iseries
    integer :: l_grep2irep(MAX_REPLICA) !! See comments for MPI_ALLREDUCE below.
    integer :: l_grep2rank(MAX_REPLICA)
+   real(PREC) :: rvalue
 #ifdef PAR_MPI
    integer :: istat
 #endif
@@ -63,18 +64,49 @@ subroutine init_replica
       nrep_proc = nrep_all
 #endif
 
+      ! ###############################################################
+      !  lab2val
+      ! ###############################################################
+      n_division = 1
+      do ivar = 1, REPT%MAX
+
+         if (.not. flg_repvar(ivar)) cycle
+
+         n_division_pre = n_division
+         n_division     = n_division * nrep(ivar)
+
+         do irep = 1, nrep(ivar)
+
+            rvalue = replica_values(irep, ivar)
+
+            ! store
+            n_continue = nrep_all / n_division
+            n_skip     = nrep_all / n_division_pre
+            do ido = 1, n_division_pre
+               do iseries = 1, n_continue
+                  label = (irep-1)*n_continue + (ido-1)*n_skip + iseries
+                  lab2val(label, ivar) = rvalue
+               enddo
+            enddo
+
+         enddo
+      enddo
+
+
       do grep = 1, nrep_all
          rep2lab(grep) = grep
          lab2rep(grep) = grep
 
+         print '(a,i5)', '# Replica ', grep
+
          if (flg_repvar(REPT%TEMP)) then 
-            lab2val(grep, REPT%TEMP) = replica_values(grep, REPT%TEMP)
-            print '(a,i5,a,f8.3)', '# Replica ', grep, ', temp = ', lab2val(grep, REPT%TEMP)
+            !lab2val(grep, REPT%TEMP) = replica_values(grep, REPT%TEMP)
+            print '(a,f8.3)', '#                T = ', lab2val(grep, REPT%TEMP)
          endif
 
          if (flg_repvar(REPT%TWZDCF)) then 
-            lab2val(grep, REPT%TWZDCF) = replica_values(grep, REPT%TWZDCF)
-            print '(a,i5,a,f8.3)', '# Replica ', grep, ', force = ', lab2val(grep, REPT%TWZDCF) / (JOUL2KCAL_MOL * 1.0e-22)
+            !lab2val(grep, REPT%TWZDCF) = replica_values(grep, REPT%TWZDCF)
+            print '(a,f8.3)', '#                force = ', lab2val(grep, REPT%TWZDCF) / (JOUL2KCAL_MOL * 1.0e-22)
          endif
       enddo
       print '(a)', '#'
