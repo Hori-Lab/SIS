@@ -99,14 +99,16 @@ subroutine init_replica
 
          print '(a,i5)', '# Replica ', grep
 
-         if (flg_repvar(REPT%TEMP)) then 
-            !lab2val(grep, REPT%TEMP) = replica_values(grep, REPT%TEMP)
+         if (flg_repvar(REPT%TEMP)) then
             print '(a,f8.3)', '#                T = ', lab2val(grep, REPT%TEMP)
          endif
 
-         if (flg_repvar(REPT%TWZDCF)) then 
-            !lab2val(grep, REPT%TWZDCF) = replica_values(grep, REPT%TWZDCF)
+         if (flg_repvar(REPT%TWZDCF)) then
             print '(a,f8.3)', '#                force = ', lab2val(grep, REPT%TWZDCF) / (JOUL2KCAL_MOL * 1.0e-22)
+         endif
+
+         if (flg_repvar(REPT%ION)) then
+            print '(a,f8.3)', '#                ionic_strength = ', lab2val(grep, REPT%ION)
          endif
       enddo
       print '(a)', '#'

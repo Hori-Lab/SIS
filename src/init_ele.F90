@@ -7,7 +7,7 @@ subroutine init_ele()
    use var_state, only : tempK, lambdaD, diele, ionic_strength, &
                          temp_independent, diele_dTcoef
    use var_potential, only : ele_coef, ele_cutoff_type, ele_cutoff_inp, ele_cutoff
-   use var_replica, only : flg_repvar, rep2val, nrep_proc, irep2grep
+   use var_replica, only : flg_replica, flg_repvar, rep2val, nrep_proc, irep2grep
 
    implicit none
 
@@ -68,9 +68,16 @@ subroutine init_ele()
 
    do irep = 1, nrep_proc
 
-      if (flg_repvar(REPT%TEMP)) then
+      if (flg_replica) then
          grep = irep2grep(irep)
-         tK = rep2val(grep, REPT%TEMP)
+
+         if (flg_repvar(REPT%TEMP)) then
+            tK = rep2val(grep, REPT%TEMP)
+         endif
+
+         if (flg_repvar(REPT%ION)) then
+            ionic_strength = rep2val(grep, REPT%ION)
+         endif
       endif
 
       call set_ele(irep, tK, ionic_strength, lb, Zp)
@@ -80,6 +87,7 @@ subroutine init_ele()
       endif
 
       print '(a,i8)', '# Replica: ', irep
+      print '(a,g15.8)', '#    Ionic strength: ', ionic_strength
       print '(a,g15.8)', '#    Dielectric constant (H2O): ', diele(irep)
       print '(a,g15.8)', '#    coef: ', ele_coef(irep) / (Zp**2)
       print '(a,g15.8)', '#    Bjerrum length: ', lb

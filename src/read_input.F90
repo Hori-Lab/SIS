@@ -428,8 +428,17 @@ subroutine read_input(cfilepath)
             call sis_abort()
          endif
 
-         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2) then
-            print '(a)', 'Error in input file: There should be more than one replica specified either or both in nrep_temp or nrep_force.'
+         nrep(REPT%ION) = 0
+         call get_value(group, "nrep_ion", nrep(REPT%ION))
+
+         if (nrep(REPT%ION) > MAX_REP_PER_DIM) then
+            print '(a)', 'Error in input file: Number of replicas (nrep_ion) exceeds MAX_REP_PER_DIM in [Replica].'
+            print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
+         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2 .and. nrep(REPT%ION) < 2) then
+            print '(a)', 'Error in input file: There should be more than one replica specified in any of nrep_temp, nrep_force, or nrep_ion'
             call sis_abort()
          endif
 
@@ -499,6 +508,34 @@ subroutine read_input(cfilepath)
             ! Ignore if nrep_force = 0 or 1
             nrep(REPT%TWZDCF) = 1
          endif
+
+         !----------------- Replica.Ionic_strength -----------------
+         if (nrep(REPT%ION) > 1) then
+
+            flg_repvar(REPT%ION) = .True.
+            nrepdim = nrepdim + 1
+
+            call get_value(group, "Ionic_strength", node, requested=.False.)
+            if (associated(node)) then
+               do i = 1, nrep(REPT%ION)
+                  write(cquery, '(i0)') i
+                  call get_value(node, cquery, replica_values(i, REPT%ION))
+
+                  if (replica_values(i, REPT%ION) > INVALID_JUDGE) then
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Ionic_strength].'
+                     call sis_abort()
+                  endif
+               enddo
+            else
+               print '(a)', 'Error in input file: [Replica.Ionic_strength] is required.'
+               call sis_abort()
+            endif
+
+         else
+            ! Ignore if nrep_temp = 0 or 1
+            nrep(REPT%ION) = 1
+         endif
+
 
          if (nrepdim > MAX_REP_DIM) then
             print '(a)', 'Error in input file: Number of replica dimensions exceeds MAX_REP_DIM in [Replica].'

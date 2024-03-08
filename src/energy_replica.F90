@@ -93,11 +93,11 @@ subroutine energy_replica(energies, replica_energies, flg_replica_exchange, flg_
             tempK_rep = tempK
          endif
 
-         !if (flg_repvar(REPT%ION)) then
-         !   ionic_strength_rep = lab2val(label_opp, REPT%ION)
-         !else
+         if (flg_repvar(REPT%ION)) then
+            ionic_strength_rep = lab2val(label_opp, REPT%ION)
+         else
             ionic_strength_rep = ionic_strength
-         !endif
+         endif
 
          if (flg_repvar(REPT%TWZDCF)) then
             twz_DCF_forces(:, 1:ntwz_DCF, irep) = lab2val(label_opp, REPT%TWZDCF) * twz_DCF_direction(:, 1:ntwz_DCF)
@@ -125,11 +125,11 @@ subroutine energy_replica(energies, replica_energies, flg_replica_exchange, flg_
             tempK_rep = tempK
          endif
 
-         !if (flg_repvar(REPT%ION)) then
-         !   ionic_strength_rep = lab2val(label_own, REPT%ION)
-         !else
+         if (flg_repvar(REPT%ION)) then
+            ionic_strength_rep = lab2val(label_own, REPT%ION)
+         else
             ionic_strength_rep = ionic_strength
-         !endif
+         endif
 
          if (flg_repvar(REPT%TWZDCF)) then
             twz_DCF_forces(:, 1:ntwz_DCF, irep) = lab2val(label_own, REPT%TWZDCF) * twz_DCF_direction(:, 1:ntwz_DCF)
