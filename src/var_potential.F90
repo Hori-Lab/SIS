@@ -119,7 +119,10 @@ module var_potential
    logical, save :: flg_twz
    integer, save :: ntwz_DCF  !!! Dual Constant Force
    integer, allocatable :: twz_DCF_pairs(:,:)  ! (2, ntwz_DCF), pair IDs imp1 and imp2
-   real(PREC), allocatable :: twz_DCF_forces(:,:)  ! (3, ntwz_DCF), force vectors
+   real(PREC), allocatable :: twz_DCF_direction(:,:)  ! (3, ntwz_DCF), force vectors given in input
+                                                      ! In f-REMD, this will be normalised.
+                                                      ! If non f-REMD, this will be copied to twz_DCF_forces.
+   real(PREC), allocatable :: twz_DCF_forces(:,:,:)  ! (3, ntwz_DCF, nrep_proc), force vectors (magniture x direction)
 
    ! Bias_SS
    logical, save :: flg_bias_ss

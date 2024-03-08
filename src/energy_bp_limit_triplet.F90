@@ -1,7 +1,6 @@
 subroutine energy_bp_limit_triplet(irep, tempK_in, Ebp)
 
-   !use mt19937_64, only : genrand64_real1, genrand64_real3
-   use mt_stream
+   use mt_stream, only : genrand_double1, genrand_double3
    use const, only : PREC
    use const_phys, only : BOLTZ_KCAL_MOL
    use pbc, only : pbc_vec_d

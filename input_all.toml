@@ -13,7 +13,7 @@ type = "MD"
         # Force-field file. Required.
 
     fasta = "./beta-globin.fasta"
-        # FASTA sequence file. Required unless [repeat] section is specified.
+        # FASTA sequence file. Required unless [Repeat] section is specified.
 
     pdb_ini = "initial.pdb"
     xyz_ini = "initial.xyz"
@@ -50,6 +50,7 @@ type = "MD"
 
 [Replica]
 nrep_temp = 8
+nrep_force = 0
 
 nstep_exchange = 10
 nstep_save = 100
@@ -67,6 +68,18 @@ exchange = true
     7 = 353.15
     8 = 363.15
 
+    [Replica.Force]
+    ## External force using Tweezers.Dual_Constant_Force
+    1 = 0.0
+    2 = 2.0
+    3 = 4.0
+    4 = 6.0
+    5 = 8.0
+    6 = 10.0
+    7 = 12.0
+    8 = 14.0
+
+
 [Condition]
 tempK = 310.15
     # Specify the simulation temperature in Kelvin.
@@ -80,7 +93,7 @@ rng_seed = 123
 opt_anneal = 0
     # (optional) flag for simulated annealing.
     # 0: No annealing (default)
-    # 1: Annealing ("anneal" is required in [files.in])
+    # 1: Annealing ("anneal" is required in [Files.In])
 
 temp_independent = 0
     # (optional) temperature independent potential
@@ -88,7 +101,7 @@ temp_independent = 0
     # 1: Use temperature-independent potential. temp_ref is required.
 tempK_ref = 328.15
 
-[repeat]
+[Repeat]
 n_repeat = 47
 n_chain = 64
 
@@ -193,7 +206,7 @@ exclude_covalent_bond_pairs = true
 step = 1000
 
 
-[variable_box]
+[Variable_box]
     # (optional)
 step = 1000
 change_x = -1.0

@@ -1,13 +1,14 @@
 subroutine read_rst(itype_wanted, rst_status)
 
    use mt_stream, only : read, mt_state  !, print !(for debug)
-   use const
-   use const_idx
+   use const, only : PREC
+   use const_idx, only : RSTBLK
    use var_io,  only : hdl_in_rst
    use var_top, only : nmp
    use var_state, only : xyz, velos, accels, istep, ianneal, mts, mts_rep
    use var_replica, only : nrep_all, rep2lab, lab2rep, grep2rank, grep2irep
 #ifdef PAR_MPI
+   use const, only : L_INT
    use var_replica, only : nrep_proc
 #endif
    use var_parallel
@@ -494,7 +495,7 @@ subroutine read_rst(itype_wanted, rst_status)
             !print *, 'mts(', irep, ')'
             !call print(mts(irep))
 
-            write(6, '(a)') '## RESTART: mts data has been received.'
+            write(6, '(a,i5,a)') '## RESTART: mts data has been received for irep = ',irep,'.'
             flush(6)
          enddo
 

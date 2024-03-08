@@ -2,7 +2,7 @@
 
 subroutine replica_exchange(velos, replica_energy, tempk)
 
-   use const
+   use const, only : PREC
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : REPT
    use var_top, only : nmp
@@ -10,7 +10,7 @@ subroutine replica_exchange(velos, replica_energy, tempk)
    use var_replica, only : nrep_all, nrep_proc, &
                            rep2lab, lab2rep, lab2val,&
                            flg_repvar, get_pair, set_forward
-   use mt_stream
+   use mt_stream, only : genrand_double1
    use var_parallel
 
    implicit none

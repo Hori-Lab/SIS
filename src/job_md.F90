@@ -2,7 +2,7 @@
 subroutine job_md()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
-   use const
+   use const, only : PREC
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
    use progress, only : progress_init, progress_update, wall_time_sec
@@ -126,7 +126,7 @@ subroutine job_md()
 
       ! Set up initial velocities by Maxwell–Boltzmann distribution
       do irep = 1, nrep_proc
-         if (flg_replica) then
+         if (flg_repvar(REPT%TEMP)) then
             tK = rep2val(irep2grep(irep), REPT%TEMP)
          else
             tK = tempK
@@ -241,9 +241,12 @@ subroutine job_md()
 
    do irep = 1, nrep_proc
 
-      if (flg_repvar(REPT%TEMP)) then
+      if (flg_replica) then
          grep = irep2grep(irep)
          rep_label = rep2lab(grep)
+      endif
+
+      if (flg_repvar(REPT%TEMP)) then
          tK = rep2val(grep, REPT%TEMP)
       else
          tK = tempK
@@ -315,7 +318,7 @@ subroutine job_md()
       print '(a, g13.6)', 'E_total   ', energies(ENE%TOTAL, irep)
       print '(a, g13.6)', 'E_bond    ', energies(ENE%BOND, irep)
       print '(a, g13.6)', 'E_angl    ', energies(ENE%ANGL, irep)
-      print '(a, g13.6)', 'E_dih     ', energies(ENE%ANGL, irep)
+      print '(a, g13.6)', 'E_dih     ', energies(ENE%DIHE, irep)
       print '(a, g13.6)', 'E_bp      ', energies(ENE%BP, irep)
       if (flg_ele  ) print '(a, g13.6)', 'E_ele     ', energies(ENE%ELE, irep)
       if (flg_stage) print '(a, g13.6)', 'E_stage   ', energies(ENE%STAGE, irep)
@@ -481,6 +484,9 @@ subroutine job_md()
             if (flg_replica) then
                grep = irep2grep(irep)
                rep_label = rep2lab(grep)
+            endif
+
+            if (flg_repvar(REPT%TEMP)) then
                tK = rep2val(grep, REPT%TEMP)
             else
                tK = tempK
@@ -687,7 +693,7 @@ contains
          do imp = 1, nmp
             c1 = 0.5 * dt * fric(imp) / mass(imp)
             c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
-            if (flg_replica) then
+            if (flg_repvar(REPT%TEMP)) then
                tK = rep2val(irep2grep(irep), REPT%TEMP)
             else
                tK = tempK

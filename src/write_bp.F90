@@ -16,7 +16,9 @@ subroutine write_bp(irep, tempK_in)
 
    integer :: ibp, imp, jmp
    real(PREC) :: kT
+#ifdef BP_HALT_IEEE_EXCEPTIONS
    logical :: halt_mode
+#endif
 
    if (.not. (flg_out_bp .or. flg_out_bpall .or. flg_out_bpe)) then
       return

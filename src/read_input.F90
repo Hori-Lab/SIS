@@ -3,10 +3,10 @@ subroutine read_input(cfilepath)
    use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT, INT64
    use tomlf
 
-   use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA
+   use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM, MAX_REP_DIM
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT, MAX_REP_PER_DIM, POTT
+   use const_idx, only : JOBT, INTGRT, REPT, POTT
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &
@@ -23,7 +23,7 @@ subroutine read_input(cfilepath)
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
-                             flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_forces, &
+                             flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
                              flg_bias_ss, bias_ss_force, &
                              flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0, &
                              flg_timed_bias_rg
@@ -47,6 +47,7 @@ subroutine read_input(cfilepath)
    !======= 
 
    integer :: i
+   integer :: nrepdim
    integer :: istat, origin
    integer :: hdl
    integer :: len_array
@@ -127,27 +128,15 @@ subroutine read_input(cfilepath)
       !################# [Files] #################
       call get_value(table, "Files", group, requested=.False.)
       if (.not. associated(group)) then
-         call get_value(table, "files", group, origin=origin, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Files] section required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[files] is deprecated. Please use [Files].", origin, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Files] section required.", 0)
+         call sis_abort()
       endif
 
       !================= [Files.In] =================
       call get_value(group, "In", node, requested=.False.)
       if (.not. associated(node)) then
-         call get_value(group, "in", node, origin=origin, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Files.In] section required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[files.in] is deprecated. Please use [Files.In].", origin, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Files.In] section required.", 0)
+         call sis_abort()
       endif
 
       if (associated(node)) then
@@ -206,14 +195,8 @@ subroutine read_input(cfilepath)
       !================= [Files.Out] =================
       call get_value(group, "Out", node, requested=.False.)
       if (.not. associated(node)) then
-         call get_value(group, "out", node, origin=origin, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Files.Out] section required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[files.out] is deprecated. Please use [Files.Out].", origin, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Files.Out] section required.", 0)
+         call sis_abort()
       endif
 
       if (associated(node)) then
@@ -260,14 +243,8 @@ subroutine read_input(cfilepath)
       !################# [Condition] #################
       call get_value(table, "Condition", group, requested=.False.)
       if (.not. associated(group)) then
-         call get_value(table, "condition", group, requested=.False.)
-
-         if (.not. associated(group)) then
-            print '(a)', context%report("[Condition] section is required.", 0)
-            call sis_abort()
-         else
-            print '(a)', context%report("[condition] is deprecated. Please use [Condition].", 0, level=toml_level%warning)
-         endif
+         print '(a)', context%report("[Condition] section is required.", 0)
+         call sis_abort()
       endif
 
       !----------------- rng_seed -----------------
@@ -276,7 +253,7 @@ subroutine read_input(cfilepath)
       ! Set a 64-bit integer. If omitted, it will be set based on SYSTEM_CLOCK.
       call get_value(group, "rng_seed", rng_seed, stat=istat, origin=origin)
       if (istat /= 0) then
-         print '(a)', context%report("rng_seed (random-number seed value) is not set in [condition].", 0, "a value is set by SYSTEM_CLOCK.", level=toml_level%warning)
+         print '(a)', context%report("rng_seed (random-number seed value) is not set in [Condition].", 0, "a value is set by SYSTEM_CLOCK.", level=toml_level%warning)
          print '(a)', context%report("a value is set by SYSTEM_CLOCK.", origin=0, level=toml_level%warning)
          call SYSTEM_CLOCK(rng_seed)
       endif
@@ -287,7 +264,7 @@ subroutine read_input(cfilepath)
       ! 1: Annealing ("anneal" is required in [files.in])
       call get_value(group, "opt_anneal", opt_anneal, 0, stat=istat, origin=origin)
       if (istat /= 0 .or. all(opt_anneal /= (/0, 1/))) then
-         print '(a)', context%report("invalid opt_anneal in [condition].", origin, "expected either 0 or 1")
+         print '(a)', context%report("invalid opt_anneal in [Condition].", origin, "expected either 0 or 1")
          call sis_abort()
       endif
 
@@ -302,7 +279,7 @@ subroutine read_input(cfilepath)
       tempK = -1.0
       call get_value(group, "tempK", tempK, stat=istat, origin=origin)
       if (istat /= 0 .or. (opt_anneal == 0 .and. tempK < 0.0)) then
-         print '(a)', context%report("Error: invalid tempK in [condition]", origin, "expected real positive value")
+         print '(a)', context%report("Error: invalid tempK in [Condition]", origin, "expected real positive value")
          call sis_abort()
       endif
 
@@ -313,21 +290,21 @@ subroutine read_input(cfilepath)
       call get_value(group, "temp_independent", temp_independent, 0, stat=istat, origin=origin)
 
       if (istat /= 0 .or. all(temp_independent /= (/0, 1/))) then
-         print '(a)', context%report("Error: invalid temp_independent in [condition]", origin, "expected either 0 or 1.")
+         print '(a)', context%report("Error: invalid temp_independent in [Condition]", origin, "expected either 0 or 1.")
          call sis_abort()
       endif
 
       if (temp_independent > 0) then
          call get_value(group, "tempK_ref", tempK_ref, stat=istat, origin=origin)
          if (istat /= 0 .or. tempK_ref <= 0.0_PREC) then
-            print '(a)', context%report("Error: invalid tempK_ref in [condition]", origin, "expected positive real value.")
+            print '(a)', context%report("Error: invalid tempK_ref in [Condition]", origin, "expected positive real value.")
             call sis_abort()
          endif
       endif
 
       !################# Repeat sequence #################
       if (.not. allocated(cfile_fasta_in)) then
-         call get_value(table, "repeat", group)
+         call get_value(table, "Repeat", group)
          if (associated(group)) then
             call get_value(group, "n_repeat", nrepeat)
             call get_value(group, "n_chain", nchains)
@@ -440,8 +417,22 @@ subroutine read_input(cfilepath)
          call get_value(group, "nrep_temp", nrep(REPT%TEMP))
 
          if (nrep(REPT%TEMP) > MAX_REP_PER_DIM) then
-            print '(a)', 'Error in input file: Number of replicas exceeds MAX_REP_PER_DIM in [Replica.Temperature].'
+            print '(a)', 'Error in input file: Number of replicas (nrep_temp) exceeds MAX_REP_PER_DIM in [Replica].'
             print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
+         nrep(REPT%TWZDCF) = 0
+         call get_value(group, "nrep_force", nrep(REPT%TWZDCF))
+
+         if (nrep(REPT%TWZDCF) > MAX_REP_PER_DIM) then
+            print '(a)', 'Error in input file: Number of replicas (nrep_force) exceeds MAX_REP_PER_DIM in [Replica].'
+            print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
+         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2) then
+            print '(a)', 'Error in input file: There should be more than one replica specified either or both in nrep_temp or nrep_force.'
             call sis_abort()
          endif
 
@@ -451,15 +442,25 @@ subroutine read_input(cfilepath)
          flg_exchange = .True.
          call get_value(group, "exchange", flg_exchange)
 
-         if (nrep(REPT%TEMP) > 0) then
+         flg_repvar(:)= .False.
+
+         nrepdim = 0
+         !----------------- Replica.Temperature -----------------
+         if (nrep(REPT%TEMP) > 1) then
 
             flg_repvar(REPT%TEMP) = .True.
+            nrepdim = nrepdim + 1
 
             call get_value(group, "Temperature", node, requested=.False.)
             if (associated(node)) then
                do i = 1, nrep(REPT%TEMP)
                   write(cquery, '(i0)') i
                   call get_value(node, cquery, replica_values(i, REPT%TEMP))
+
+                  if (replica_values(i, REPT%TEMP) > INVALID_JUDGE) then
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Temperature].'
+                     call sis_abort()
+                  endif
                enddo
             else
                print '(a)', 'Error in input file: [Replica.Temperature] is required.'
@@ -467,19 +468,48 @@ subroutine read_input(cfilepath)
             endif
 
          else
-            print '(a)', 'Error in input file: nrep_temp has to be more than zero in [Replica].'
-            call sis_abort()
+            ! Ignore if nrep_temp = 0 or 1
+            nrep(REPT%TEMP) = 1
          endif
 
-         do i = 1, nrep(REPT%TEMP)
-            if (replica_values(i, REPT%TEMP) > INVALID_JUDGE) then
-               print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Temperature].'
+         !----------------- Replica.Force -----------------
+         if (nrep(REPT%TWZDCF) > 1) then
+
+            flg_repvar(REPT%TWZDCF) = .True.
+            nrepdim = nrepdim + 1
+
+            call get_value(group, "Force", node, requested=.False.)
+            if (associated(node)) then
+               do i = 1, nrep(REPT%TWZDCF)
+                  write(cquery, '(i0)') i
+                  rdummy = INVALID_VALUE
+                  call get_value(node, cquery, rdummy)
+
+                  if (rdummy > INVALID_JUDGE) then
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Force].'
+                     call sis_abort()
+                  endif
+
+                  ! Convert the unit from pN to kcal/mol/A
+                  replica_values(i, REPT%TWZDCF) = rdummy * (JOUL2KCAL_MOL * 1.0e-22)
+               enddo
+            else
+               print '(a)', 'Error in input file: [Replica.Force] is required.'
                call sis_abort()
             endif
-         enddo
 
+         else
+            ! Ignore if nrep_force = 0 or 1
+            nrep(REPT%TWZDCF) = 1
+         endif
+
+         if (nrepdim > MAX_REP_DIM) then
+            print '(a)', 'Error in input file: Number of replica dimensions exceeds MAX_REP_DIM in [Replica].'
+            print '(a)', 'Please increase MAX_REP_DIM in const.F90.'
+            call sis_abort()
+         endif
       else
-         nrep(REPT%TEMP) = 1
+         nrep(:) = 1
          flg_exchange = .False.
       endif
 
@@ -620,7 +650,7 @@ subroutine read_input(cfilepath)
       !################# [variable_box] #################
       ! (optional)
       flg_variable_box = .False.
-      call get_value(table, "variable_box", group, requested=.False.)
+      call get_value(table, "Variable_box", group, requested=.False.)
       if (associated(group)) then 
          flg_variable_box = .True.
          call get_value(group, "step", variable_box_step)
@@ -719,7 +749,9 @@ subroutine read_input(cfilepath)
 
       !################# [Tweezers] #################
       ! (optional)
+      ! If nrep_force > 1, this is necessary.
       flg_twz = .False.
+      ntwz_DCF = 0
       call get_value(table, "Tweezers", group, requested=.False.)
 
       if (associated(group)) then
@@ -785,7 +817,7 @@ subroutine read_input(cfilepath)
                      call sis_abort()
                   endif
 
-                  allocate(twz_DCF_forces(3, ntwz_DCF))
+                  allocate(twz_DCF_direction(3, ntwz_DCF))
 
                   do i = 1, ntwz_DCF
                      call get_value(array, i, nested_array)
@@ -795,9 +827,9 @@ subroutine read_input(cfilepath)
                                         origin, "array(s) have to be a vector (fx, fy, fz).")
                            call sis_abort()
                         endif
-                        call get_value(nested_array, 1, twz_DCF_forces(1,i))
-                        call get_value(nested_array, 2, twz_DCF_forces(2,i))
-                        call get_value(nested_array, 3, twz_DCF_forces(3,i))
+                        call get_value(nested_array, 1, twz_DCF_direction(1,i))
+                        call get_value(nested_array, 2, twz_DCF_direction(2,i))
+                        call get_value(nested_array, 3, twz_DCF_direction(3,i))
 
                      else
                         print '(a)', context%report("invalid forces_pN vector in [Tweezers.Dual_Constant_Force].", &
@@ -807,11 +839,17 @@ subroutine read_input(cfilepath)
                   enddo
 
                   ! Convert the unit from pN to kcal/mol/A
-                  twz_DCF_forces(:,:) = twz_DCF_forces(:,:) * (JOUL2KCAL_MOL * 1.0e-22)
+                  twz_DCF_direction(:,:) = twz_DCF_direction(:,:) * (JOUL2KCAL_MOL * 1.0e-22)
                endif
             endif
          endif
 
+      endif
+
+      ! If f-REMD
+      if (flg_repvar(REPT%TWZDCF) .and. ntwz_DCF /= 1) then
+         print '(a)', 'Error in input file: A force pair should be specified in [Tweezers.Dual_Constant_Force].'
+         call sis_abort()
       endif
 
       !################# [Bias_SS] #################
@@ -926,7 +964,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(nstep_rep_save, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_exchange, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(replica_values, MAX_REPLICA, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(replica_values, MAX_REP_PER_DIM*REPT%MAX, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(rng_seed, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(opt_anneal, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -999,8 +1037,14 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_twz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_twz) then
       call MPI_BCAST(ntwz_DCF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(twz_DCF_pairs, 2*ntwz_DCF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(twz_DCF_forces, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      if (ntwz_DCF > 0) then
+         if (myrank /= 0) then
+            allocate(twz_DCF_pairs(2, ntwz_DCF))
+            allocate(twz_DCF_direction(3, ntwz_DCF))
+         endif
+         call MPI_BCAST(twz_DCF_pairs, 2*ntwz_DCF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(twz_DCF_direction, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      endif
    endif
 
    call MPI_BCAST(flg_bias_ss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
@@ -1037,6 +1081,7 @@ subroutine read_input(cfilepath)
 
    if (flg_replica) then
       print '(a,i16)', '# Replica, nrep_temp: ', nrep(REPT%TEMP)
+      print '(a,i16)', '# Replica, nrep_force: ', nrep(REPT%TWZDCF)
       print '(a,i16)', '# Replica, nstep_exchange: ', nstep_rep_exchange
       print '(a,i16)', '# Replica, nstep_save: ', nstep_rep_save
       print '(a,L1)', '# Replica, exchange: ', flg_exchange
@@ -1166,8 +1211,8 @@ subroutine read_input(cfilepath)
       print '(a)', '# Tweezers, mode pair  imp1  imp2   fx      fy      fz'
       do i = 1, ntwz_DCF
          print '(a,i3,x,i5,x,i5,3(x,f7.2))', '# Tweezers,  DCF ',i, twz_DCF_pairs(1,i), twz_DCF_pairs(2,i),&
-               twz_DCF_forces(1,i) / (JOUL2KCAL_MOL*1.0e-22), twz_DCF_forces(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
-               twz_DCF_forces(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
+               twz_DCF_direction(1,i) / (JOUL2KCAL_MOL*1.0e-22), twz_DCF_direction(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
+               twz_DCF_direction(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
       enddo
       print '(a)', '#'
    endif

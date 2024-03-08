@@ -1,7 +1,6 @@
 module const_idx
 
    use,intrinsic :: ISO_FORTRAN_ENV, only: REAL64, INT64
-   use :: const
 
    implicit none
 
@@ -74,9 +73,10 @@ module const_idx
 
    type replica_type
       integer :: TEMP
+      integer :: TWZDCF
       integer :: MAX
    endtype replica_type
-   type(replica_type), parameter :: REPT = replica_type(1,1)
+   type(replica_type), parameter :: REPT = replica_type(1,2,2)
 
    type nn_types
       integer :: GC_CG

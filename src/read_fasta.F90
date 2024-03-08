@@ -2,7 +2,7 @@ subroutine read_fasta()
 
    use, intrinsic :: iso_fortran_env, Only : OUTPUT_UNIT
 
-   use const
+   use const, only : CHAR_FILE_LINE
    use const_idx, only : SEQT, char2seqt
    use var_top, only : nmp, nchains, nmp_chain, seq, imp_chain, ichain_mp, lmp_mp
    use var_io, only : cfile_fasta_in, iopen_hdl

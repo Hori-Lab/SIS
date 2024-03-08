@@ -1,7 +1,9 @@
 subroutine init_replica
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
-   use const_idx, only : REPT, MAX_REPLICA, RSTBLK
+   use const, only : MAX_REPLICA
+   use const_idx, only : REPT, RSTBLK
+   use const_phys, only : INVALID_VALUE, JOUL2KCAL_MOL
    use var_state, only : restarted
    use var_replica, only : flg_replica, nrep_all, rep2val, nrep_proc, &
                            irep2grep, grep2irep, grep2rank, &
@@ -13,8 +15,11 @@ subroutine init_replica
    implicit none
 
    integer :: irep, grep
-   integer :: ivar
    integer :: rst_status
+   integer :: ivar, label, n_division, n_division_pre, n_continue, n_skip, ido, iseries
+   integer :: l_grep2irep(MAX_REPLICA) !! See comments for MPI_ALLREDUCE below.
+   integer :: l_grep2rank(MAX_REPLICA)
+   real(PREC) :: rvalue
 #ifdef PAR_MPI
    integer :: istat
 #endif
@@ -23,12 +28,15 @@ subroutine init_replica
    nrep_all = 1
    nrep_proc = 1
    irep2grep(:) = 1
+   lab2val(:,:) = INVALID_VALUE
 
    if (flg_replica) then
 
       ! The followint two have to be zero in order to use MPI_ALLREDUCE below.
-      grep2irep(:) = 0
-      grep2rank(:) = 0
+      !grep2irep(:) = 0
+      !grep2rank(:) = 0
+      l_grep2irep(:) = 0
+      l_grep2rank(:) = 0
 
       print '(a)', 'Initializing replicas'
 
@@ -39,17 +47,13 @@ subroutine init_replica
          endif
       enddo
 
-      print *, 'nrep_all=',nrep_all
-      print *, 'nprocs=',nprocs
-      print *, 'nrep(REPT%TEMP)=', nrep(REPT%TEMP)
-
-      if (nprocs > nrep(REPT%TEMP)) then
+      if (nprocs > nrep_all) then
          print *, 'Error: the number of MPI processes should be equal to or smaller than the number of replicas.'
          call sis_abort()
       endif
 
 #ifdef PAR_MPI
-      if (mod(nrep(REPT%TEMP), nprocs) /= 0) then
+      if (mod(nrep_all, nprocs) /= 0) then
          print *, 'Error: the number of replicas has to be a multiple of the number of MPI processes.'
          call sis_abort()
       endif
@@ -60,11 +64,50 @@ subroutine init_replica
       nrep_proc = nrep_all
 #endif
 
+      ! ###############################################################
+      !  lab2val
+      ! ###############################################################
+      n_division = 1
+      do ivar = 1, REPT%MAX
+
+         if (.not. flg_repvar(ivar)) cycle
+
+         n_division_pre = n_division
+         n_division     = n_division * nrep(ivar)
+
+         do irep = 1, nrep(ivar)
+
+            rvalue = replica_values(irep, ivar)
+
+            ! store
+            n_continue = nrep_all / n_division
+            n_skip     = nrep_all / n_division_pre
+            do ido = 1, n_division_pre
+               do iseries = 1, n_continue
+                  label = (irep-1)*n_continue + (ido-1)*n_skip + iseries
+                  lab2val(label, ivar) = rvalue
+               enddo
+            enddo
+
+         enddo
+      enddo
+
+
       do grep = 1, nrep_all
          rep2lab(grep) = grep
          lab2rep(grep) = grep
-         lab2val(grep, REPT%TEMP) = replica_values(grep, REPT%TEMP)
-         print '(a,i5,a,f8.3)', '# Replica ', grep, ', temp = ', lab2val(grep, REPT%TEMP)
+
+         print '(a,i5)', '# Replica ', grep
+
+         if (flg_repvar(REPT%TEMP)) then 
+            !lab2val(grep, REPT%TEMP) = replica_values(grep, REPT%TEMP)
+            print '(a,f8.3)', '#                T = ', lab2val(grep, REPT%TEMP)
+         endif
+
+         if (flg_repvar(REPT%TWZDCF)) then 
+            !lab2val(grep, REPT%TWZDCF) = replica_values(grep, REPT%TWZDCF)
+            print '(a,f8.3)', '#                force = ', lab2val(grep, REPT%TWZDCF) / (JOUL2KCAL_MOL * 1.0e-22)
+         endif
       enddo
       print '(a)', '#'
 
@@ -72,21 +115,29 @@ subroutine init_replica
       do irep = 1, nrep_proc
          grep = myrank * nrep_proc + irep
          irep2grep(irep) = grep
-         grep2irep(grep) = irep
-         grep2rank(grep) = myrank
+         !grep2irep(grep) = irep
+         !grep2rank(grep) = myrank
+         l_grep2irep(grep) = irep
+         l_grep2rank(grep) = myrank
          print '(a,i5,a,i5)', '# irep = ', irep, ' ==> grep = ', grep
       enddo
       print '(a)', '#'
+      flush(output_unit)
 
 #ifdef PAR_MPI
-      call MPI_ALLREDUCE(MPI_IN_PLACE, grep2irep, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
-      call MPI_ALLREDUCE(MPI_IN_PLACE, grep2rank, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+      !call MPI_ALLREDUCE(MPI_IN_PLACE, grep2irep, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+      !call MPI_ALLREDUCE(MPI_IN_PLACE, grep2rank, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+
+      !! Somehow MPI_IN_PLACE does not work properly and all elements become zero after this. (only issue in Mac?). 
+      !! For now, the workaround is just use temporal variable l_grep2rank and l_grep2irep.
+      call MPI_ALLREDUCE(l_grep2irep, grep2irep, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
+      call MPI_ALLREDUCE(l_grep2rank, grep2rank, MAX_REPLICA, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, istat)
 
       do irep = 1, nrep_all
          print '(a,i5,a,i5)', "# MPI grep2irep(", irep, ") = ", grep2irep(irep)
       enddo
       do irep = 1, nrep_all
-         print '(a,i5,a,i5)', "# MPI irep2rank(", irep, ") = ", grep2rank(irep)
+         print '(a,i5,a,i5)', "# MPI grep2rank(", irep, ") = ", grep2rank(irep)
       enddo
       print '(a)', '#'
 #endif

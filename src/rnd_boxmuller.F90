@@ -2,7 +2,7 @@ function rnd_boxmuller(irep)
 
    use const, only : PREC
    !use mt19937_64
-   use mt_stream
+   use mt_stream, only : genrand_double1
    use var_state, only : mts
 
    implicit none
