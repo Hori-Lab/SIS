@@ -1050,6 +1050,7 @@ subroutine read_input(cfilepath)
    if (flg_replica) then
       print '(a,i16)', '# Replica, nrep_temp: ', nrep(REPT%TEMP)
       print '(a,i16)', '# Replica, nrep_force: ', nrep(REPT%TWZDCF)
+      print '(a,i16)', '# Replica, nrep_ion: ', nrep(REPT%ION)
       print '(a,i16)', '# Replica, nstep_exchange: ', nstep_rep_exchange
       print '(a,i16)', '# Replica, nstep_save: ', nstep_rep_save
       print '(a,L1)', '# Replica, exchange: ', flg_exchange
