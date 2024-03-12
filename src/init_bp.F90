@@ -2,25 +2,23 @@ subroutine init_bp()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const, only : PREC
-   use const_idx, only : SEQT, BPT, seqt2char, seqt2nnt, NNENDT
-   use var_io, only : flg_in_ct, flg_in_bpseq, cfile_ct_in, cfile_bpseq_in, iopen_hdl
+   use const_idx, only : SEQT, BPT, seqt2nnt, NNENDT, is_complement
+   use var_io, only : flg_in_ct, flg_in_bpseq
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
    use var_potential, only : bp_model, bp_map, bp_min_loop, & !bp_map_dG, bp_map_0, &
                              bp_paras, bp_cutoff_energy, bp_cutoff_dist, bp3_map, &
                              NN_dH, NN_dS, dH0, dS0, bp3_dH, bp3_dS, &
                              flg_NNend, NNend_dH, NNend_dS, dHend0, dSend0
    !use var_replica, only : nrep_proc
+   use var_parallel
 
    implicit none
 
    integer :: imp, jmp, bptype
-   integer :: i, j, ichain, jchain
-   integer :: h, l, n, idummy
+   integer :: i, j, h, ichain, jchain
    integer :: w, x, u, z, y, v
-   integer :: istat, hdl
    real(PREC) :: cutoff
    real(PREC) :: dH, dS
-   character(len=1) :: nt
    logical :: comp_wz, comp_uv
    integer :: bp3_hash(1:4**6)   ! 4**6 = 4096
 
@@ -182,189 +180,7 @@ subroutine init_bp()
          error stop
       endif
 
-      iopen_hdl = iopen_hdl + 1
-      hdl = iopen_hdl
-
-      if (flg_in_ct) then
-         print '(2a)', "Reading CT file: ", trim(cfile_ct_in)
-         open(hdl, file=cfile_ct_in, status='old', action='read', iostat=istat)
-
-         if (istat /= 0) then
-            print '(2a)', 'Error: failed to open the CT file. ', trim(cfile_ct_in)
-            flush(output_unit)
-            error stop
-         endif
-
-         ! Header, number of nucleotides
-         read(hdl, *) n
-
-         if (n /= nmp) then
-            print '(a)', 'Error: CT file format error. The total number of nucleotide does not match.'
-            flush(output_unit)
-            error stop
-         endif
-
-      else ! BPSEQ
-         print '(2a)', "Reading BPSEQ file: ", trim(cfile_bpseq_in)
-         open(hdl, file=cfile_bpseq_in, status='old', action='read', iostat=istat)
-
-         if (istat /= 0) then
-            print '(2a)', 'Error: failed to open the BPSEQ file. ', trim(cfile_bpseq_in)
-            flush(output_unit)
-            error stop
-         endif
-      endif
-
-      ! Main
-      do l = 1, nmp
-
-         if (flg_in_ct) then
-            ! e.g.)   2 G     1     3   218     5
-            read(hdl, *, iostat=istat) imp, nt, idummy, idummy, jmp, idummy
-
-            if (istat /= 0) then
-               print '(a,i8)', 'Error: CT file format error. Line can not be read for Nucleotide ', l
-               flush(output_unit)
-               error stop
-            end if
-
-            if (imp /= l) then
-               print '(a,i8)', 'Error: CT file format error. Nucleotide number does not match for Nucleotide ', l
-               flush(output_unit)
-               error stop
-            endif
-
-         else ! BPSEQ
-            ! e.g.)   2 G     218
-            read(hdl, *, iostat=istat) imp, nt, jmp
-
-            if (istat /= 0) then
-               print '(a,i8)', 'Error: BPSEQ file format error. Line can not be read for Nucleotide ', l
-               flush(output_unit)
-               error stop
-            end if
-
-            if (imp /= l) then
-               print '(a,i8)', 'Error: BPSEQ file format error. Nucleotide number does not match for Nucleotide ', l
-               flush(output_unit)
-               error stop
-            endif
-         endif
-
-         if (jmp /= 0) then
-
-            if (jmp < imp) then
-               idummy = jmp
-               jmp = imp
-               imp = idummy
-            endif
-
-            i = lmp_mp(imp)
-            ichain = ichain_mp(imp)
-            j = lmp_mp(jmp)
-            jchain = ichain_mp(jmp)
-
-            ! Either 5' or 3' end
-            if (i == 1 .or. i == nmp_chain(ichain)) then
-               print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered because (i) is a chain end.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
-               cycle
-            endif
-
-            ! Either 5' or 3' end
-            if (j == 1 .or. j == nmp_chain(jchain)) then
-               print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered because (j) is a chain end.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
-               cycle
-            endif
-
-            ! Minimum loop length
-            if (ichain == jchain .and. i + bp_min_loop >= j) then
-               print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered due to the minimum loop length required.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
-               cycle
-            endif
-
-            if (bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
-               ! Isolated base pair not allowed
-               if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
-                   .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
-                  print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered because it is an isolated base pair.'
-                  print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-                  print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
-                  cycle
-               endif
-            endif
-
-            if (seq(i, ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) then
-               bp_map(imp, jmp) = BPT%GC
-               bp_map(jmp, imp) = BPT%GC
-            else if (seq(i, ichain) == SEQT%C .and. seq(j, jchain) == SEQT%G) then
-               bp_map(imp, jmp) = BPT%CG
-               bp_map(jmp, imp) = BPT%CG
-
-            else if (seq(i, ichain) == SEQT%A .and. seq(j, jchain) == SEQT%U) then
-               bp_map(imp, jmp) = BPT%AU
-               bp_map(jmp, imp) = BPT%AU
-            else if (seq(i, ichain) == SEQT%U .and. seq(j, jchain) == SEQT%A) then
-               bp_map(imp, jmp) = BPT%UA
-               bp_map(jmp, imp) = BPT%UA
-
-            else if (seq(i, ichain) == SEQT%G .and. seq(j, jchain) == SEQT%U) then
-               bp_map(imp, jmp) = BPT%GU
-               bp_map(jmp, imp) = BPT%GU
-            else if (seq(i, ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) then
-               bp_map(imp, jmp) = BPT%UG
-               bp_map(jmp, imp) = BPT%UG
-
-            else
-               print '(a)', 'Warning: The following pair in CT/BPSEQ file does not form any known types of base pairs.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
-
-            endif
-
-            if (bp_model == 5) then
-               !if (ichain == jchain .and. (j+1) + bp_min_loop >= (i-1)) then
-               !   ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
-               !   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
-               !                                             SEQT%U, seq(j, jchain), seq(j-1, jchain)))
-
-               if (i-1 == 1 .or. j+1 == nmp_chain(jchain)) then
-                  ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
-                                                            SEQT%U, seq(j, jchain), seq(j-1, jchain)))
-
-               else if (j-1 == 1 .or. i+1 == nmp_chain(ichain)) then
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
-                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
-
-               else if (ichain == jchain .and. (i+1) + bp_min_loop >= (j-1)) then
-                  ! (i+1) and (j-1) should be treated as unpaired (represented as U-U).
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
-                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
-
-               else
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), seq(i+1, ichain), &
-                                                            seq(j+1, jchain), seq(j, jchain), seq(j-1, jchain)))
-
-               endif
-            endif
-            !bp_map_0(imp, jmp) = bp_map(imp, jmp)
-            !bp_map_0(jmp, imp) = bp_map(jmp, imp)
-
-         endif
-      enddo
-
-      close(hdl)
-      iopen_hdl = iopen_hdl - 1
-
-      print '(a)', 'Done: reading CT/BPSEQ file'
-      print *
-      flush(output_unit)
+      call read_ss()   ! set bp_map according to ct/bpseq files
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! All pairwise
@@ -428,42 +244,53 @@ subroutine init_bp()
                bp_map(jmp, imp) = BPT%UG
             endif
 
-            if (bp_model == 5) then
-               !if (ichain == jchain .and. (j+1) + bp_min_loop >= (i-1)) then
-               !   ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
-               !   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
-               !                                             SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+         enddo
+      enddo
+   endif
 
-               if (i-1 == 1 .or. j+1 == nmp_chain(jchain)) then
-                  ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
-                                                            SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+   if (bp_model == 5) then
 
-               else if (j-1 == 1 .or. i+1 == nmp_chain(ichain)) then
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
-                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
+      do imp = 1, nmp
+         do jmp = imp+1, nmp
 
-               else if (ichain == jchain .and. (i+1) + bp_min_loop >= (j-1)) then
-                  ! (i+1) and (j-1) should be treated as unpaired (represented as U-U).
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
-                                                            seq(j+1, jchain), seq(j, jchain), SEQT%U))
+            if (bp_map(imp, jmp) == 0) cycle
 
-               else
-                  bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), seq(i+1, ichain), &
-                                                            seq(j+1, jchain), seq(j, jchain), seq(j-1, jchain)))
+            i = lmp_mp(imp)
+            ichain = ichain_mp(imp)
+            j = lmp_mp(jmp)
+            jchain = ichain_mp(jmp)
 
-               endif
+            !if (ichain == jchain .and. (j+1) + bp_min_loop >= (i-1)) then
+            !   ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
+            !   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
+            !                                             SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+
+            if (i-1 == 1 .or. j+1 == nmp_chain(jchain)) then
+               ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
+               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
+                                                         SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+
+            else if (j-1 == 1 .or. i+1 == nmp_chain(ichain)) then
+               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
+                                                         seq(j+1, jchain), seq(j, jchain), SEQT%U))
+
+            else if (ichain == jchain .and. (i+1) + bp_min_loop >= (j-1)) then
+               ! (i+1) and (j-1) should be treated as unpaired (represented as U-U).
+               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
+                                                         seq(j+1, jchain), seq(j, jchain), SEQT%U))
+
+            else
+               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), seq(i+1, ichain), &
+                                                         seq(j+1, jchain), seq(j, jchain), seq(j-1, jchain)))
+
             endif
 
          enddo
       enddo
 
-      !bp_map_0(:,:) = bp_map(:,:)
-      !bp_map_0(:,:) = bp_map(:,:)
-   endif
-
-   if (bp_model /= 5) then
+   else
       bp3_map(:,:) = bp_map(:,:)
+
    endif
 
    !call set_bp_map()
@@ -501,36 +328,6 @@ subroutine init_bp()
    call write_bpcoef()
 
 contains
-
-   logical function is_complement(s1, s2)
-
-      integer, intent(in) :: s1, s2
-
-      is_complement = .False.
-
-      if (s1 == SEQT%A) then
-         if (s2 == SEQT%U) then
-            is_complement = .True.
-         endif
-
-      else if (s1 == SEQT%U) then
-         if (s2 == SEQT%A .or. s2 == SEQT%G) then
-            is_complement = .True.
-         endif
-
-      else if (s1 == SEQT%G) then
-         if (s2 == SEQT%C .or. s2 == SEQT%U) then
-            is_complement = .True.
-         endif
-
-      else if (s1 == SEQT%C) then
-         if (s2 == SEQT%G) then
-            is_complement = .True.
-         endif
-
-      endif
-
-   end function is_complement
 
    function bp3_hash_key(w, x, u, z, y, v) result (i)
 

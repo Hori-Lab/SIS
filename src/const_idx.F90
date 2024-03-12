@@ -271,4 +271,32 @@ contains
       nnt = char2nnt(ci//cj//'_'//ck//cl)
    endfunction seqt2nnt
 
+   logical function is_complement(s1, s2)
+      integer, intent(in) :: s1, s2
+
+      is_complement = .False.
+
+      if (s1 == SEQT%A) then
+         if (s2 == SEQT%U) then
+            is_complement = .True.
+         endif
+
+      else if (s1 == SEQT%U) then
+         if (s2 == SEQT%A .or. s2 == SEQT%G) then
+            is_complement = .True.
+         endif
+
+      else if (s1 == SEQT%G) then
+         if (s2 == SEQT%C .or. s2 == SEQT%U) then
+            is_complement = .True.
+         endif
+
+      else if (s1 == SEQT%C) then
+         if (s2 == SEQT%G) then
+            is_complement = .True.
+         endif
+
+      endif
+   end function is_complement
+
 end module const_idx
