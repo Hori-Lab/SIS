@@ -154,10 +154,10 @@ subroutine read_fasta()
 #ifdef PAR_MPI
 
    if (myrank == 0) then
-      print '(2a)', 'Sending sequence data via MPI.'
+      print '(a)', 'Sending sequence data via MPI.'
       flush(OUTPUT_UNIT)
    else
-      print '(2a)', 'Receiving sequence data via MPI.'
+      print '(a)', 'Receiving sequence data via MPI.'
       flush(OUTPUT_UNIT)
    endif
 

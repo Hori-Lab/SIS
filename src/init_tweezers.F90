@@ -17,7 +17,7 @@ subroutine init_tweezers
 
       ! Currently only ntwz_DCF = 1 is allowed for REMD.
       if (ntwz_DCF /= 1) then
-         print '(2a)', 'Error: ntwz_DCF must be 1 in f-REMD.'
+         print '(a)', 'Error: ntwz_DCF must be 1 in f-REMD.'
          call sis_abort()
       endif
 
