@@ -12,15 +12,15 @@ subroutine write_rep_table()
 
    if (myrank == 0) then
 
-      write(hdl_rep,'(a)') '# Table of replica valiable and label'
+      write(hdl_rep,'(a)') '# Table of replica variable and label'
       write(hdl_rep,'(a)',ADVANCE="NO") '#label '
       do ivar = 1, REPT%MAX
          if (flg_repvar(ivar)) then
             select case (ivar)
             case (REPT%TEMP)
                write(hdl_rep, '(a)', ADVANCE = "NO") 'Temperature   '
-            !case (REPT%ION)
-            !   write(hdl_rep, '(a)', ADVANCE = "NO") 'IonicStrength '
+            case (REPT%ION)
+               write(hdl_rep, '(a)', ADVANCE = "NO") 'IonicStrength '
             case (REPT%TWZDCF)
                write(hdl_rep, '(a)', ADVANCE = "NO") 'External-force '
             endselect
