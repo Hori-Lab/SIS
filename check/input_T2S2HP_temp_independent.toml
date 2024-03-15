@@ -1,19 +1,19 @@
 title = "T2S2 HP, DCD mode, temperature independent"
 
-[job]
+[Job]
 type = "DCD"
 
-[files]
-      [files.in]
+[Files]
+      [Files.In]
       ff = "./sis_dih_ReB_NN.ff"
       fasta = "T2S2HP.fasta"
       dcd = "./test_T2S2HP.dcd"
 
-      [files.out]
+      [Files.Out]
       types = []
       prefix = "./test_T2S2HP_temp_independent"
 
-[condition]
+[Condition]
       #tempK = 348.15
       tempK = 300.00
       rng_seed = 123

@@ -11,6 +11,7 @@ add_executable(${SIS_EXE}
     var_top.F90 var_state.F90 var_potential.F90 var_io.F90
     read_force_field.F90 read_input.F90 read_pdb.F90 read_xyz.F90 read_fasta.F90
     read_anneal.F90 read_ss.F90
+    write_out.F90
     write_rep_table.F90
     write_rst.F90 read_rst.F90
     write_bp.F90

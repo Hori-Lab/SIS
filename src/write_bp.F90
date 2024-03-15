@@ -58,6 +58,18 @@ subroutine write_bp(irep, tempK_in)
 #ifdef BP_HALT_IEEE_EXCEPTIONS
       call ieee_get_halting_mode(IEEE_UNDERFLOW, halt_mode)
       call ieee_set_halting_mode(IEEE_UNDERFLOW, halting=.false. )
+      ! This is a workaround for Mac (GCC version 13.2.0) stops with error
+      ! after failing to cast very small number like below.
+      !
+      !   ene_bp(ibp, irep) =   -2.6033794090771756E-047
+      !
+      !   Program received signal SIGILL: Illegal instruction.
+      !   zsh: illegal hardware instructio
+      !
+      ! Another possible workaround is to exlucde such values.
+      !if (ene_bp(ibp,irep) > -1.0e-10_PREC) then
+      !   cycle
+      !endif
 #endif
 
       do ibp = 1, nbp(irep)

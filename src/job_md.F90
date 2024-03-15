@@ -1,4 +1,3 @@
-!#define OUTFLUSH
 subroutine job_md()
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64, output_unit
@@ -17,7 +16,7 @@ subroutine job_md()
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next, &
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
-   use var_io, only : flg_progress, step_progress, hdl_dcd, hdl_out, cfile_dcd, hdl_rep
+   use var_io, only : flg_progress, step_progress, hdl_dcd, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage, flg_ele, flg_twz
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
@@ -27,7 +26,7 @@ subroutine job_md()
 
    implicit none
 
-   integer :: i, irep, imp, icol
+   integer :: i, irep, imp
    integer :: grep, rep_label
    integer :: rst_status
    real(PREC) :: tK
@@ -43,7 +42,6 @@ subroutine job_md()
    real(PREC) :: replica_energies(2, nrep_all)
    logical :: flg_stop
    logical :: flg_step_save, flg_step_rep_save, flg_step_rep_exchange
-   character(len=37) :: out_fmt
 #ifdef PAR_MPI
    integer :: istat
    real(PREC) :: replica_energies_l(2, nrep_all)
@@ -51,13 +49,6 @@ subroutine job_md()
 
    ! Function
    real(PREC) :: rnd_boxmuller
-
-   ! Format in .out file
-   if (flg_replica) then
-      write(out_fmt, '(a23,i2,a12)') '(i12, 1x, i4, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
-   else
-      write(out_fmt, '(a15,i2,a12)') '(i12, 1x, f6.2,', ENE%EXV+2, '(1x, g13.6))'
-   endif
 
    allocate(mass(nmp))
    allocate(accels(3, nmp, nrep_proc))
@@ -232,34 +223,7 @@ subroutine job_md()
 
       call fdcd(irep)%write_header(nmp)
 
-      ! .out file header
-      if (flg_replica) then
-         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe   (2)R (3)T   (4)Ekin       (5)Epot       (6)Ebond     '
-                                                   !123456789012 1234 123456 1234567890123 1234567890123 1234567890123'
-         write(hdl_out(irep), '(a)', advance='no') ' (7)Eangl      (8)Edih       (9)Ebp        (10)Eexv     '
-                                                   ! 1234567890123 1234567890123 1234567890123 1234567890123'
-         icol = 10
-      else
-         write(hdl_out(irep), '(a)', advance='no') '#(1)nframe   (2)T   (3)Ekin       (4)Epot       (5)Ebond     '
-                                                   !123456789012 123456 1234567890123 1234567890123 1234567890123'
-         write(hdl_out(irep), '(a)', advance='no') ' (6)Eangl      (7)Edih       (8)Ebp        (9)Eexv      '
-                                                   ! 1234567890123 1234567890123 1234567890123 1234567890123'
-         icol = 9
-      endif
-      if (flg_ele) then
-         icol = icol + 1
-                                                        ! 1   23     4567890123
-         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Eele     '
-      endif
-      if (flg_stage) then
-         icol = icol + 1
-         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Estage   '
-      endif
-      if (flg_twz) then
-         icol = icol + 1
-         write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Etweezers'
-      endif
-      write(hdl_out(irep), '(a)') ''
+      call write_out_header(irep)
 
       ! Output initial states
 
@@ -285,21 +249,7 @@ subroutine job_md()
 
       if (.not. restarted) then
          ! At istep = 0 (not restarted), write both .out and DCD
-         if (flg_replica) then
-            write(hdl_out(irep), out_fmt, advance='no') istep, rep_label, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%EXV)
-         else
-            write(hdl_out(irep), out_fmt, advance='no') istep, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%EXV)
-         endif
-         if (flg_ele) then
-            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%ELE, irep)
-         endif
-         if (flg_stage) then
-            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
-         endif
-         if (flg_twz) then
-            write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%TWZ, irep)
-         endif
-         write(hdl_out(irep), '(a)') ''
+         call write_out(irep, istep, rep_label, tK)
 
          call write_bp(irep, tK)
 
@@ -447,24 +397,7 @@ subroutine job_md()
             !call energy_sumup(irep, energies(1:ENE%MAX, irep))
             call energy_kinetic(irep, Ekinetic(irep))
 
-            if (flg_replica) then
-               write(hdl_out(irep), out_fmt, advance='no') istep, rep_label, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%EXV)
-            else
-               write(hdl_out(irep), out_fmt, advance='no') istep, tK, Ekinetic(irep), (energies(i, irep), i=0,ENE%EXV)
-            endif
-            if (flg_ele) then
-               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%ELE, irep)
-            endif
-            if (flg_stage) then
-               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%STAGE, irep)
-            endif
-            if (flg_twz) then
-               write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%TWZ, irep)
-            endif
-            write(hdl_out(irep), '(a)') ''
-#ifdef OUTFLUSH
-            flush(hdl_out(irep))
-#endif
+            call write_out(irep, istep, rep_label, tK)
 
             call write_bp(irep, tK)
 
