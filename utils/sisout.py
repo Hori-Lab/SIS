@@ -17,6 +17,7 @@ class SisoutHeader(object):
         self.e_exv = None
         self.e_ele = None
         self.e_stage = None
+        self.e_twz = None
 
     def show(self):
         print('step', self.step)
@@ -32,6 +33,7 @@ class SisoutHeader(object):
         print('e_exv', self.e_exv)
         print('e_ele', self.e_el)
         print('e_stage', self.e_stage)
+        print('e_twz', self.e_twz)
 
 class SisoutFile(object):
     def __init__(self, filename) :
@@ -179,6 +181,8 @@ class SisoutFile(object):
             elif s.endswith(')Eele'):
                 h.e_ele = i
             elif s.endswith(')Estage'):
+                h.e_stage = i
+            elif s.endswith(')Etweezers'):
                 h.e_stage = i
             else:
                 raise Exception('unknown header in sisout.py')
