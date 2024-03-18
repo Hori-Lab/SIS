@@ -1,4 +1,4 @@
-subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
+subroutine set_ele(irep, tempk, ionstr, out_lb, out_Zp)
 
    use const
    use const_phys, only : PI, EPS0, BOLTZ_J, N_AVO, ELE, JOUL2KCAL_MOL
@@ -10,7 +10,7 @@ subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
 
    integer, intent(in) :: irep
    real(PREC), intent(in) :: tempk
-   real(PREC), intent(in) :: ionic_strength
+   real(PREC), intent(in) :: ionstr
    real(PREC), intent(out), optional :: out_lb
    real(PREC), intent(out), optional :: out_Zp
 
@@ -89,13 +89,13 @@ subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
    !   = sqrt(1.0e-3 * e0 * ek * kb / 2 * NA * eq**2) * sqrt(T(K) / I(M))
 
 #ifdef _HTN_CONSISTENT
-   rho = 2 * ionic_strength * 6.022e-4_PREC
+   rho = 2 * ionstr * 6.022e-4_PREC
    kappaD = sqrt(4 * 3.14159 * lb_kT * rho / temp_kT)
    lambdaD(irep) = 1.0_PREC / kappaD
 #else
    lambdaD(irep) = 1.0e10_PREC * sqrt( (1.0e-3_PREC * EPS0 * diele(irep) * BOLTZ_J) &
                                   / (2.0_PREC * N_AVO * ELE**2)  )     &
-                                * sqrt(tempk / ionic_strength)
+                                * sqrt(tempk / ionstr)
 #endif
 
    if (present(out_lb)) out_lb = lb

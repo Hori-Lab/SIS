@@ -51,6 +51,25 @@ subroutine job_md()
    ! Function
    real(PREC) :: rnd_boxmuller
 
+   interface
+   subroutine energy_sumup(irep, tempK_in, energies)
+      use const, only : PREC
+      use const_idx, only : ENE
+      implicit none
+      integer,    intent(in)  :: irep
+      real(PREC), intent(in)  :: tempK_in
+      real(PREC), intent(out) :: energies(0:ENE%MAX)
+   endsubroutine energy_sumup
+   subroutine set_ele(irep, tempk, ionstr, out_lb, out_Zp)
+      use const, only : PREC
+      integer, intent(in) :: irep
+      real(PREC), intent(in) :: tempk
+      real(PREC), intent(in) :: ionstr
+      real(PREC), intent(out), optional :: out_lb
+      real(PREC), intent(out), optional :: out_Zp
+   endsubroutine set_ele
+   endinterface
+
    allocate(mass(nmp))
    allocate(accels(3, nmp, nrep_proc))
    allocate(velos(3, nmp, nrep_proc))
