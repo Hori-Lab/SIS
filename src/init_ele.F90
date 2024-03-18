@@ -12,14 +12,14 @@ subroutine init_ele()
    implicit none
 
    integer :: i, irep, grep
-   real(PREC) :: tK, lb, Zp
+   real(PREC) :: tK, lb, Zp, ionstr
 
    interface
-   subroutine set_ele(irep, tempk, ionic_strength, out_lb, out_Zp)
+   subroutine set_ele(irep, tempk, ionstr, out_lb, out_Zp)
       use const, only : PREC
       integer, intent(in) :: irep
       real(PREC), intent(in) :: tempk
-      real(PREC), intent(in) :: ionic_strength
+      real(PREC), intent(in) :: ionstr
       real(PREC), intent(out), optional :: out_lb
       real(PREC), intent(out), optional :: out_Zp
    endsubroutine set_ele
@@ -45,6 +45,7 @@ subroutine init_ele()
    ele_cutoff(:) = 0.0_PREC
 
    tK = tempK
+   ionstr = ionic_strength
 
    has_charge(:) = .True.
    if (allocated(inp_no_charge)) then
@@ -76,18 +77,18 @@ subroutine init_ele()
          endif
 
          if (flg_repvar(REPT%ION)) then
-            ionic_strength = rep2val(grep, REPT%ION)
+            ionstr = rep2val(grep, REPT%ION)
          endif
       endif
 
-      call set_ele(irep, tK, ionic_strength, lb, Zp)
+      call set_ele(irep, tK, ionstr, lb, Zp)
 
       if (ele_cutoff_type == 2) then
          ele_cutoff(irep) = ele_cutoff_inp * lambdaD(irep)
       endif
 
       print '(a,i8)', '# Replica: ', irep
-      print '(a,g15.8)', '#    Ionic strength: ', ionic_strength
+      print '(a,g15.8)', '#    Ionic strength: ', ionstr
       print '(a,g15.8)', '#    Dielectric constant (H2O): ', diele(irep)
       print '(a,g15.8)', '#    coef: ', ele_coef(irep) / (Zp**2)
       print '(a,g15.8)', '#    Bjerrum length: ', lb

@@ -7,7 +7,7 @@ subroutine job_md()
    use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp, flg_freeze, is_frozen
-   use var_state, only : restarted, flg_bp_energy, &
+   use var_state, only : restarted, flg_bp_energy, ionic_strength, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
                          nstep_check_stop, stop_wall_time_sec, fix_com_origin, &
@@ -18,7 +18,8 @@ subroutine job_md()
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
    use var_io, only : flg_progress, step_progress, hdl_dcd, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
-                             ele_cutoff, flg_stage, flg_ele, flg_twz
+                             ele_cutoff, flg_stage, flg_ele, &
+                             flg_twz, ntwz_DCF, twz_DCF_forces, twz_DCF_direction
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -29,7 +30,7 @@ subroutine job_md()
    integer :: i, irep, imp
    integer :: grep, rep_label
    integer :: rst_status
-   real(PREC) :: tK
+   real(PREC) :: tK, k, ionstr
    real(PREC) :: dxyz(3)
    real(PREC) :: xyz_move(3, nmp, nrep_proc)
    type(file_dcd) :: fdcd(nrep_proc)
@@ -434,6 +435,31 @@ subroutine job_md()
             call replica_exchange(velos, replica_energies, tempk)
 
             if (flg_repvar(REPT%TEMP)) call set_md_coef()
+
+            do irep = 1, nrep_proc
+               grep = irep2grep(irep)
+
+               if (flg_ele) then
+                  if (flg_repvar(REPT%TEMP)) then
+                     tK = rep2val(grep, REPT%TEMP)
+                  else
+                     tK = tempK
+                  endif
+
+                  if (flg_repvar(REPT%ION)) then
+                     ionstr = rep2val(grep, REPT%ION)
+                  else
+                     ionstr = ionic_strength
+                  endif
+
+                  call set_ele(irep, tK, ionstr)
+               endif
+
+               if (flg_repvar(REPT%TWZDCF)) then
+                  k = rep2val(grep, REPT%TWZDCF)
+                  twz_DCF_forces(:, 1:ntwz_DCF, irep) = k * twz_DCF_direction(:, 1:ntwz_DCF)
+               endif
+            enddo
 
          endif
       endif
