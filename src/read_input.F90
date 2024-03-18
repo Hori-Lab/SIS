@@ -1057,19 +1057,19 @@ subroutine read_input(cfilepath)
       print '(a)', '#'
    endif
 
-   print '(a,a)', '# Files.In, ff: ', trim(cfile_ff)
-   if (job == JOBT%DCD) then
-      print '(a,a)', '# Files.In, dcd: ', trim(cfile_dcd_in)
-   endif
-   if (flg_in_pdb) print '(a,a)', '# Files.In, pdb: ', trim(cfile_pdb_ini)
-   if (flg_in_xyz) print '(a,a)', '# Files.In, xyz: ', trim(cfile_xyz_ini)
-   if (flg_in_fasta) print '(a,a)', '# Files.In, fasta: ', trim(cfile_fasta_in)
-   if (flg_in_ct) print '(a,a)', '# Files.In, ct: ', trim(cfile_ct_in)
-   if (flg_in_bpseq) print '(a,a)', '# Files.In, bpseq: ', trim(cfile_bpseq_in)
    if (myrank == 0) then
+      print '(a,a)', '# Files.In, ff: ', trim(cfile_ff)
+      if (job == JOBT%DCD) then
+         print '(a,a)', '# Files.In, dcd: ', trim(cfile_dcd_in)
+      endif
+      if (flg_in_pdb) print '(a,a)', '# Files.In, pdb: ', trim(cfile_pdb_ini)
+      if (flg_in_xyz) print '(a,a)', '# Files.In, xyz: ', trim(cfile_xyz_ini)
+      if (flg_in_fasta) print '(a,a)', '# Files.In, fasta: ', trim(cfile_fasta_in)
+      if (flg_in_ct) print '(a,a)', '# Files.In, ct: ', trim(cfile_ct_in)
+      if (flg_in_bpseq) print '(a,a)', '# Files.In, bpseq: ', trim(cfile_bpseq_in)
       if (opt_anneal > 0) print '(a,a)', '# Files.In, anneal: ', trim(cfile_anneal_in)
+      print '(a)', '#'
    endif
-   print '(a)', '#'
 
    print '(a,a)', '# Files.Out, prefix: ', trim(cfile_prefix)
    print '(a,L)', '# Files.Out, bpcoef: ', flg_out_bpcoef
