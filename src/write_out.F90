@@ -44,6 +44,7 @@ endsubroutine write_out_header
 
 subroutine write_out(irep, istep_out, rep_label, tK)
 
+   use,intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const, only : PREC
    use const_idx, only : ENE
    use var_io, only : hdl_out
@@ -52,7 +53,7 @@ subroutine write_out(irep, istep_out, rep_label, tK)
    use var_state, only : Ekinetic, energies
 
    integer, intent(in) :: irep
-   integer, intent(in) :: istep_out
+   integer(INT64), intent(in) :: istep_out
    integer, intent(in) :: rep_label
    real(PREC), intent(in) :: tK
 
