@@ -79,4 +79,8 @@ module var_state
    integer(INT64), save :: variable_box_step
    real(PREC), save :: variable_box_change(3)
 
+#ifdef DUMPFORCE
+   logical, save :: flg_step_dump_force
+#endif
+
 end module var_state

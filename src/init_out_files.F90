@@ -10,6 +10,10 @@ subroutine init_out_files
                       cfile_rst, cfile_dcd
    use var_replica, only : nrep_proc, flg_replica, irep2grep
    use var_parallel, only : myrank
+#ifdef DUMPFORCE
+   use const_idx, only : ENE
+   use var_io, only : hdl_force
+#endif
 
    implicit none
 
@@ -126,4 +130,21 @@ subroutine init_out_files
       open(hdl_rep, file=cfilename, status='replace', action='write', form='formatted')
    endif
 
+#ifdef DUMPFORCE
+   hdl_force(ENE%BOND) = iopen_hdl + 1
+   hdl_force(ENE%ANGL) = iopen_hdl + 2
+   hdl_force(ENE%DIHE) = iopen_hdl + 3
+   hdl_force(ENE%BP) = iopen_hdl + 4
+   hdl_force(ENE%EXV) = iopen_hdl + 5
+   hdl_force(ENE%ELE) = iopen_hdl + 6
+   hdl_force(ENE%STAGE) = iopen_hdl + 7
+   iopen_hdl = iopen_hdl + 7
+   open(hdl_force(ENE%BOND), file='force_bond.out', status='replace', action='write', form='formatted')
+   open(hdl_force(ENE%ANGL), file='force_angl.out', status='replace', action='write', form='formatted')
+   open(hdl_force(ENE%DIHE), file='force_dihe.out', status='replace', action='write', form='formatted')
+   open(hdl_force(ENE%BP), file='force_bp.out', status='replace', action='write', form='formatted')
+   open(hdl_force(ENE%EXV), file='force_exv.out', status='replace', action='write', form='formatted')
+   open(hdl_force(ENE%ELE), file='force_ele.out', status='replace', action='write', form='formatted')
+   open(hdl_force(ENE%STAGE), file='force_stage.out', status='replace', action='write', form='formatted')
+#endif
 endsubroutine init_out_files

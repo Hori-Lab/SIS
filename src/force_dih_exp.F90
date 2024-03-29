@@ -5,6 +5,11 @@ subroutine force_dih_exp(irep, forces)
    use var_state, only : xyz
    use var_top, only : nmp
    use var_potential, only : ndih, dih_mp, dih_k, dih_w, dih_p0
+#ifdef DUMPFORCE
+   use const_idx, only : ENE
+   use var_io, only : hdl_force
+   use var_state, only: flg_step_dump_force
+#endif
 
    implicit none
 
@@ -16,6 +21,17 @@ subroutine force_dih_exp(irep, forces)
    real(PREC) :: coef1, coef2
    real(PREC) :: m(3), n(3)
    real(PREC) :: vij(3), vkj(3), vkl(3), fi(3), fj(3), fk(3), fl(3)
+#ifdef DUMPFORCE
+   integer :: i
+   real(PREC) :: force_save(3, 1:nmp)
+
+   if (flg_step_dump_force) then
+      !$omp master
+      force_save(:,:) = 0.0_PREC
+      !$omp end master
+      !$omp barrier
+   endif
+#endif
 
    coef1 = dih_k * dih_w
    coef2 = - 0.5_PREC * dih_w
@@ -60,7 +76,34 @@ subroutine force_dih_exp(irep, forces)
       forces(:, imp2) = forces(:, imp2) + fj(:)
       forces(:, imp3) = forces(:, imp3) + fk(:) 
       forces(:, imp4) = forces(:, imp4) + fl(:)
+
+#ifdef DUMPFORCE
+      if (flg_step_dump_force) then
+         do i = 1, 3
+            !$omp atomic update
+            force_save(i, imp1) = force_save(i, imp1) + fi(i)
+            !$omp atomic update
+            force_save(i, imp2) = force_save(i, imp2) + fj(i)
+            !$omp atomic update
+            force_save(i, imp3) = force_save(i, imp3) + fk(i)
+            !$omp atomic update
+            force_save(i, imp4) = force_save(i, imp4) + fl(i)
+         enddo
+      endif
+#endif
    end do 
    !$omp end do nowait
+
+#ifdef DUMPFORCE
+   if (flg_step_dump_force) then
+      !$omp barrier
+      !$omp master
+      do imp1 = 1, nmp
+         write(hdl_force(ENE%DIHE), '(3(1x,e10.4))', advance='no') force_save(1:3, imp1)
+      enddo
+      write(hdl_force(ENE%DIHE), '(a)') ''
+      !$omp end master
+   endif
+#endif
 
 end subroutine force_dih_exp

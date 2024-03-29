@@ -1,6 +1,7 @@
 module var_io
    
    use const
+   use const_idx, only : ENE
 
    logical :: flg_out_bpcoef = .False.
    logical :: flg_out_bp = .False.
@@ -33,6 +34,10 @@ module var_io
    integer  :: hdl_rep
 
    integer :: iopen_hdl = 15
+
+#ifdef DUMPFORCE
+   integer :: hdl_force(1:ENE%MAX)
+#endif
 
    logical :: flg_progress
    integer :: step_progress
