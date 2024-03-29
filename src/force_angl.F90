@@ -15,7 +15,7 @@ subroutine force_angl(irep, forces)
 
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
-  
+
    integer :: ibd, imp1, imp2, imp3
    real(PREC) :: t, f, delta, cosine
    real(PREC) :: d21, d32, d2132
@@ -40,11 +40,11 @@ subroutine force_angl(irep, forces)
 
       v21(:) = pbc_vec_d(xyz(:, imp2, irep), xyz(:, imp1, irep))
       v32(:) = pbc_vec_d(xyz(:, imp3, irep), xyz(:, imp2, irep))
-     
+
       d21 = dot_product(v21, v21)
       d32 = dot_product(v32, v32)
       d2132 = dot_product(v32, v21)
-     
+
       cosine = - d2132 / sqrt(d21 * d32)
 
       if (abs(cosine) > 1.0e0_PREC) then
@@ -61,11 +61,11 @@ subroutine force_angl(irep, forces)
       f = angl_k * delta / sqrt(t)
       f21(:) = f * (v21(:) * (d2132 / d21) - v32(:))
       f32(:) = f * (v32(:) * (d2132 / d32) - v21(:))
-   
+
       forces(:, imp1) = forces(:, imp1) - f21(:)
       forces(:, imp2) = forces(:, imp2) + f21(:) - f32(:)
       forces(:, imp3) = forces(:, imp3) + f32(:)
-      
+
       !Eangl = Eangl + 0.5 * angl_k * (t - angl_t0) ** 2
 #ifdef DUMPFORCE
       if (flg_step_dump_force) then

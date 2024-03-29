@@ -10,10 +10,10 @@ subroutine force_stage(irep, forces)
 
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3,nmp)
-  
+
    integer :: imp
    real(PREC) :: z, coef, f_z
-   
+
    coef = 24.0e0_PREC * stage_eps / stage_sigma
 
    !if (any(xyz(3,:) < 0.85*stage_sigma)) then

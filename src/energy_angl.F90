@@ -32,12 +32,12 @@ subroutine energy_angl(irep, Eangl)
       end if
 
       t = acos(t)
-      
+
       !k = angl_para(1, ibd)
       !t0 = angl_para(2, ibd)
 
       !Eangl = Eangl + 0.5 * k * (t - t0) ** 2
       Eangl = Eangl + 0.5 * angl_k * (t - angl_t0) ** 2
    enddo
-  
+
 end subroutine energy_angl

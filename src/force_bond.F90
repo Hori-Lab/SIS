@@ -1,5 +1,5 @@
 subroutine force_bond(irep, forces)
-      
+
    use const
    use pbc, only : pbc_vec_d
    use var_state, only : xyz
@@ -10,9 +10,9 @@ subroutine force_bond(irep, forces)
    use var_io, only : hdl_force
    use var_state, only: flg_step_dump_force
 #endif
-  
+
    implicit none
-  
+
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
 

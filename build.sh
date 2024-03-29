@@ -26,6 +26,9 @@ else
     FC=gfortran cmake .. -DCMAKE_BUILD_TYPE=Release
 fi
 
+## Available options
+## -DDUMPFORCE=ON : output force files for ML
+
 make -j8
 #make VERBOSE=1
 
