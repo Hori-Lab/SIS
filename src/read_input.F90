@@ -24,6 +24,7 @@ subroutine read_input(cfilepath)
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
+                             ntwz_FR, twz_FR_pairs, twz_FR_k, twz_FR_velo, &
                              flg_bias_ss, bias_ss_force
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
@@ -779,6 +780,7 @@ subroutine read_input(cfilepath)
       ! If nrep_force > 1, this is necessary.
       flg_twz = .False.
       ntwz_DCF = 0
+      ntwz_FR = 0
       call get_value(table, "Tweezers", group, requested=.False.)
 
       if (associated(group)) then
@@ -786,8 +788,6 @@ subroutine read_input(cfilepath)
          !================= [Tweezers.Dual_Constnat_Force] =================
          call get_value(group, "Dual_Constant_Force", node, requested=.False.)
          if (associated(node)) then
-
-            flg_twz = .True.
 
             call get_value(node, "id_pairs", array, stat=istat, origin=origin)
             if (istat /= 0) then
@@ -821,15 +821,11 @@ subroutine read_input(cfilepath)
                         call sis_abort()
                      endif
                   enddo
-               else
-                  flg_twz = .False.
                endif
-            else
-               flg_twz = .False.
             endif
 
             ! Forces
-            if (flg_twz) then
+            if (ntwz_DCF > 0) then
                call get_value(node, "forces_pN", array, stat=istat, origin=origin)
                if (istat /= 0) then
                   print '(a)', context%report("invalid forces_pN in [Tweezers.Dual_Constant_Force].", &
@@ -840,7 +836,7 @@ subroutine read_input(cfilepath)
                if (associated(array)) then
                   if (len(array) /= ntwz_DCF) then
                      print '(a)', context%report("invalid forces_pN in [Tweezers.Dual_Constant_Force].", &
-                                  origin, "the array has to have the same numbe of vectors (fx, fy, yz) as id_pairs.")
+                                  origin, "the array has to have the same number of vectors (fx, fy, yz) as id_pairs.")
                      call sis_abort()
                   endif
 
@@ -871,6 +867,126 @@ subroutine read_input(cfilepath)
             endif
          endif
 
+         !================= [Tweezers.Force_Ramp] =================
+         call get_value(group, "Force_Ramp", node, requested=.False.)
+         if (associated(node)) then
+
+            call get_value(node, "id_pairs", array, stat=istat, origin=origin)
+            if (istat /= 0) then
+               print '(a)', context%report("invalid id_pairs value in [Tweezers.Force_Ramp].", &
+                            origin, "expected an array of integer pairs [imp1, imp2].")
+               call sis_abort()
+            endif
+            if (associated(array)) then
+               ntwz_FR = len(array)
+
+               if (ntwz_FR > 0) then
+                  allocate(twz_FR_pairs(2, ntwz_FR))
+                  do i = 1, ntwz_FR
+                     call get_value(array, i, nested_array)
+                     if (associated(nested_array)) then
+                        if (len(nested_array) /= 2) then
+                           print '(a)', context%report("invalid id_pairs value in [Tweezers.Force_Ramp].", &
+                                        origin, "array(s) have to have two elements each.")
+                           call sis_abort()
+                        endif
+                        call get_value(nested_array, 1, twz_FR_pairs(1, i))
+                        call get_value(nested_array, 2, twz_FR_pairs(2, i))
+                        if ((twz_FR_pairs(1, i) < 1) .or. (twz_FR_pairs(2, i) < 1)) then
+                           print '(a)', context%report("invalid id_pairs value in [Tweezers.Force_Ramp].", &
+                              origin, "expected an array of integer pairs.")
+                           call sis_abort()
+                        endif
+                     else
+                        print '(a)', context%report("invalid id_pairs value in [Tweezers.Force_Ramp].", &
+                                     origin, "expected an array of integer pairs.")
+                        call sis_abort()
+                     endif
+                  enddo
+               endif
+            endif
+
+            if (ntwz_FR > 0) then
+
+               ! Spring constant
+               call get_value(node, "spring_const", array, stat=istat, origin=origin)
+               if (istat /= 0) then
+                  print '(a)', context%report("invalid sprint_const in [Tweezers.Force_Ramp].", &
+                               origin, "expected an array of pair of float values.")
+                  call sis_abort()
+               endif
+
+               if (associated(array)) then
+                  if (len(array) /= ntwz_FR) then
+                     print '(a)', context%report("invalid spring_const in [Tweezers.Force_Ramp].", &
+                                  origin, "the array has to have the same number of pairs as id_pairs.")
+                     call sis_abort()
+                  endif
+
+                  allocate(twz_FR_k(2, ntwz_FR))
+
+                  do i = 1, ntwz_FR
+                     call get_value(array, i, nested_array)
+                     if (associated(nested_array)) then
+                        if (len(nested_array) /= 2) then
+                           print '(a)', context%report("invalid spring_const in [Tweezers.Force_Ramp].", &
+                                        origin, "array(s) have to be a pair (k_i, k_j).")
+                           call sis_abort()
+                        endif
+                        call get_value(nested_array, 1, twz_FR_k(1,i))
+                        call get_value(nested_array, 2, twz_FR_k(2,i))
+
+                     else
+                        print '(a)', context%report("invalid spring_const pair in [Tweezers.Force_Ramp].", &
+                                     origin, "array(s) have to be a pair (k_i, k_j).")
+                        call sis_abort()
+                     endif
+                  enddo
+
+               endif
+
+               ! Velocities
+               call get_value(node, "velocity", array, stat=istat, origin=origin)
+               if (istat /= 0) then
+                  print '(a)', context%report("invalid velocity in [Tweezers.Force_Ramp].", &
+                               origin, "expected an array of pair of float values.")
+                  call sis_abort()
+               endif
+
+               if (associated(array)) then
+                  if (len(array) /= ntwz_FR) then
+                     print '(a)', context%report("invalid velocity in [Tweezers.Force_Ramp].", &
+                                  origin, "the array has to have the same number of pairs as id_pairs.")
+                     call sis_abort()
+                  endif
+
+                  allocate(twz_FR_velo(2, ntwz_FR))
+
+                  do i = 1, ntwz_FR
+                     call get_value(array, i, nested_array)
+                     if (associated(nested_array)) then
+                        if (len(nested_array) /= 2) then
+                           print '(a)', context%report("invalid velocity in [Tweezers.Force_Ramp].", &
+                                        origin, "array(s) have to be a pair (v_i, v_j).")
+                           call sis_abort()
+                        endif
+                        call get_value(nested_array, 1, twz_FR_velo(1,i))
+                        call get_value(nested_array, 2, twz_FR_velo(2,i))
+
+                     else
+                        print '(a)', context%report("invalid velocity pair in [Tweezers.Force_Ramp].", &
+                                     origin, "array(s) have to be a pair (v_i, v_j).")
+                        call sis_abort()
+                     endif
+                  enddo
+
+               endif
+            endif
+         endif
+
+         if (ntwz_DCF > 0 .or. ntwz_FR > 0) then
+            flg_twz = .True.
+         endif
       endif
 
       ! If f-REMD
@@ -1012,6 +1128,7 @@ subroutine read_input(cfilepath)
 
    call MPI_BCAST(flg_twz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_twz) then
+      ! Dual Constant Force
       call MPI_BCAST(ntwz_DCF, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
       if (ntwz_DCF > 0) then
          if (myrank /= 0) then
@@ -1020,6 +1137,19 @@ subroutine read_input(cfilepath)
          endif
          call MPI_BCAST(twz_DCF_pairs, 2*ntwz_DCF, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
          call MPI_BCAST(twz_DCF_direction, 3*ntwz_DCF, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      endif
+
+      ! Force Ramp
+      call MPI_BCAST(ntwz_FR, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+      if (ntwz_FR > 0) then
+         if (myrank /= 0) then
+            allocate(twz_FR_pairs(2, ntwz_FR))
+            allocate(twz_FR_k(2, ntwz_FR))
+            allocate(twz_FR_velo(2, ntwz_FR))
+         endif
+         call MPI_BCAST(twz_FR_pairs, 2*ntwz_FR, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(twz_FR_k, 2*ntwz_FR, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(twz_FR_velo, 2*ntwz_FR, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       endif
    endif
 
@@ -1176,12 +1306,18 @@ subroutine read_input(cfilepath)
 
    if (flg_twz) then
       print '(a)', '# Tweezers: On'
-      print '(a,i5)', '# Tweezers, number of pairs:', ntwz_DCF
+      print '(a,i5)', '# Tweezers,  DCF, number of pairs:', ntwz_DCF
       print '(a)', '# Tweezers, mode pair  imp1  imp2   fx      fy      fz'
       do i = 1, ntwz_DCF
          print '(a,i3,x,i5,x,i5,3(x,f7.2))', '# Tweezers,  DCF ',i, twz_DCF_pairs(1,i), twz_DCF_pairs(2,i),&
                twz_DCF_direction(1,i) / (JOUL2KCAL_MOL*1.0e-22), twz_DCF_direction(2,i) / (JOUL2KCAL_MOL*1.0e-22), &
                twz_DCF_direction(3,i) / (JOUL2KCAL_MOL*1.0e-22)  ! output in pN
+      enddo
+      print '(a)', '#'
+      print '(a,i5)', '# Tweezers,  FR, number of pairs:', ntwz_FR
+      do i = 1, ntwz_FR
+         print '(a,i3,x,i5,x,i5,4(x,f7.2))', '# Tweezers,  FR  ',i, twz_FR_pairs(1,i), twz_FR_pairs(2,i),&
+               twz_FR_k(1, i), twz_FR_k(2,i), twz_FR_velo(1, i), twz_FR_velo(2, i)
       enddo
       print '(a)', '#'
    endif

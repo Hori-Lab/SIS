@@ -233,5 +233,10 @@ id_ranges = [[1, 5], [10,14]]
     id_pairs = [[1, 5],]
     forces_pN = [[5.0, 0.0, 0.0],]
 
+    [Tweezers.Force_Ramp]
+    id_pairs = [[1, 27]]
+    spring_const = [[20.0, 20.0],]
+    velocity = [[0.0, 5.0]]
+
 [Bias_SS]
 force_pN = 20.0

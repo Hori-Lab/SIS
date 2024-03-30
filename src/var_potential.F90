@@ -122,6 +122,13 @@ module var_potential
                                                       ! In f-REMD, this will be normalised.
                                                       ! If non f-REMD, this will be copied to twz_DCF_forces.
    real(PREC), allocatable :: twz_DCF_forces(:,:,:)  ! (3, ntwz_DCF, nrep_proc), force vectors (magniture x direction)
+   integer, save :: ntwz_FR  !!! Force Ramp
+   integer, allocatable :: twz_FR_pairs(:,:)   ! (2, ntwz_FR)
+   real(PREC), allocatable :: twz_FR_k(:,:)  ! (2, ntwz_FR)
+   real(PREC), allocatable :: twz_FR_velo(:,:)  ! (2, ntwz_FR)
+   real(PREC), allocatable :: twz_FR_init(:,:,:)  ! (3, 2, ntwz_FR)
+   real(PREC), allocatable :: twz_FR_direction(:,:)  ! (3, ntwz_FR)
+
 
    ! Bias_SS
    logical, save :: flg_bias_ss
