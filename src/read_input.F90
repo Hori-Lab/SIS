@@ -24,7 +24,7 @@ subroutine read_input(cfilepath)
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
-                             ntwz_FR, twz_FR_pairs, twz_FR_k, twz_FR_velo, &
+                             ntwz_FR, twz_FR_pairs, twz_FR_k, twz_FR_speed, &
                              flg_bias_ss, bias_ss_force
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
@@ -946,7 +946,7 @@ subroutine read_input(cfilepath)
                endif
 
                ! Velocities
-               call get_value(node, "velocity", array, stat=istat, origin=origin)
+               call get_value(node, "trap_speed", array, stat=istat, origin=origin)
                if (istat /= 0) then
                   print '(a)', context%report("invalid velocity in [Tweezers.Force_Ramp].", &
                                origin, "expected an array of pair of float values.")
@@ -960,7 +960,7 @@ subroutine read_input(cfilepath)
                      call sis_abort()
                   endif
 
-                  allocate(twz_FR_velo(2, ntwz_FR))
+                  allocate(twz_FR_speed(2, ntwz_FR))
 
                   do i = 1, ntwz_FR
                      call get_value(array, i, nested_array)
@@ -970,8 +970,8 @@ subroutine read_input(cfilepath)
                                         origin, "array(s) have to be a pair (v_i, v_j).")
                            call sis_abort()
                         endif
-                        call get_value(nested_array, 1, twz_FR_velo(1,i))
-                        call get_value(nested_array, 2, twz_FR_velo(2,i))
+                        call get_value(nested_array, 1, twz_FR_speed(1,i))
+                        call get_value(nested_array, 2, twz_FR_speed(2,i))
 
                      else
                         print '(a)', context%report("invalid velocity pair in [Tweezers.Force_Ramp].", &
@@ -1145,11 +1145,11 @@ subroutine read_input(cfilepath)
          if (myrank /= 0) then
             allocate(twz_FR_pairs(2, ntwz_FR))
             allocate(twz_FR_k(2, ntwz_FR))
-            allocate(twz_FR_velo(2, ntwz_FR))
+            allocate(twz_FR_speed(2, ntwz_FR))
          endif
          call MPI_BCAST(twz_FR_pairs, 2*ntwz_FR, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
          call MPI_BCAST(twz_FR_k, 2*ntwz_FR, PREC_MPI, 0, MPI_COMM_WORLD, istat)
-         call MPI_BCAST(twz_FR_velo, 2*ntwz_FR, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+         call MPI_BCAST(twz_FR_speed, 2*ntwz_FR, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       endif
    endif
 
@@ -1317,7 +1317,7 @@ subroutine read_input(cfilepath)
       print '(a,i5)', '# Tweezers,  FR, number of pairs:', ntwz_FR
       do i = 1, ntwz_FR
          print '(a,i3,x,i5,x,i5,4(x,f7.2))', '# Tweezers,  FR  ',i, twz_FR_pairs(1,i), twz_FR_pairs(2,i),&
-               twz_FR_k(1, i), twz_FR_k(2,i), twz_FR_velo(1, i), twz_FR_velo(2, i)
+               twz_FR_k(1, i), twz_FR_k(2,i), twz_FR_speed(1, i), twz_FR_speed(2, i)
       enddo
       print '(a)', '#'
    endif

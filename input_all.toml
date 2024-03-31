@@ -236,7 +236,14 @@ id_ranges = [[1, 5], [10,14]]
     [Tweezers.Force_Ramp]
     id_pairs = [[1, 27]]
     spring_const = [[20.0, 20.0],]
-    velocity = [[0.0, 5.0]]
+    trap_speed = [[0.0, 5.0]]
+    ## In the Force_Ramp mode, a pair of particles (i, j) is specified by id_pairs = [[i, j],].
+    ## The two particles are each trapped by tweezers with spring constants k_i and k_j 
+    ## specified by spring_const = [[k_i, k_j],]. The positions of the two traps are initially 
+    ## located at the same position as the particles i and j at time = 0 (xyz_i(0) and xyz_j(0)).
+    ## The trap positions move along the simulation at the speed given by trap_speed = [[v_i, v_j],]. 
+    ## The direction of movement is determined by the initial positions and is (xyz_j(0) - xyz_i(0)),
+    ## i.e. the direction from xyz_i(0) to xyz_j(0).
 
 [Bias_SS]
 force_pN = 20.0

@@ -125,9 +125,10 @@ module var_potential
    integer, save :: ntwz_FR  !!! Force Ramp
    integer, allocatable :: twz_FR_pairs(:,:)   ! (2, ntwz_FR)
    real(PREC), allocatable :: twz_FR_k(:,:)  ! (2, ntwz_FR)
-   real(PREC), allocatable :: twz_FR_velo(:,:)  ! (2, ntwz_FR)
+   real(PREC), allocatable :: twz_FR_speed(:,:)  ! (2, ntwz_FR)
    real(PREC), allocatable :: twz_FR_init(:,:,:)  ! (3, 2, ntwz_FR)
-   real(PREC), allocatable :: twz_FR_direction(:,:)  ! (3, ntwz_FR)
+   real(PREC), allocatable :: twz_FR_pos(:,:,:)  ! (3, 2, ntwz_FR)
+   real(PREC), allocatable :: twz_FR_velo(:,:,:)  ! (3, 2, ntwz_FR)
 
 
    ! Bias_SS
