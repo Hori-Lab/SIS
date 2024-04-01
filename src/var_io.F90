@@ -10,6 +10,7 @@ module var_io
    logical :: flg_out_T = .False.
    logical :: flg_out_dcd = .False.
    logical :: flg_out_rst = .False.
+   logical :: flg_out_twz = .False.
 
    logical :: flg_in_bpseq = .False.
    logical :: flg_in_ct = .False.
@@ -32,6 +33,7 @@ module var_io
    integer, allocatable :: hdl_bpall(:)
    integer, allocatable :: hdl_bpe(:)
    integer  :: hdl_rep
+   integer  :: hdl_twz
 
    integer :: iopen_hdl = 15
 

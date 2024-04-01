@@ -38,11 +38,12 @@ type = "MD"
 
     [Files.Out]
     prefix = "./test"
-    types = ["bpcoef", "bp", "bpe", "bpall"]
+    types = ["bpcoef", "bp", "bpe", "bpall", "twz"]
         # Available options:
         # "bpcoef": bp parameters will be written.
         # "bp": bp energy trajectory in binary format.
         # "bpe": bp energy trajecotry in ASCII format.
+        # "twz": information of tweezers (force values for Force_Ramp)
 
 [Replica]
 nrep_temp = 8
@@ -244,6 +245,7 @@ id_ranges = [[1, 5], [10,14]]
     ## The trap positions move along the simulation at the speed given by trap_speed = [[v_i, v_j],]. 
     ## The direction of movement is determined by the initial positions and is (xyz_j(0) - xyz_i(0)),
     ## i.e. the direction from xyz_i(0) to xyz_j(0).
+    ## DO NOT FORGET to add "twz" in [Files.Out] types to get information of extension and forces.
 
 [Bias_SS]
 force_pN = 20.0

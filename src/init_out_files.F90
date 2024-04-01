@@ -4,12 +4,13 @@ subroutine init_out_files
    use const_idx, only : JOBT
    use var_state, only : job
    use var_io, only : iopen_hdl, cfile_prefix, KIND_OUT_BP, KIND_OUT_BPE, &
-                      flg_out_dcd, flg_out_rst, &
+                      flg_out_dcd, flg_out_rst, flg_out_twz, &
                       flg_out_bpcoef, flg_out_bp, flg_out_bpall, flg_out_bpe, &
-                      hdl_out, hdl_dcd, hdl_rst, hdl_bpcoef, hdl_bp, hdl_bpall, hdl_bpe, hdl_rep, &
+                      hdl_out, hdl_dcd, hdl_rst, hdl_bpcoef, hdl_bp, hdl_bpall, hdl_bpe, hdl_rep, hdl_twz,&
                       cfile_rst, cfile_dcd
    use var_replica, only : nrep_proc, flg_replica, irep2grep
    use var_parallel, only : myrank
+   use var_potential, only : ntwz_FR
 #ifdef DUMPFORCE
    use const_idx, only : ENE
    use var_io, only : hdl_force
@@ -33,7 +34,6 @@ subroutine init_out_files
       flg_out_dcd = .True.
       flg_out_rst = .True.
    endif
-
 
    !! Allocate
    allocate(hdl_out(nrep_proc))
@@ -128,6 +128,14 @@ subroutine init_out_files
       iopen_hdl = iopen_hdl + 1
       hdl_rep = iopen_hdl
       open(hdl_rep, file=cfilename, status='replace', action='write', form='formatted')
+   endif
+
+   if (flg_out_twz .and. ntwz_FR > 0 .and. myrank == 0) then
+      cfilename = trim(cfile_prefix) // '.twz'
+      iopen_hdl = iopen_hdl + 1
+      hdl_twz = iopen_hdl
+      open(hdl_twz, file=cfilename, status='replace', action='write', form='formatted')
+      write(hdl_twz, '(a)') '#  (1)step  (2)id (3)d[traps]   (4)d[beads]   (5)d[t1-b1]   (6)d[t2-b2]   (7)f[b1]      (8)f[b2]'
    endif
 
 #ifdef DUMPFORCE
