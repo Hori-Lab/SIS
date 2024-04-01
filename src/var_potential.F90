@@ -127,7 +127,6 @@ module var_potential
    real(PREC), allocatable :: twz_FR_k(:,:)  ! (2, ntwz_FR)
    real(PREC), allocatable :: twz_FR_speed(:,:)  ! (2, ntwz_FR)
    real(PREC), allocatable :: twz_FR_init(:,:,:)  ! (3, 2, ntwz_FR)
-   real(PREC), allocatable :: twz_FR_pos(:,:,:)  ! (3, 2, ntwz_FR)
    real(PREC), allocatable :: twz_FR_velo(:,:,:)  ! (3, 2, ntwz_FR)
 
 
