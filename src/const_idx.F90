@@ -40,9 +40,10 @@ module const_idx
    type integrator_types
       integer :: UNDEF       ! 0
       integer :: LD_GJF2GJ   ! 1
+      integer :: BD_EM       ! 2
       integer :: MAX
    endtype integrator_types
-   type(integrator_types), parameter :: INTGRT = integrator_types(0,1,1)
+   type(integrator_types), parameter :: INTGRT = integrator_types(0,1,2,2)
 
    type bp_types
       integer :: UNDEF   ! 0

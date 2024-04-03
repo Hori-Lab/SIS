@@ -123,6 +123,9 @@ z = 809.972
 
 [MD]
 integrator = "GJF-2GJ"
+    # GJF-2GJ
+    # Ermak-McCammon
+
 dt = 0.05
 nstep = 500000
 nstep_save = 500
