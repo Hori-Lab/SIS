@@ -1,6 +1,11 @@
 set(SIS_EXE sis)
 
-option(BP_HALT_IEEE_EXCEPTIONS "Use ieee halting mode functions in write_bp" ON)
+option(BP_HALT_IEEE_EXCEPTIONS "Use ieee halting mode functions in write_bp" OFF)
+if (BP_HALT_IEEE_EXCEPTIONS)
+    set(CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -DBP_HALT_IEEE_EXCEPTIONS")
+    set(CMAKE_Fortran_FLAGS_RELEASE   "${CMAKE_Fortran_FLAGS_RELEASE} -DBP_HALT_IEEE_EXCEPTIONS")
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO   "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DBP_HALT_IEEE_EXCEPTIONS")
+endif (BP_HALT_IEEE_EXCEPTIONS)
 
 add_executable(${SIS_EXE}
     const.F90 const_idx.F90 const_phys.F90

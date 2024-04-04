@@ -319,7 +319,22 @@ subroutine read_input(cfilepath)
          endif
 
          !----------------- integrator -----------------
-         call get_value(group, "integrator", cline)
+         call get_value(group, "integrator", cline, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report('[MD] integrator value is invalid.', origin, "Abort.")
+            call sis_abort()
+         endif
+
+         if (cline == 'GJF-2GJ') then
+            integrator = INTGRT%LD_GJF2GJ
+
+         else if (cline == 'Ermak-McCammon') then
+            integrator = INTGRT%BD_EM
+
+         else
+            print '(a)', context%report('[MD] integrator value is invalid.', origin, "Abort.")
+            call sis_abort()
+         endif
 
          !----------------- dt -----------------
          call get_value(group, "dt", dt, stat=istat, origin=origin)
@@ -1226,6 +1241,11 @@ subroutine read_input(cfilepath)
 
    if (integrator == INTGRT%LD_GJF2GJ) then
       print '(a)', '# MD integrator: GJF-2GJ'
+   else if (integrator == INTGRT%BD_EM) then
+      print '(a)', '# MD integrator: GJF-2GJ'
+   else
+      print '(a)', 'Error: invalid integrator value,', integrator
+      call sis_abort()
    endif
    print '(a,g15.8)', '# MD dt: ', dt
    print '(a,i16)', '# MD nstep: ', nstep

@@ -3,7 +3,7 @@ mkdir -p ../build && cd ../build
 #cmake -DCMAKE_BUILD_TYPE=Release ..
 
 # Fortran debug
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake -DCMAKE_BUILD_TYPE=Debug -DBP_HALT_IEEE_EXCEPTIONS=ON ..
 #cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS="-O0 -g -fbacktrace -ffpe-trap=zero,overflow,denormal,underflow -Wall -ffree-line-length-none -fbounds-check -fmax-errors=5" ..
 #cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS="-O0 -g -fbacktrace -ffpe-trap=zero,overflow,denormal,underflow -Wall -ffree-line-length-none -fbounds-check -fmax-errors=5 -D_HTN_CONSISTENT" ..
 
