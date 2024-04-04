@@ -123,8 +123,10 @@ z = 809.972
 
 [MD]
 integrator = "GJF-2GJ"
-    # GJF-2GJ
-    # Ermak-McCammon
+    # GJF-2GJ: Langevin dynamics using GJF-2GJ thermostat
+    #     L.F.G. Jensen, N. Grønbech-Jensen (2019) Mol. Phys. DOI:10.1080/00268976.2019.1570369
+    # Ermak-McCammon: Brownian dynamics
+    #     D.L. Ermak, J.A. McCammon (1978) J. Chem. Phys. DOI:10.1063/1.436761
 
 dt = 0.05
 nstep = 500000
