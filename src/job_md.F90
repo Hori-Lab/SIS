@@ -2,12 +2,12 @@ subroutine job_md()
 
    use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64, output_unit
    use const, only : PREC
-   use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL
-   use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT
+   use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL, JOUL2KCAL_MOL
+   use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT, INTGRT
    use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp, flg_freeze, is_frozen
-   use var_state, only : restarted, flg_bp_energy, ionic_strength, &
+   use var_state, only : restarted, flg_bp_energy, ionic_strength, integrator, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
                          nstep_check_stop, stop_wall_time_sec, fix_com_origin, &
@@ -84,16 +84,45 @@ subroutine job_md()
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Set up constants for the dynamics
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   radius = 10.0
-   v = viscosity_Pas * sqrt(1.0e3_PREC / KCAL2JOUL) * N_AVO * 1.0e-20_PREC
-   fric(:) = 6.0e0_PREC * PI * v * radius
-   print '(a)', 'Langevin dynamics parameters'
+
+   if (integrator == INTGRT%LD_GJF2GJ) then
+      print '(a)', 'Langevin dynamics parameters'
+      print '(a)', 'Integrator: GFJ-2GJ'
+
+      radius = 10.0_PREC
+      v = viscosity_Pas * sqrt(1.0e3_PREC / KCAL2JOUL) * N_AVO * 1.0e-20_PREC
+      fric(:) = 6.0e0_PREC * PI * v * radius
+
+   else if (integrator == INTGRT%BD_EM) then
+      print '(a)', 'Brownian dynamics parameters'
+      print '(a)', 'Integrator: Ermak-McCammon'
+
+      radius = 10.0_PREC
+      v = (JOUL2KCAL_MOL * 1.0e-18_PREC) * viscosity_Pas
+      fric(:) = 6.0e0_PREC * PI * v * radius
+   endif
+
    print '(a,f10.3)', 'Stokes radius = ', radius
    print '(a,f10.3)', 'Viscosity = ', v
    print '(a,f10.3)', 'Friction coefficient = ', fric(1)
 
-   !v = 0.5 ! ps^(-1)
-   !write(*,*) 'v =', v
+   ! Coefficients that do not depend on replicas
+   do imp = 1, nmp
+      ! Mass hard coded
+      select case (seq(lmp_mp(imp), ichain_mp(imp)))
+         case (SEQT%A)
+            mass(imp) = 328.212_PREC
+         case (SEQT%G)
+            mass(imp) = 344.212_PREC
+         case (SEQT%C)
+            mass(imp) = 304.182_PREC
+         case (SEQT%U)
+            mass(imp) = 305.164_PREC
+         case default
+            write(*,*) 'Error: Unknown seq type, ', seq(lmp_mp(imp), ichain_mp(imp)), ' imp=',imp
+            call sis_abort()
+      endselect
+   enddo
 
    print '(a)', 'mass(A) = 328.212'
    print '(a)', 'mass(G) = 344.212'
@@ -101,24 +130,6 @@ subroutine job_md()
    print '(a)', 'mass(U) = 305.164'
    print *
    flush(output_unit)
-
-   ! Coefficients that do not depend on replicas
-   do imp = 1, nmp
-      ! Mass hard coded
-      select case (seq(lmp_mp(imp), ichain_mp(imp)))
-         case (SEQT%A)
-            mass(imp) = 328.212
-         case (SEQT%G)
-            mass(imp) = 344.212
-         case (SEQT%C)
-            mass(imp) = 304.182
-         case (SEQT%U)
-            mass(imp) = 305.164
-         case default
-            write(*,*) 'Error: Unknown seq type, ', seq(lmp_mp(imp), ichain_mp(imp)), ' imp=',imp
-            call sis_abort()
-      endselect
-   enddo
 
    call set_md_coef()
 
@@ -352,35 +363,50 @@ subroutine job_md()
             enddo
          enddo
 
-         !$omp parallel do private(accels_pre, dxyz)
-         do imp = 1, nmp
-            !if(fix_mp(imp)) cycle
+         if (integrator == INTGRT%LD_GJF2GJ) then
+            !$omp parallel do private(accels_pre, dxyz)
+            do imp = 1, nmp
+               !if(fix_mp(imp)) cycle
 
-            !! a = (1 - gamma h / 2m) / (1 + gamma h / 2m)
-            !! b = 1 / (1 + gamma h / 2m)
+               !! a = (1 - gamma h / 2m) / (1 + gamma h / 2m)
+               !! b = 1 / (1 + gamma h / 2m)
 
-            ! beta(t + h) with the associated coefficient
-            accels_pre(1:3) = md_coef_rep(1, imp, irep) * rnd_bm(1:3, imp)
-            ! md_coef_rep(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
+               ! beta(t + h) with the associated coefficient
+               accels_pre(1:3) = md_coef_rep(1, imp, irep) * rnd_bm(1:3, imp)
+               ! md_coef_rep(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
 
-            ! v(t + 1/2h) update the half-step velocity
-            velos(1:3, imp, irep) =  md_coef(1, imp) * velos(1:3, imp, irep)  &
-                             + md_coef(2, imp) * forces(1:3, imp) &
-                             + (accels(1:3, imp, irep) + accels_pre(1:3))
-            ! md_coef(1) = a
-            ! md_coef(2) = sqrt(b) h / m
+               ! v(t + 1/2h) update the half-step velocity
+               velos(1:3, imp, irep) =  md_coef(1, imp) * velos(1:3, imp, irep)  &
+                                + md_coef(2, imp) * forces(1:3, imp) &
+                                + (accels(1:3, imp, irep) + accels_pre(1:3))
+               ! md_coef(1) = a
+               ! md_coef(2) = sqrt(b) h / m
 
-            ! beta(t) <= beta(t+h) (incluing the coefficient) save for the next iteration
-            accels(1:3, imp, irep) = accels_pre(1:3)
+               ! beta(t) <= beta(t+h) (incluing the coefficient) save for the next iteration
+               accels(1:3, imp, irep) = accels_pre(1:3)
 
-            dxyz(1:3) =  md_coef(3, imp) * velos(1:3, imp, irep)
-            ! md_coef(3) = sqrt(b) h
-            !           (= 0 if frozen)
+               dxyz(1:3) =  md_coef(3, imp) * velos(1:3, imp, irep)
+               ! md_coef(3) = sqrt(b) h
+               !           (= 0 if frozen)
 
-            xyz(1:3, imp, irep) = xyz(1:3, imp, irep) + dxyz(1:3)
-            xyz_move(1:3, imp, irep) = xyz_move(1:3, imp, irep) + dxyz(1:3)
-         end do
-         !$omp end parallel do
+               xyz(1:3, imp, irep) = xyz(1:3, imp, irep) + dxyz(1:3)
+               xyz_move(1:3, imp, irep) = xyz_move(1:3, imp, irep) + dxyz(1:3)
+            end do
+            !$omp end parallel do
+
+         else if (integrator == INTGRT%BD_EM) then
+            !$omp parallel do private(dxyz)
+            do imp = 1, nmp
+
+               dxyz(1:3) = md_coef(1, imp) * forces(1:3, imp) &
+                          + md_coef_rep(1, imp, irep) * rnd_bm(1:3, imp)
+
+               xyz(1:3, imp, irep) = xyz(1:3, imp, irep) + dxyz(1:3)
+               xyz_move(1:3, imp, irep) = xyz_move(1:3, imp, irep) + dxyz(1:3)
+            enddo
+            !$omp end parallel do
+
+         endif ! integrator
 
       enddo ! irep
 
@@ -593,44 +619,66 @@ contains
 
       ! Coefficients that do not depend on replicas
       if (flg_first) then
-         do imp = 1, nmp
-            !fric(imp) = v * mass(imp)
-            !if (imp == 1) then
-            !   write(*,*) 'fric = ', fric(imp)
-            !endif
+         print *, 'job_md: flg_first'
 
-            !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
-            c1 = 0.5 * dt * fric(imp) / mass(imp)
-            c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
+         if (integrator == INTGRT%LD_GJF2GJ) then
+            do imp = 1, nmp
+               !! sqrt(b) = sqrt(1 / (1 + gamma h / 2m))
+               c1 = 0.5 * dt * fric(imp) / mass(imp)
+               c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
 
-            ! md_coef(1) = a
-            md_coef(1, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
-            ! md_coef(2) = sqrt(b) h / m
-            md_coef(2, imp) = c2 * dt / mass(imp)
-            ! md_coef(3) = sqrt(b) h
-            md_coef(3, imp) = c2 * dt
+               ! md_coef(1) = a
+               md_coef(1, imp) = (1.0_PREC - c1) / (1.0_PREC + c1)
+               ! md_coef(2) = sqrt(b) h / m
+               md_coef(2, imp) = c2 * dt / mass(imp)
+               ! md_coef(3) = sqrt(b) h
+               md_coef(3, imp) = c2 * dt
 
-            if (flg_freeze) then
-               if (is_frozen(imp)) md_coef(3, imp) = 0.0_PREC
-            endif
-         enddo
+               if (flg_freeze) then
+                  if (is_frozen(imp)) md_coef(3, imp) = 0.0_PREC
+               endif
+            enddo
+
+         else if (integrator == INTGRT%BD_EM) then
+            do imp = 1, nmp
+               md_coef(1, imp) = dt / fric(imp)
+
+               if (flg_freeze) then
+                  if (is_frozen(imp)) md_coef(1, imp) = 0.0_PREC
+               endif
+            enddo
+         endif
 
          flg_first = .False.
       endif
 
       ! Coefficients depending on replicas
       do irep = 1, nrep_proc
-         do imp = 1, nmp
-            c1 = 0.5 * dt * fric(imp) / mass(imp)
-            c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
-            if (flg_repvar(REPT%TEMP)) then
-               tK = rep2val(irep2grep(irep), REPT%TEMP)
-            else
-               tK = tempK
-            endif
-            ! md_coef_rep(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
-            md_coef_rep(1, imp, irep) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric(imp) * BOLTZ_KCAL_MOL * tK * dt)
-         enddo
+
+         if (flg_repvar(REPT%TEMP)) then
+            tK = rep2val(irep2grep(irep), REPT%TEMP)
+         else
+            tK = tempK
+         endif
+
+         if (integrator == INTGRT%LD_GJF2GJ) then
+            do imp = 1, nmp
+               c1 = 0.5 * dt * fric(imp) / mass(imp)
+               c2 = sqrt(1.0e0_PREC / (1.0_PREC + c1))
+               ! md_coef_rep(1) = sqrt(b) / 2m * sqrt(2 gamma kT h)
+               md_coef_rep(1, imp, irep) = 0.5_PREC * c2 / mass(imp) * sqrt(2.0_PREC * fric(imp) * BOLTZ_KCAL_MOL * tK * dt)
+            enddo
+
+         else if (integrator == INTGRT%BD_EM) then
+            do imp = 1, nmp
+               md_coef_rep(1, imp, irep) = sqrt(2.0_PREC * BOLTZ_KCAL_MOL * tK * dt / fric(imp))
+
+               if (flg_freeze) then
+                  if (is_frozen(imp)) md_coef_rep(1, imp, irep) = 0.0_PREC
+               endif
+            enddo
+         endif
+
       enddo
 
    endsubroutine set_md_coef
