@@ -63,7 +63,7 @@ subroutine init_tweezers
          twz_FR_init(:, 2, ipair) = xyz(:, imp2, 1)
 
          v(:) = twz_FR_init(:, 2, ipair) - twz_FR_init(:, 1, ipair)
-         twz_FR_velo(:, 1, ipair) = v(:) / norm2(v) * twz_FR_speed(1, ipair)
+         twz_FR_velo(:, 1, ipair) = -v(:) / norm2(v) * twz_FR_speed(1, ipair)
          twz_FR_velo(:, 2, ipair) = v(:) / norm2(v) * twz_FR_speed(2, ipair)
          print '(a,x,i5,i5,i5)', '## pair, imp1, imp2: ', ipair, imp1, imp2
          print '(a,x,3(f10.3))', '## initial position 2: ', twz_FR_init(:, 2, ipair)
