@@ -45,10 +45,10 @@ In the `Force_Ramp` mode, a pair of particles $i$ and $j$ are each trapped by tw
 
 
 * `id_pairs` specfies the particle pairs ($i$ and $j$) being trapped. 
-* `spring_const` specifies the spring constant $k$ of harmonic potential applied to each pair. 
+* `spring_const` specifies the spring constant $k$ of harmonic potential applied to each pair, in the unit of $\rm{kcal/mol/Å^2}$.
 * `trap_speed` specifies the absolute speed of the trap movement. The unit is Å per simulation time step.
 
-* In the above example, the pair of particles 1 and 27 are each trapped with spring constants $k_1 = k_{27} = 5 \;\rm{kcal/mol/Å^2}$. The positions of the two traps are initially located at the same position as the particles at time = $0$ ($\vec{R_{1}^0}$ and $\vec{R_{27}^0}$). The trap positions move along the simulation at the speed given by $s_i = 0$ and $s_j = 10^{-6}$ Å per simulation step. In practice, as in this example, the first trap is fixed in the space by specifying zero speed. 
+* In the above example, the pair of particles 1 and 27 are each trapped with spring constants $k_1 = k_{27} = 5$ $\rm{kcal/mol/Å^2}$. The positions of the two traps are initially located at the same position as the particles at time = $0$ ($\vec{R_{1}^0}$ and $\vec{R_{27}^0}$). The trap positions move along the simulation at the speed given by $s_i = 0$ and $s_j = 10^{-6}$ Å per simulation step. In practice, as in this example, the first trap is fixed in the space by specifying zero speed. 
 
 **DO NOT FORGET to add `"twz"` in `[Files.Out]` `types` to get information of extension and forces.**
     
