@@ -25,11 +25,11 @@ nstep_save = 10000
    14 = 373.15
 ```
 
-`nrep_temp` is the number of replicas. In this example, there will be 14 replcias. Therfore, you need to specify eight temperatures in `[Replica.Temperature]`.
+ * `nrep_temp` is the number of replicas. In this example, there will be 14 replcias. Therfore, you need to specify 14 temperatures in `[Replica.Temperature]`.
 
-`nstep_exchange` is the frequency of attempting replica exchanges.
+ * `nstep_exchange` is the frequency of attempting replica exchanges.
 
-`nstep_save` is the frequency of saving replica states into `.rep` file. I recommend that you set `nstep_save` to be the same as `[MD] nstep_save`.
+ * `nstep_save` is the frequency of saving replica states into `.rep` file. I recommend that you set `nstep_save` to be the same as `[MD] nstep_save`.
 
 ## Submitting a job
 
