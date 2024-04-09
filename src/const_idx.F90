@@ -60,16 +60,17 @@ module const_idx
    character(len=*), dimension(6), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU', 'CG', 'UA', 'UG'/)
 
    type rst_block
-      integer :: STEP
-      integer :: ANNEAL
-      integer :: XYZ
-      integer :: VELO
-      integer :: ACCEL
-      integer :: REPLICA
-      integer :: PRNG
-      integer :: PRNGREP
+      integer :: STEP    ! 1
+      integer :: ANNEAL  ! 2
+      integer :: XYZ     ! 3
+      integer :: VELO    ! 4
+      integer :: ACCEL   ! 5
+      integer :: REPLICA ! 6
+      integer :: PRNG    ! 7
+      integer :: PRNGREP ! 8
+      integer :: TWZ     ! 9
    endtype rst_block
-   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6,7,8)
+   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6,7,8,9)
 
    type replica_type
       integer :: TEMP

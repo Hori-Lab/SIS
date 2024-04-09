@@ -11,10 +11,11 @@ program show_rst
    integer :: iargc
    character(1000) :: cfile_input
 
-   integer :: i, imp, itype
+   integer :: i, i2, i3
+   integer :: imp, itype
    integer :: nblock_size
    integer :: istat
-   integer :: nmp
+   integer :: nmp, n
    integer(L_INT) :: i_ll
    real(PREC) :: r1,r2,r3
    integer, parameter :: luninp = 10
@@ -100,6 +101,19 @@ program show_rst
          read (luninp) nmp
          write(*,*) 'nmp:',nmp
          do imp = 1, nmp
+            read (luninp) r1,r2,r3
+            write(*,*) r1,r2,r3
+         enddo
+
+      case(RSTBLK%TWZ)
+         write(*,*) '# Tweezers'
+         read (luninp) i
+         write(*,*) 'replica:', i
+         read (luninp) n
+         write(*,*) 'ntwz_FR:', n
+         do i = 1, n
+            read (luninp) r1,r2,r3
+            write(*,*) r1,r2,r3
             read (luninp) r1,r2,r3
             write(*,*) r1,r2,r3
          enddo

@@ -8,12 +8,13 @@ subroutine write_rst()
    use var_state, only : istep, mts_rep, mts, &
                          opt_anneal, ianneal, &
                          xyz, velos, accels
+   use var_potential, only : flg_twz, ntwz_FR, twz_FR_init
    use var_replica, only : nrep_proc, nrep_all, rep2lab, irep2grep
    use var_parallel, only : myrank
 
    implicit none
 
-   integer :: i, imp, irep
+   integer :: i, imp, irep, ipair
    integer :: istep_sim
    integer :: grep
    integer :: lunout
@@ -93,6 +94,21 @@ subroutine write_rst()
       do imp = 1, nmp
          write(lunout) (accels(i,imp,irep),i=1,3) ! PREC
       enddo
+
+      ! Tweezers
+      if (flg_twz) then
+         if (ntwz_FR > 0) then
+            write(lunout) RSTBLK%TWZ
+            nblock_size = calc_size(2, 0, ntwz_FR*2*3, 0)
+            write(lunout) nblock_size
+            write(lunout) grep    ! M_INT
+            write(lunout) ntwz_FR     ! M_INT
+            do ipair = 1, ntwz_FR
+               write(lunout) (twz_FR_init(i, 1, ipair), i=1,3)  ! PREC
+               write(lunout) (twz_FR_init(i, 2, ipair), i=1,3)  ! PREC
+            enddo
+         endif
+      endif
 
       ! PRNGREP, mts_rep for replica exchange
       if (myrank == 0 .and. irep == 1) then

@@ -7,6 +7,7 @@ subroutine read_rst(itype_wanted, rst_status)
    use var_top, only : nmp
    use var_state, only : xyz, velos, accels, istep, ianneal, mts, mts_rep
    use var_replica, only : nrep_all, rep2lab, lab2rep, grep2rank, grep2irep
+   use var_potential, only : ntwz_FR, twz_FR_init
 #ifdef PAR_MPI
    use const, only : L_INT
    use var_replica, only : nrep_proc
@@ -18,7 +19,7 @@ subroutine read_rst(itype_wanted, rst_status)
    integer, intent(in) :: itype_wanted
    integer, intent(out) :: rst_status
 
-   integer :: i, imp, itype
+   integer :: i, imp, itype, ipair
    integer :: n, m
    integer :: irep, grep, rank
    integer :: idummy
@@ -26,6 +27,7 @@ subroutine read_rst(itype_wanted, rst_status)
    integer :: nblock_size
    logical :: flg_done(1:nrep_all)
    real(PREC), allocatable :: temp_array(:,:)
+   real(PREC), allocatable :: temp_array3(:,:,:)
 #ifdef PAR_MPI
    integer, parameter :: TAG = 1
 #endif
@@ -330,6 +332,51 @@ subroutine read_rst(itype_wanted, rst_status)
                exit
             endif
 
+         !----------------------------
+         ! Tweezers
+         !----------------------------
+         case(RSTBLK%TWZ)
+            read (hdl_in_rst) grep
+
+            if (ntwz_FR > 0) then
+               read (hdl_in_rst) n
+
+               if (n /= ntwz_FR) then
+                  print '(a,i10,a,i10)', 'Error: ntwz_FR is not consistent in the restart file. n=',n,' ntwz_FR=',ntwz_FR
+                  error stop
+               endif
+
+               allocate(temp_array3(3, 2, ntwz_FR))
+               do ipair = 1, ntwz_FR
+                  read (hdl_in_rst) (temp_array3(i, 1, ipair), i=1,3)
+                  read (hdl_in_rst) (temp_array3(i, 2, ipair), i=1,3)
+               enddo
+
+               rank = grep2rank(grep)
+               irep = grep2irep(grep)
+               if (rank == 0) then
+                  twz_FR_init(1:3, 1:2, 1:ntwz_FR) = temp_array3(1:3, 1:2, 1:ntwz_FR)
+               endif
+
+#ifdef PAR_MPI
+               if (rank == 0) then
+                  ! Add local communication when necessary.
+                  continue
+               else
+                  call MPI_SEND(irep, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
+                  call MPI_SEND(temp_array3, 3*2*ntwz_FR, PREC_MPI, rank, TAG, MPI_COMM_WORLD, istat)
+               endif
+#endif
+               deallocate(temp_array3)
+            endif
+
+            flg_done(grep) = .true.
+            if (all(flg_done)) then
+               write(6, '(a)') '## RESTART: tweezers data has been loaded.'
+               flush(6)
+               exit
+            endif
+
          case default
             print '(a,i3)', 'Error: Unknown block-identifier in the restart file. itype=',itype
             error stop
@@ -498,6 +545,23 @@ subroutine read_rst(itype_wanted, rst_status)
             write(6, '(a,i5,a)') '## RESTART: mts data has been received for irep = ',irep,'.'
             flush(6)
          enddo
+
+      !----------------------------
+      ! Tweezers
+      !----------------------------
+      case(RSTBLK%TWZ)
+
+         if (ntwz_FR > 0) then
+            do i = 1, nrep_proc
+               call MPI_RECV(irep, 1, MPI_INTEGER, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+               call MPI_RECV(twz_FR_init(:,:,:), 3*2*ntwz_FR, PREC_MPI, 0, TAG, MPI_COMM_WORLD, istats_mpi, istat)
+            enddo
+
+            ! Add local communication when necessary.
+
+            write(6, '(a)') '## RESTART: tweezers data has been received.'
+            flush(6)
+         endif
 
       case default
          print '(a,i3)', 'Error: Logical error undefined itype_wanted used.' ,itype_wanted
