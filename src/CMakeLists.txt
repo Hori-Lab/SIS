@@ -57,3 +57,5 @@ add_executable(show_rst
     const.F90 const_idx.F90
     show_rst.F90
 )
+add_dependencies(show_rst mt_stream-lib)
+target_link_libraries(show_rst mt_stream-lib)
