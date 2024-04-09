@@ -4,7 +4,7 @@ subroutine init_mts()
    ! http://theo.phys.sci.hiroshima-u.ac.jp/~ishikawa/PRNG/mt_stream_en.html
    !use mt_kind_defs
    use mt_stream, only : set_mt19937, new, init, create_stream
-   
+
    use const_idx, only : RSTBLK
    use var_state, only : mts, mts_rep, rng_seed, restarted
    use var_replica, only : irep2grep, nrep_proc, flg_replica
@@ -31,8 +31,8 @@ subroutine init_mts()
       print '(a)', 'Creating an MT stream, mts_rep.'
       call create_stream(mts(0), mts_rep, 1)
       id_offset = 1
-   endif     
-  
+   endif
+
    ! Stream for each process.
    do irep = 1, nrep_proc
       grep = irep2grep(irep)
@@ -41,7 +41,7 @@ subroutine init_mts()
          call create_stream(mts(0), mts(irep), grep + id_offset)
       endif
    enddo
- 
+
    print '(a)', 'Done: Initialising MT stream.'
    print *
    flush(6)
