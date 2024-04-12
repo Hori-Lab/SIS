@@ -17,26 +17,44 @@ release = '2024.04'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['myst_parser',
-              'sphinx_rtd_theme',
+extensions = [
+              'sphinx.ext.mathjax',
               #'sphinx_fontawesome'
-              'sphinx.ext.mathjax'
-            ]
+              #'nbsphinx', # for ipynb
+]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_sphinx.md', '.git']
 
 source_suffix = {
     '.rst': 'restructuredtext',
-    #'.txt': 'markdown',
     '.md': 'markdown',
+    #'.txt': 'markdown',
 }
-
-mathjax_path = '.'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 #html_theme = 'alabaster'
+
+extensions += ['sphinx_rtd_theme',]
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+#html_static_path = ['_static']
+
+# -- MyST --------------------------------------------------------------------
+extensions += ['myst_parser',]
+myst_enable_extensions = [
+    "amsmath",
+    #"colon_fence",
+    #"deflist",
+    "dollarmath",
+    #"fieldlist",
+    #"html_admonition",
+    #"html_image",
+    #"linkify",
+    #"replacements",
+    #"smartquotes",
+    #"strikethrough",
+    #"substitution",
+    #"tasklist",
+]
+

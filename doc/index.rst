@@ -10,9 +10,9 @@ Welcome to SIS's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   references
    replica
    tweezers
+   references
 
 Indices and tables
 ==================
