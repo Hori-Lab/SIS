@@ -5,7 +5,7 @@
 
 There are two different modes of operation implemented as follows.
 
-## `[Tweezers.Dual_Constant_Force]` mode
+## Constant Force mode
 
 In this mode, it is assumed that one or more pairs of coarse-grained particles ($i$ and $j$) are gripped with optical tweezers and a constant force $\vec{F}$ is applied to each pair in opposite directions.
 
@@ -23,7 +23,7 @@ In this mode, it is assumed that one or more pairs of coarse-grained particles (
 * `id_pairs` specfies the particle pairs that are subject of constant force. In the example above, particles 1 and 5 will be the subject of external force.
 * `forces_pN` specifies the force vector applied to each pair. In the above example, $F_i = (f_x, f_y, f_z) = (5.0, 0, 0)$ pN is applied to the first particle. The exact opposite force, $F_j = (-5.0, 0, 0)$ pN, is applied to the particle 5. 
 
-## `[Tweezers.Force_Ramp]` mode
+## Force Ramp mode
 
 In the `Force_Ramp` mode, a pair of particles $i$ and $j$ are each trapped by tweezers with harmonic potentials with the spring constants $k_i$ and $k_j$. The positions of the two traps are initially located at the same position as the particles $i$ and $j$ at time = 0 ($\vec{R_i^0}$ and $\vec{R_j^0}$). The trap positions move along the simulation with velocity $\vec{v_i}$ and $\vec{v_j}$, which are defined by the initial-position vector $\left(\vec{R_j^0} - \vec{R_i^0}\right)$ and given absolute speeds $s_i$ and $s_j$.
 
