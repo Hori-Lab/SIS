@@ -164,7 +164,7 @@ fix_com_origin = 0
 model = 1
     # 1: The model by Nguyen, Hori, Thirumalai (2022) Nat. Chem.
     # 2: (obsolete)
-　  # 3: Same as 1 but not allowing isolated base pairs.
+    # 3: Same as 1 but not allowing isolated base pairs.
     # 4: Base pair potential U0 is calcualted by dG values of the nearest neighbour model.
     # 5: Base pair potential U0 is calcualted by dH and dS values of the nearest neighbour model.
 
