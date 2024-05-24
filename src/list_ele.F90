@@ -2,7 +2,7 @@ subroutine list_ele()
 
    use const
    use var_top, only : nmp_chain, imp_chain, nchains, has_charge
-   use var_potential, only : nele, ele_mp
+   use var_potential, only : nele, ele_mp, ele_exclude_covalent_bond_pairs
    use var_replica, only : nrep_proc
 
    implicit none
@@ -30,7 +30,11 @@ subroutine list_ele()
                if (.not. has_charge(imp)) cycle
 
                if (ichain == jchain) then
-                  j_start = i + 3
+                  if (ele_exclude_covalent_bond_pairs) then
+                     j_start = i + 2
+                  else
+                     j_start = i + 1
+                  endif
                else
                   j_start = 1
                endif
