@@ -8,8 +8,6 @@ Nback = 10   # Number of particles removed backward when new bead causes clash.
 BL = 5.84    # Bond length
 BA = 2.643   # Bond angle
 DIH = 0.267
-EV = 12.0    # Excluded-volume distance
-EV2 = EV * EV
 
 # Arguments parser
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -77,22 +75,6 @@ i = 3
 while (i < N):
     # Derive the coordinate by NeRF
     p = NeRF(xyz[-3], xyz[-2], xyz[-1], BL, BA, DIH)
-
-    # Check if any clash
-    flg = False
-    for j in range(i-2):
-        v = p - xyz[j]
-        d2 = v[0]**2 + v[1]**2 + v[2]**2
-        if d2 < EV2:
-            flg = True
-            break
-
-    # If clash, remove the last Nback beads
-    if flg:
-        Ndel = min(i-3, Nback)
-        i -= Ndel
-        del xyz[-Ndel:]
-        continue
 
     # Add the new bead
     xyz.append(p)
