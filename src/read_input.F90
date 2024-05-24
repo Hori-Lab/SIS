@@ -1239,30 +1239,32 @@ subroutine read_input(cfilepath)
       print '(a)', '#'
    endif
 
-   if (integrator == INTGRT%LD_GJF2GJ) then
-      print '(a)', '# MD integrator: GJF-2GJ'
-   else if (integrator == INTGRT%BD_EM) then
-      print '(a)', '# MD integrator: GJF-2GJ'
-   else
-      print '(a)', 'Error: invalid integrator value,', integrator
-      call sis_abort()
-   endif
-   print '(a,g15.8)', '# MD dt: ', dt
-   print '(a,i16)', '# MD nstep: ', nstep
-   print '(a,i16)', '# MD nstep_save: ', nstep_save
-   print '(a,i16)', '# MD nstep_save_rst: ', nstep_save_rst
-   print '(a,g15.8)', '# MD neighbor_list_margin: ', nl_margin
-   print '(a,f12.8)', '# MD viscosity_Pas: ', viscosity_Pas
+   if (job == JOBT%MD) then
+      if (integrator == INTGRT%LD_GJF2GJ) then
+         print '(a)', '# MD integrator: GJF-2GJ'
+      else if (integrator == INTGRT%BD_EM) then
+         print '(a)', '# MD integrator: GJF-2GJ'
+      else
+         print '(a)', 'Error: invalid integrator value,', integrator
+         call sis_abort()
+      endif
+      print '(a,g15.8)', '# MD dt: ', dt
+      print '(a,i16)', '# MD nstep: ', nstep
+      print '(a,i16)', '# MD nstep_save: ', nstep_save
+      print '(a,i16)', '# MD nstep_save_rst: ', nstep_save_rst
+      print '(a,g15.8)', '# MD neighbor_list_margin: ', nl_margin
+      print '(a,f12.8)', '# MD viscosity_Pas: ', viscosity_Pas
 
-   if (stop_wall_time_sec < 0) then
-      print '(a,g15.8,a)', '# MD stop_wall_time_hour: -1 (wall time limit not set)'
-   else
-      print '(a,g15.8)', '# MD stop_wall_time_hour: ', real(stop_wall_time_sec, kind=PREC) / 3600.0_PREC
-      print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
-   endif
+      if (stop_wall_time_sec < 0) then
+         print '(a,g15.8,a)', '# MD stop_wall_time_hour: -1 (wall time limit not set)'
+      else
+         print '(a,g15.8)', '# MD stop_wall_time_hour: ', real(stop_wall_time_sec, kind=PREC) / 3600.0_PREC
+         print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
+      endif
 
-   print '(a,i5)', '# MD fix_com_origin: ', fix_com_origin
-   print '(a)', '#'
+      print '(a,i5)', '# MD fix_com_origin: ', fix_com_origin
+      print '(a)', '#'
+   endif
 
    print '(a,i6)', '# Basepair, model: ', bp_model
    print '(a,i6)', '# Basepair, nstep_MC: ', nstep_bp_MC

@@ -1,6 +1,6 @@
 subroutine job_dcd()
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end
+   use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64
    use const
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
@@ -9,12 +9,22 @@ subroutine job_dcd()
    use var_io, only : cfile_dcd_in, iopen_hdl
    use dcd, only : file_dcd, DCD_OPEN_MODE
    use var_replica, only : nrep_proc
+#ifdef DUMPFORCE
+   use var_state, only : flg_step_dump_force
+#endif
 
    implicit none
 
-   integer :: nframe, istat, nmp_dcd
+   integer(INT64) :: nframe
+   integer :: istat, nmp_dcd
    type(file_dcd) :: fdcd
    integer, parameter :: IREP = 1
+
+#ifdef DUMPFORCE
+   real(PREC), allocatable :: forces(:, :)
+   flg_step_dump_force = .True.
+   allocate(forces(3, nmp))
+#endif
 
    allocate(Ekinetic(nrep_proc))
    Ekinetic(:) = 0.0_PREC
@@ -55,6 +65,10 @@ subroutine job_dcd()
       call fdcd%read_onestep(nmp, xyz(:,:,IREP), istat)
       if (istat == iostat_end) exit
       nframe = nframe + 1
+
+#ifdef DUMPFORCE
+      call force(IREP, forces(:,:))
+#endif
 
       call energy_sumup(IREP, tempK, energies(0:ENE%MAX, IREP))
       
