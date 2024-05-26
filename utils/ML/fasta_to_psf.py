@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 
 NUCLEOTIDES = ['A', 'U', 'G', 'C', 'D']
+MASS = {'A': 328.212,
+        'U': 305.164,
+        'G': 344.212,
+        'C': 304.182,
+        'D': 300.000,
+       }
+CHARGE = {'A': -1.0,
+          'U': -1.0,
+          'G': -1.0,
+          'C': -1.0,
+          'D':  0.0,
+         }
 
 import sys
 import numpy as np
@@ -49,7 +61,7 @@ fpsf.write('\n')
 fpsf.write(f'{n_nt:10d} !NATOM\n')
 for i, s in enumerate(seq):
     i_nt = i + 1
-    fpsf.write(f'{i_nt:10d} R {i_nt:8d}         R{s}      C4        R{s}      0.000000        0.0000           0 \n')
+    fpsf.write(f'{i_nt:10d} R {i_nt:8d}         R{s}      C4        R{s} {CHARGE[s]:13.6f} {MASS[s]:13.4f}           0 \n')
 
 fpsf.write('\n')
 fpsf.write('\n')
