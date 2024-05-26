@@ -49,7 +49,7 @@ fpsf.write('\n')
 fpsf.write(f'{n_nt:10d} !NATOM\n')
 for i, s in enumerate(seq):
     i_nt = i + 1
-    fpsf.write(f'{i_nt:10d} R {i_nt:8d}         R{s}      C4        C4      0.000000        0.0000           0 \n')
+    fpsf.write(f'{i_nt:10d} R {i_nt:8d}         R{s}      C4        R{s}      0.000000        0.0000           0 \n')
 
 fpsf.write('\n')
 fpsf.write('\n')
