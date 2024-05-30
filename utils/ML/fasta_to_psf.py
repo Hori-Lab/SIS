@@ -79,7 +79,7 @@ fpsf.write('         0 !NTHETA: angles\n')
 fpsf.write('\n')
 fpsf.write('\n')
 
-fpsf.write('         0 !NPHI: dihedrals\n')
+fpsf.write(f'{n_nt-3:10d} !NPHI: dihedrals\n')
 for i in range(n_nt-3):
     fpsf.write(f' {i+1:9d} {i+2:9d} {i+3:9d} {i+4:9d}')
     if i % 2 == 1:
