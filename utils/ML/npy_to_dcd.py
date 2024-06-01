@@ -16,8 +16,8 @@ if __name__ == '__main__':
 
     data = np.load(sys.argv[1])
     n_nt, _, n_frame = np.shape(data)
-    print("N_nt = ", n_nt)
-    print("N_frame = ", n_frame)
+    #print("N_nt = ", n_nt)
+    #print("N_frame = ", n_frame)
 
     dcd = DcdFile(sys.argv[-1])
     dcd.open_to_write()

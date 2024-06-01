@@ -10,7 +10,7 @@ if len(sys.argv) == 1:
 files = sys.argv[1:-1]
 out_npy = sys.argv[-1]
 
-a = np.load(files[1])
+a = np.load(files[0])
 
 for f in files[1:]:
     a += np.load(f)
