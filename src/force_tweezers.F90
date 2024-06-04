@@ -54,7 +54,7 @@ subroutine force_tweezers(irep, forces)
 
       if (flg_step_save) then
          d = norm2(xyz(:, imp2, irep) - xyz(:, imp1, irep))
-         write(hdl_twz, '(i13,x,i3,6(x,g13.8))') istep, ipair, norm2(p2-p1), d, norm2(v1), norm2(v2), &
+         write(hdl_twz, '(i13,x,i3,6(x,g15.8))') istep, ipair, norm2(p2-p1), d, norm2(v1), norm2(v2), &
                   twz_FR_k(1, ipair) * norm2(v1) / (JOUL2KCAL_MOL*1.0e-22), &
                   twz_FR_k(2, ipair) * norm2(v2) / (JOUL2KCAL_MOL*1.0e-22) ! output in pN
       endif

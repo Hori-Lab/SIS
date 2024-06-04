@@ -75,12 +75,12 @@ subroutine init_tweezers
          twz_FR_velo(:, 2, ipair) = v(:) / norm2(v) * twz_FR_speed(2, ipair)
 
          print '(a,x,i5,i5,i5)', '## pair, imp1, imp2: ', ipair, imp1, imp2
-         print '(a,x,3(f14.3))', '## initial position 2: ', twz_FR_init(:, 2, ipair)
-         print '(a,x,3(f14.3))', '## initial position 1: ', twz_FR_init(:, 1, ipair)
-         print '(a,x,g14.8)', '## speed 1: ', twz_FR_speed(1, ipair)
-         print '(a,x,g14.8)', '## speed 2: ', twz_FR_speed(2, ipair)
-         print '(a,3(x,g14.8))', '## velocity 1: ', twz_FR_velo(:, 1, ipair)
-         print '(a,3(x,g14.8))', '## velocity 2: ', twz_FR_velo(:, 2, ipair)
+         print '(a,x,3(f15.3))', '## initial position 2: ', twz_FR_init(:, 2, ipair)
+         print '(a,x,3(f15.3))', '## initial position 1: ', twz_FR_init(:, 1, ipair)
+         print '(a,x,g15.8)', '## speed 1: ', twz_FR_speed(1, ipair)
+         print '(a,x,g15.8)', '## speed 2: ', twz_FR_speed(2, ipair)
+         print '(a,3(x,g15.8))', '## velocity 1: ', twz_FR_velo(:, 1, ipair)
+         print '(a,3(x,g15.8))', '## velocity 2: ', twz_FR_velo(:, 2, ipair)
       enddo
 
       print *
