@@ -10,7 +10,7 @@ subroutine force_bp_triplet(irep, forces)
    use var_state, only : xyz, bp_status, ene_bp, kT, flg_bp_energy, tempK, &
                          nstep_bp_MC, bp_status_MC
    use var_potential, only : nbp, bp_cutoff_energy, bp_mp, bp_paras, bp_coef, &
-                             basepair_parameters
+                             basepair_parameters, flg_bias_ss, bias_ss_force
    use var_replica, only : flg_repvar, rep2val, irep2grep
 
    implicit none
@@ -78,7 +78,18 @@ subroutine force_bp_triplet(irep, forces)
       a12 = sqrt(d1212)
       d = a12 - bpp%bond_r
 
-      if (abs(d) > bpp%cutoff_ddist) cycle
+      if (flg_bias_ss) then
+         if (abs(d) > bpp%cutoff_ddist) then
+            v12(:) = bias_ss_force / a12 * v12(:)
+            !$omp critical
+            forces(:, imp1) = forces(:, imp1) - v12(:)
+            forces(:, imp2) = forces(:, imp2) + v12(:)
+            !$omp end critical
+            cycle
+         endif
+      else
+         if (abs(d) > bpp%cutoff_ddist) cycle
+      endif
 
       imp3 = imp1 - 1
       imp4 = imp2 - 1
