@@ -11,10 +11,10 @@ subroutine read_input(cfilepath)
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &
                       flg_out_bpcoef, flg_out_bp, flg_out_bpe, flg_out_bpall, flg_out_twz, &
-                      flg_in_ct, flg_in_bpseq, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
+                      flg_in_ct, flg_in_bpseq, flg_in_bpl, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
-                      cfile_ct_in, cfile_bpseq_in
+                      cfile_ct_in, cfile_bpseq_in, cfile_bpl_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  tempK_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
@@ -154,6 +154,7 @@ subroutine read_input(cfilepath)
          call get_value(node, "fasta", cfile_fasta_in)
          call get_value(node, "ct", cfile_ct_in)
          call get_value(node, "bpseq", cfile_bpseq_in)
+         call get_value(node, "bpl", cfile_bpl_in)
          call get_value(node, "anneal", cfile_anneal_in)
 
       else
@@ -166,9 +167,11 @@ subroutine read_input(cfilepath)
       if (allocated(cfile_fasta_in)) flg_in_fasta = .True.
       if (allocated(cfile_ct_in)) flg_in_ct = .True.
       if (allocated(cfile_bpseq_in)) flg_in_bpseq = .True.
+      if (allocated(cfile_bpl_in)) flg_in_bpl = .True.
 
-      if (flg_in_ct .and. flg_in_bpseq) then
-         print '(a)', 'Error: only one of ct and bpseq files can be specified.'
+      if ((flg_in_ct .and. flg_in_bpseq) .or. (flg_in_bpseq .and. flg_in_bpl) &
+           .or. (flg_in_ct .and. flg_in_bpl)) then
+         print '(a)', 'Error: only one of ct, bpseq, and bpl files can be specified.'
          call sis_abort()
       endif
 
@@ -1054,6 +1057,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_in_xyz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_in_bpl, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    ! Because the length of cfile_prefix is unknown...
    if (myrank == 0) strlen = len(cfile_prefix)
@@ -1214,6 +1218,7 @@ subroutine read_input(cfilepath)
       if (flg_in_fasta) print '(a,a)', '# Files.In, fasta: ', trim(cfile_fasta_in)
       if (flg_in_ct) print '(a,a)', '# Files.In, ct: ', trim(cfile_ct_in)
       if (flg_in_bpseq) print '(a,a)', '# Files.In, bpseq: ', trim(cfile_bpseq_in)
+      if (flg_in_bpl) print '(a,a)', '# Files.In, bpl: ', trim(cfile_bpl_in)
       if (opt_anneal > 0) print '(a,a)', '# Files.In, anneal: ', trim(cfile_anneal_in)
       print '(a)', '#'
    endif

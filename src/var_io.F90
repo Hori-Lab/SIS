@@ -14,6 +14,7 @@ module var_io
 
    logical :: flg_in_bpseq = .False.
    logical :: flg_in_ct = .False.
+   logical :: flg_in_bpl = .False.
    logical :: flg_in_fasta = .False.
    logical :: flg_in_xyz = .False.
    logical :: flg_in_pdb = .False.
@@ -48,7 +49,7 @@ module var_io
    character(len=CHAR_FILE_PATH), allocatable :: cfile_rst(:)  ! (nrep_proc)
    character(len=CHAR_FILE_PATH), allocatable :: cfile_dcd(:)  ! (nrep_proc)
    character(len=:), allocatable :: cfile_ff, cfile_prefix, cfile_dcd_in, cfile_pdb_ini, &
-                                    cfile_fasta_in, cfile_ct_in, cfile_bpseq_in, &
+                                    cfile_fasta_in, cfile_ct_in, cfile_bpseq_in, cfile_bpl_in, &
                                     cfile_anneal_in, cfile_xyz_ini
 
 end module var_io
