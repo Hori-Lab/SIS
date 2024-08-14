@@ -11,7 +11,7 @@ subroutine energy_rg(irep, Erg)
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: Erg
 
-   integer :: imp
+   integer :: imp, grep
    real(PREC) :: s2, v(3), cm(3)
 
    ! Center of mass
@@ -26,12 +26,12 @@ subroutine energy_rg(irep, Erg)
    rg(irep) = sqrt(s2 / real(nmp, kind=PREC))
 
    if (bias_rg_pott == POTT%FLATBOTTOMED) then
-      if (rg(irep) <= bias_rg_0) then
+      if (rg(irep) <= bias_rg_0(irep)) then
          Erg = 0.0_PREC
          return
       endif
    endif
 
-   Erg = 0.5_PREC * bias_rg_k * (rg(irep) - bias_rg_0)**2
+   Erg = 0.5_PREC * bias_rg_k * (rg(irep) - bias_rg_0(irep))**2
 
 end subroutine energy_rg
