@@ -79,9 +79,10 @@ module const_idx
       integer :: TEMP
       integer :: TWZDCF
       integer :: ION
+      integer :: RG
       integer :: MAX
    endtype replica_type
-   type(replica_type), parameter :: REPT = replica_type(1,2,3,3)
+   type(replica_type), parameter :: REPT = replica_type(1,2,3,4,4)
 
    type nn_types
       integer :: GC_CG

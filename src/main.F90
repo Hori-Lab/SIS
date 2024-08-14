@@ -4,7 +4,7 @@ program sis
    use const, only : CHAR_FILE_PATH, init_const, PREC, FILENAME_DIGIT_REPLICA
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, JOBT, REPT, RSTBLK
-   use var_potential, only : flg_ele, flg_twz, flg_restraint
+   use var_potential, only : flg_ele, flg_twz, flg_bias_rg, flg_restraint
    use var_state, only : restarted, xyz, tempK, kT, job, opt_anneal, anneal_tempK, reset_step
    use var_top, only : nmp, flg_freeze
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
@@ -128,6 +128,8 @@ program sis
    if (flg_twz) call init_tweezers()
 
    if (flg_restraint) call read_restraint()
+
+   if (flg_bias_rg) call init_bias_rg()
 
    !! Construct pair lists of local potentials
    call list_local()

@@ -27,12 +27,12 @@ subroutine force_rg(irep, forces)
    r_g = sqrt(s2 / real(nmp, kind=PREC))
 
    if (bias_rg_pott == POTT%FLATBOTTOMED) then
-      if (r_g <= bias_rg_0) then
+      if (r_g <= bias_rg_0(irep)) then
          return
       endif
    endif
 
-   factor = - bias_rg_k * (r_g - bias_rg_0) / (r_g * nmp)
+   factor = - bias_rg_k * (r_g - bias_rg_0(irep)) / (r_g * nmp)
 
    do imp = 1, nmp
       forces(:, imp) = forces(:, imp) + factor * (xyz(:, imp, irep) - cm(:))

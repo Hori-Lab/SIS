@@ -22,7 +22,7 @@ add_executable(${SIS_EXE}
     write_bp.F90
     write_bpcoef.F90
     init_mts.F90 init_out_files.F90 init_replica.F90 init_ele.F90 init_freeze.F90
-    init_tweezers.F90
+    init_tweezers.F90 init_bias_rg.F90
     init_sequence.F90 init_structure.F90 gen_random_coil.F90
     list_local.F90 list_bp.F90
     list_exv.F90 list_ele.F90

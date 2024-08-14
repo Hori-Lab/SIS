@@ -26,7 +26,7 @@ subroutine read_input(cfilepath)
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
                              ntwz_FR, twz_FR_pairs, twz_FR_k, twz_FR_speed, &
                              flg_bias_ss, bias_ss_force, &
-                             flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0, &
+                             flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0_inp, &
                              flg_timed_bias_rg, flg_restraint
    use var_top, only : nrepeat, nchains, inp_no_charge, dummy_has_charge,&
                        flg_freeze, frz_ranges
@@ -459,8 +459,19 @@ subroutine read_input(cfilepath)
             call sis_abort()
          endif
 
-         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2 .and. nrep(REPT%ION) < 2) then
-            print '(a)', 'Error in input file: There should be more than one replica specified in any of nrep_temp, nrep_force, or nrep_ion'
+         nrep(REPT%RG) = 0
+         call get_value(group, "nrep_rg", nrep(REPT%RG))
+
+         if (nrep(REPT%RG) > MAX_REP_PER_DIM) then
+            print '(a)', 'Error in input file: Number of replicas (nrep_rg) exceeds MAX_REP_PER_DIM in [Replica].'
+            print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
+         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2 .and. &
+             nrep(REPT%ION) < 2  .and. nrep(REPT%RG) < 2    ) then
+            print '(a)', 'Error in input file: There should be more than one replica specified in'
+            print '(a)', '                     any of nrep_temp, nrep_force, nrep_ion, or nrep_rg.'
             call sis_abort()
          endif
 
@@ -558,6 +569,32 @@ subroutine read_input(cfilepath)
             nrep(REPT%ION) = 1
          endif
 
+         !----------------- Replica.Rg -----------------
+         if (nrep(REPT%RG) > 1) then
+
+            flg_repvar(REPT%RG) = .True.
+            nrepdim = nrepdim + 1
+
+            call get_value(group, "Rg", node, requested=.False.)
+            if (associated(node)) then
+               do i = 1, nrep(REPT%RG)
+                  write(cquery, '(i0)') i
+                  call get_value(node, cquery, replica_values(i, REPT%RG))
+
+                  if (replica_values(i, REPT%RG) > INVALID_JUDGE) then
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Rg].'
+                     call sis_abort()
+                  endif
+               enddo
+            else
+               print '(a)', 'Error in input file: [Replica.Rg] is required.'
+               call sis_abort()
+            endif
+
+         else
+            ! Ignore if nrep_rg = 0 or 1
+            nrep(REPT%RG) = 1
+         endif
 
          if (nrepdim > MAX_REP_DIM) then
             print '(a)', 'Error in input file: Number of replica dimensions exceeds MAX_REP_DIM in [Replica].'
@@ -1097,8 +1134,8 @@ subroutine read_input(cfilepath)
          endif
 
          !----------------- Rg0 -----------------
-         call get_value(group, "Rg0", bias_rg_0, stat=istat, origin=origin)
-         if (istat /= 0 .or. bias_rg_0 < 0.0_PREC) then
+         call get_value(group, "Rg0", bias_rg_0_inp, stat=istat, origin=origin)
+         if (istat /= 0 .or. bias_rg_0_inp < 0.0_PREC) then
             print '(a)', context%report("invalid Rg0 value in [Bias_Rg].", origin, "expected a positive real value.")
             call sis_abort()
          endif
@@ -1253,7 +1290,7 @@ subroutine read_input(cfilepath)
    if (flg_bias_rg) then
       call MPI_BCAST(bias_rg_pott, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       call MPI_BCAST(bias_rg_k, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
-      call MPI_BCAST(bias_rg_0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(bias_rg_0_inp, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
 #endif
@@ -1449,7 +1486,7 @@ subroutine read_input(cfilepath)
          print '(a)', '# Bias_Rg, timing file: ' // trim(cfile_bias_rg_in)
       else
          print '(a,x,f7.2)', '# Bias_Rg, k:', bias_rg_k
-         print '(a,x,f7.2)', '# Bias_Rg, Rg0:', bias_rg_0
+         print '(a,x,f7.2)', '# Bias_Rg, Rg0:', bias_rg_0_inp
       endif
       print '(a)', '#'
    endif

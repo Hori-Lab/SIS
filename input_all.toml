@@ -58,6 +58,7 @@ type = "MD"
 nrep_temp = 8
 nrep_force = 0
 nrep_ion = 0
+nrep_rg = 0
 
 nstep_exchange = 10
 nstep_save = 100
@@ -87,6 +88,17 @@ exchange = true
     8 = 14.0
 
     [Replica.Ionic_strength]
+    ## Ionic strength of the monovalent ions in molar (mol/L) units.
+    1 = 10.0
+    2 = 12.0
+    3 = 14.0
+    4 = 16.0
+    5 = 18.0
+    6 = 20.0
+    7 = 22.0
+    8 = 24.0
+
+    [Replica.Rg]
     ## Ionic strength of the monovalent ions in molar (mol/L) units.
     1 = 0.02
     2 = 0.05

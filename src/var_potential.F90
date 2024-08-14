@@ -139,7 +139,9 @@ module var_potential
    logical, save :: flg_bias_rg
    integer, save :: bias_rg_pott  ! potential type (POTT%HARMONIC or POTT%FLATBOTTOMED)
    real(PREC), save :: bias_rg_k
-   real(PREC), save :: bias_rg_0
+   real(PREC), save :: bias_rg_0_inp        ! Value from the input file
+   real(PREC), allocatable :: bias_rg_0(:)  ! (1:nrep_proc)
+                                            ! bias_rg_0 = bias_rg_0_inp if not Rg-REMD
 
    ! Time-dependent Bias-Rg
    logical, save :: flg_timed_bias_rg

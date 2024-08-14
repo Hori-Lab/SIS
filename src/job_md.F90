@@ -228,6 +228,11 @@ subroutine job_md()
    ! Setting up Timed bias-Rg
    if (flg_timed_bias_rg) then
 
+      if (flg_repvar(REPT%RG)) then
+         write(*,*) 'Error: timed-bias-rg does not work with nrep_rg > 1.'
+         call sis_abort()
+      endif
+
       call read_timed_bias_rg()
 
       itimed_bias_rg = 1
@@ -250,7 +255,7 @@ subroutine job_md()
       endif
 
       bias_rg_k = timed_bias_rg_k(itimed_bias_rg)
-      bias_rg_0 = timed_bias_rg_0(itimed_bias_rg)
+      bias_rg_0(:) = timed_bias_rg_0(itimed_bias_rg)
 
       if (itimed_bias_rg < ntimed_bias_rg) then
          istep_timed_bias_rg_next = timed_bias_rg_step(itimed_bias_rg + 1)
@@ -551,6 +556,10 @@ subroutine job_md()
                   k = rep2val(grep, REPT%TWZDCF)
                   twz_DCF_forces(:, 1:ntwz_DCF, irep) = k * twz_DCF_direction(:, 1:ntwz_DCF)
                endif
+
+               if (flg_repvar(REPT%RG)) then
+                  bias_rg_0(irep) = rep2val(grep, REPT%RG)
+               endif
             enddo
 
          endif
@@ -598,7 +607,7 @@ subroutine job_md()
       if (flg_timed_bias_rg .and. istep + 1 == istep_timed_bias_rg_next) then
          itimed_bias_rg = itimed_bias_rg + 1
          bias_rg_k = timed_bias_rg_k(itimed_bias_rg)
-         bias_rg_0 = timed_bias_rg_0(itimed_bias_rg)
+         bias_rg_0(:) = timed_bias_rg_0(itimed_bias_rg)
 
          if (itimed_bias_rg < ntimed_bias_rg) then
             istep_timed_bias_rg_next = timed_bias_rg_step(itimed_bias_rg + 1)
