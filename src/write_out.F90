@@ -2,7 +2,7 @@ subroutine write_out_header(irep)
 
    use var_io, only : hdl_out
    use var_replica, only : flg_replica
-   use var_potential, only : flg_stage, flg_ele, flg_twz
+   use var_potential, only : flg_stage, flg_ele, flg_twz, flg_bias_rg
 
    integer, intent(in) :: irep
 
@@ -39,7 +39,15 @@ subroutine write_out_header(irep)
       write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Etweezers'
    endif
 
+   if (flg_bias_rg) then
+      icol = icol + 1
+      write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Erg      '
+      icol = icol + 1
+      write(hdl_out(irep), '(a,i2,a)', advance='no') ' (', icol, ')Rg       '
+   endif
+
    write(hdl_out(irep), '(a)') ''
+
 endsubroutine write_out_header
 
 subroutine write_out(irep, istep_out, rep_label, tK)
@@ -49,8 +57,8 @@ subroutine write_out(irep, istep_out, rep_label, tK)
    use const_idx, only : ENE
    use var_io, only : hdl_out
    use var_replica, only : flg_replica
-   use var_potential, only : flg_stage, flg_ele, flg_twz
-   use var_state, only : Ekinetic, energies
+   use var_potential, only : flg_stage, flg_ele, flg_twz, flg_bias_rg
+   use var_state, only : Ekinetic, energies, rg
 
    integer, intent(in) :: irep
    integer(INT64), intent(in) :: istep_out
@@ -86,5 +94,15 @@ subroutine write_out(irep, istep_out, rep_label, tK)
    endif
 
    write(hdl_out(irep), '(a)') ''
+
+   if (flg_bias_rg) then
+      write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%RG, irep)
+      write(hdl_out(irep), '(1x, g13.6)', advance='no') rg(irep)
+   endif
+   write(hdl_out(irep), '(a)') ''
+
+#ifdef OUTFLUSH
+   flush(hdl_out(irep))
+#endif
 
 endsubroutine write_out

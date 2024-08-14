@@ -14,9 +14,10 @@ module const_idx
       integer :: ELE    ! 6
       integer :: STAGE  ! 7
       integer :: TWZ    ! 8
+      integer :: RG     ! 9
       integer :: MAX
    endtype energy_types
-   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,8)
+   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,9,9)
 
    type seq_types
       integer :: UNDEF  ! -1
@@ -116,6 +117,12 @@ module const_idx
       integer :: GUonGU
    endtype nnend_types
    type(nnend_types), parameter :: NNENDT = nnend_types(1,2,3,4,5,6)
+
+   type potential_types
+      integer :: HARMONIC
+      integer :: FLATBOTTOMED
+   endtype potential_types
+   type(potential_types), parameter :: POTT = potential_types(1,2)
 
 contains
    function seqt2char(i) result(c)

@@ -6,7 +6,7 @@ subroutine read_input(cfilepath)
    use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM, MAX_REP_DIM
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT
+   use const_idx, only : JOBT, INTGRT, REPT, POTT
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &
@@ -14,7 +14,7 @@ subroutine read_input(cfilepath)
                       flg_in_ct, flg_in_bpseq, flg_in_bpl, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
-                      cfile_ct_in, cfile_bpseq_in, cfile_bpl_in
+                      cfile_bias_rg_in, cfile_ct_in, cfile_bpseq_in, cfile_bpl_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  tempK_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
@@ -25,7 +25,9 @@ subroutine read_input(cfilepath)
                              flg_stage, stage_sigma, stage_eps, &
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
                              ntwz_FR, twz_FR_pairs, twz_FR_k, twz_FR_speed, &
-                             flg_bias_ss, bias_ss_force
+                             flg_bias_ss, bias_ss_force, &
+                             flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0, &
+                             flg_timed_bias_rg
    use var_top, only : nrepeat, nchains, inp_no_charge, &
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
@@ -156,6 +158,7 @@ subroutine read_input(cfilepath)
          call get_value(node, "bpseq", cfile_bpseq_in)
          call get_value(node, "bpl", cfile_bpl_in)
          call get_value(node, "anneal", cfile_anneal_in)
+         call get_value(node, "bias_Rg", cfile_bias_rg_in)
 
       else
          print '(a)', context%report("Files.In section required.", 0)
@@ -1039,6 +1042,57 @@ subroutine read_input(cfilepath)
          bias_ss_force = bias_ss_force * (JOUL2KCAL_MOL * 1.0e-22)
       endif
 
+      !################# [Bias_Rg] #################
+      ! (optional)
+      flg_bias_rg = .False.
+      call get_value(table, "Bias_Rg", group, requested=.False.)
+
+      if (associated(group)) then
+         flg_bias_rg = .True.
+         flg_timed_bias_rg = .False.
+
+         !----------------- potential -----------------
+         bias_rg_pott = POTT%HARMONIC  ! Default
+         call get_value(group, "potential", cline, stat=istat, origin=origin)
+         !if (istat < 0) then
+         !   print '(a)', context%report("invalid potential in [Bias_Rg].", origin, "expected either harmonic or flat-bottomed!.")
+         !   call sis_abort()
+         !endif
+         if (istat == 0) then
+            if (cline == 'harmonic') then
+               bias_rg_pott = POTT%HARMONIC
+            else if (cline == 'flat-bottomed') then
+               bias_rg_pott = POTT%FLATBOTTOMED
+            else if (cline == 'timed-flat-bottomed') then
+               flg_timed_bias_rg = .True.
+               bias_rg_pott = POTT%FLATBOTTOMED
+            else
+               print '(a)', context%report("invalid potential in [Bias_Rg].", origin, "expected either harmonic or flat-bottomed.")
+               call sis_abort()
+            endif
+         endif
+
+         if (flg_timed_bias_rg .and. .not. allocated(cfile_bias_rg_in)) then
+            print '(a)', 'Error: if timed potential is slected in [Biaas_Rg], bias_Rg is needed in [files.in].'
+            call sis_abort()
+         endif
+
+         !----------------- k -----------------
+         call get_value(group, "k", bias_rg_k, stat=istat, origin=origin)
+         if (istat /= 0 .or. bias_rg_k < 0.0_PREC) then
+            print '(a)', context%report("invalid k value in [Bias_Rg].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+
+         !----------------- Rg0 -----------------
+         call get_value(group, "Rg0", bias_rg_0, stat=istat, origin=origin)
+         if (istat /= 0 .or. bias_rg_0 < 0.0_PREC) then
+            print '(a)', context%report("invalid Rg0 value in [Bias_Rg].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+      endif
+
+      !#############################################
       call table%destroy
 
    endif ! myrank == 0
@@ -1177,6 +1231,14 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_bias_ss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    if (flg_bias_ss) then
       call MPI_BCAST(bias_ss_force, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   endif
+
+   call MPI_BCAST(flg_bias_rg, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_timed_bias_rg, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   if (flg_bias_rg) then
+      call MPI_BCAST(bias_rg_pott, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(bias_rg_k, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(bias_rg_0, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
 #endif
@@ -1354,6 +1416,23 @@ subroutine read_input(cfilepath)
    if (flg_bias_ss) then
       print '(a)', '# Bias_SS: On'
       print '(a,x,f7.2)', '# Bias_SS, force', bias_ss_force / (JOUL2KCAL_MOL*1.0e-22)  ! in pN
+      print '(a)', '#'
+   endif
+
+   if (flg_bias_rg) then
+      print '(a)', '# Bias_Rg: On'
+      if (bias_rg_pott == POTT%HARMONIC) then
+         print '(a)', '# Bias_Rg, potential: harmonic'
+      else if (bias_rg_pott == POTT%FLATBOTTOMED) then
+         print '(a)', '# Bias_Rg, potential: flat-bottomed'
+      endif
+
+      if (flg_timed_bias_rg) then
+         print '(a)', '# Bias_Rg, timing file: ' // trim(cfile_bias_rg_in)
+      else
+         print '(a,x,f7.2)', '# Bias_Rg, k:', bias_rg_k
+         print '(a,x,f7.2)', '# Bias_Rg, Rg0:', bias_rg_0
+      endif
       print '(a)', '#'
    endif
 
