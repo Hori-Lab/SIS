@@ -561,10 +561,12 @@ subroutine job_md()
       if (flg_variable_box) then
          if (mod(istep, variable_box_step) == 0) then
             call set_pbc_size(pbc_box(:) + variable_box_change(:))
-            fdcd(irep)%box(:) = pbc_box(:)
+            do irep = 1, nrep_proc
+               fdcd(irep)%box(:) = pbc_box(:)
 
-            call neighbor_list(irep)
-            xyz_move(:,:,irep) = 0.0e0_PREC
+               call neighbor_list(irep)
+               xyz_move(:,:,irep) = 0.0e0_PREC
+            enddo
 
             print '(a,i12,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
          endif
