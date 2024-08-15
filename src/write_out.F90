@@ -93,12 +93,11 @@ subroutine write_out(irep, istep_out, rep_label, tK)
       write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%TWZ, irep)
    endif
 
-   write(hdl_out(irep), '(a)') ''
-
    if (flg_bias_rg) then
       write(hdl_out(irep), '(1x, g13.6)', advance='no') energies(ENE%RG, irep)
       write(hdl_out(irep), '(1x, g13.6)', advance='no') rg(irep)
    endif
+
    write(hdl_out(irep), '(a)') ''
 
 #ifdef OUTFLUSH
