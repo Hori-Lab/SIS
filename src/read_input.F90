@@ -1035,7 +1035,7 @@ subroutine read_input(cfilepath)
       if (associated(group)) then
          flg_bias_ss = .True.
 
-         if (.not. (flg_in_ct .or. flg_in_bpseq)) then
+         if (.not. (flg_in_ct .or. flg_in_bpseq .or. flg_in_bpl)) then
             print '(a)', "Incompatible setup in [Bias_SS]. To use Bias_SS, either a ct or bpseq file is required in [Files.In]."
             call sis_abort()
          endif

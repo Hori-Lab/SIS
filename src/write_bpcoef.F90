@@ -70,4 +70,7 @@ subroutine write_bpcoef()
 
    endif
 
+   do irep = 1, nrep_proc
+      flush(hdl_bpcoef(irep))
+   enddo
 endsubroutine write_bpcoef
