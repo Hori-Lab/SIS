@@ -28,7 +28,7 @@ subroutine read_input(cfilepath)
                              flg_bias_ss, bias_ss_force, &
                              flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0, &
                              flg_timed_bias_rg
-   use var_top, only : nrepeat, nchains, inp_no_charge, &
+   use var_top, only : nrepeat, nchains, inp_no_charge, dummy_has_charge,&
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
                            replica_values, flg_replica, flg_repvar
@@ -681,10 +681,19 @@ subroutine read_input(cfilepath)
             enddo
          endif
 
+         !----------------- dummy_has_charge -----------------
+         ! (optional) default is false
+         ! If true, dummy particles (D) will have the same charge as normal RNA particles.
+         ! These charges can be individually disabled by the 'no_charge' option below.
+         call get_value(group, "dummy_has_charge", dummy_has_charge, .False., stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("[Electrostatic] dummy_has_charge value is invalid.", origin, "expected either true or false.")
+            call sis_abort()
+         endif
+
          !----------------- exclude_covalent_bond_pairs -----------------
          ! (optional) true / false
          call get_value(group, "exclude_covalent_bond_pairs", ele_exclude_covalent_bond_pairs, .True., stat=istat, origin=origin)
-
          if (istat /= 0) then
             print '(a)', context%report("[Electrostatic] ele_exclude_covalent_bond_pairs value is invalid.", origin, "expected either true or false.")
             call sis_abort()
@@ -1165,6 +1174,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(ele_cutoff_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ele_cutoff_inp, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(length_per_charge, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(dummy_has_charge, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ele_exclude_covalent_bond_pairs, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    if (myrank == 0) then
@@ -1350,6 +1360,7 @@ subroutine read_input(cfilepath)
 
       print '(a,g15.8)', '# Electrostatic, cutoff: ', ele_cutoff_inp
       print '(a,g15.8)', '# Electrostatic, length per charge: ', length_per_charge
+      print '(a,l1)', '# Electrostatic, dummy_has_charge: ', dummy_has_charge
       if (allocated(inp_no_charge)) then
          print '(a)', "# Electrostatic, no charges on the following particles:"
          do i = 1, size(inp_no_charge)

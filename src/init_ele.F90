@@ -2,8 +2,9 @@ subroutine init_ele()
    
    use, intrinsic :: iso_fortran_env, only : output_unit
    use const, only : PREC
-   use const_idx, only : REPT
-   use var_top, only : nmp, has_charge, inp_no_charge
+   use const_idx, only : REPT, SEQT
+   use var_top, only : nmp, has_charge, inp_no_charge, dummy_has_charge, &
+                       nchains, imp_chain, nmp_chain, seq
    use var_state, only : tempK, lambdaD, diele, ionic_strength, &
                          temp_independent, diele_dTcoef
    use var_potential, only : ele_coef, ele_cutoff_type, ele_cutoff_inp, ele_cutoff
@@ -11,7 +12,7 @@ subroutine init_ele()
 
    implicit none
 
-   integer :: i, irep, grep
+   integer :: i, ichain, imp, irep, grep
    real(PREC) :: tK, lb, Zp, ionstr
 
    interface
@@ -48,12 +49,25 @@ subroutine init_ele()
    ionstr = ionic_strength
 
    has_charge(:) = .True.
+
+   ! "dummy_has_charge" option (default = False)
+   if (.not. dummy_has_charge) then
+      do ichain =  1, nchains
+         do i = 1, nmp_chain(ichain)
+            if (seq(i, ichain) == SEQT%D) then
+               imp = imp_chain(i, ichain)
+               has_charge(imp) = .False.
+            endif
+         enddo
+      enddo
+   endif
+
+   ! "no_charge" option
    if (allocated(inp_no_charge)) then
       do i = 1, size(inp_no_charge)
          has_charge(inp_no_charge(i)) = .False.
       enddo
    endif
-
 
    ! Set cutoff
    if (ele_cutoff_type == 1) then

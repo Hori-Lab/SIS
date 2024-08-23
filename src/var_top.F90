@@ -21,6 +21,7 @@ module var_top
 
    integer, allocatable :: inp_no_charge(:)
    logical, allocatable :: has_charge(:)
+   logical, save :: dummy_has_charge
    !real(PREC), allocatable :: charge(:,:)  ! (nmp, nrep_all)
 
    logical :: flg_freeze

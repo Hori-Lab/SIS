@@ -207,6 +207,11 @@ cutoff = 50.0
     # Either distance (cutoff_type = 1) or multiple (cutoff_type = 2),
     # depending on the choice of cutoff_type.
 
+dummy_has_charge = false
+    # (optional) default is false
+    # If true, dummy particles (D) will have the same charge as normal RNA particles.
+    # These charges can be individually disabled by the 'no_charge' option below.
+
 no_charge = [1, 27]
     # (optional) array of positive integeres.
     # Particles having no charges.
