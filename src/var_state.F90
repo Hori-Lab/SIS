@@ -9,6 +9,7 @@ module var_state
   
    ! ----------------------------------------------------------------
    logical, save :: restarted
+   logical, save :: reset_step
 
    integer, save :: job
 

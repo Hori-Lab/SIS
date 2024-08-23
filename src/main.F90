@@ -5,7 +5,7 @@ program sis
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, JOBT, REPT, RSTBLK
    use var_potential, only : flg_ele, flg_twz
-   use var_state, only : restarted, xyz, tempK, kT, job, opt_anneal, anneal_tempK
+   use var_state, only : restarted, xyz, tempK, kT, job, opt_anneal, anneal_tempK, reset_step
    use var_top, only : nmp, flg_freeze
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
                       hdl_out, hdl_bp, hdl_bpall, hdl_bpe
@@ -16,6 +16,7 @@ program sis
    implicit none
 
    character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_rst
+   character(len=CHAR_FILE_PATH) :: carg
 
    integer :: nargs
    integer :: istat
@@ -31,9 +32,21 @@ program sis
 
    nargs = command_argument_count()
 
-   if (nargs < 1 .or. 2 < nargs) then
-      print *, 'Usage: PROGRAM input.toml [restart file (.rst)]'
+   if (nargs < 1 .or. 3 < nargs) then
+      print *, 'Usage: PROGRAM input.toml [restart file (.rst)] [--reset-step]'
       stop
+   endif
+
+   reset_step = .False.
+   if (nargs == 3) then
+      !! Check the third argument
+      call get_command_argument(3, carg)
+      if (trim(carg) == '--reset-step') then
+         reset_step = .True.
+      else
+         print *, 'Usage: PROGRAM input.toml [restart file (.rst)] [--reset-step]'
+         stop
+      endif
    endif
 
    !! Read input file

@@ -7,7 +7,7 @@ subroutine job_md()
    use progress, only : progress_init, progress_update, wall_time_sec
    use pbc, only : pbc_box, set_pbc_size, flg_pbc
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp, flg_freeze, is_frozen
-   use var_state, only : restarted, flg_bp_energy, ionic_strength, integrator, &
+   use var_state, only : restarted, reset_step, flg_bp_energy, ionic_strength, integrator, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
                          nstep_check_stop, stop_wall_time_sec, fix_com_origin, &
@@ -194,7 +194,7 @@ subroutine job_md()
    enddo
    xyz_move(:,:,:) = 0.0e0_PREC
 
-   if (restarted) then
+   if (restarted .and. .not. reset_step) then
       call read_rst(RSTBLK%STEP, rst_status)
    else
       istep = 0_INT64
