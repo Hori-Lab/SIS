@@ -122,6 +122,8 @@ subroutine job_md()
             mass(imp) = 304.182_PREC
          case (SEQT%U)
             mass(imp) = 305.164_PREC
+         case (SEQT%D)
+            mass(imp) = 320.443_PREC
          case default
             write(*,*) 'Error: Unknown seq type, ', seq(lmp_mp(imp), ichain_mp(imp)), ' imp=',imp
             call sis_abort()

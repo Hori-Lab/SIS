@@ -25,9 +25,10 @@ module const_idx
       integer :: U   ! 1
       integer :: G   ! 2
       integer :: C   ! 3
+      integer :: D   ! 4
       integer :: MAX
    endtype seq_types
-   type(seq_types), parameter :: SEQT = seq_types(-1,0,1,2,3,3)
+   type(seq_types), parameter :: SEQT = seq_types(-1,0,1,2,3,4,4)
 
    type job_types
       integer :: DEBUG       ! 0
@@ -138,6 +139,8 @@ contains
          c = 'G'
       case (SEQT%C)
          c = 'C'
+      case (SEQT%D)
+         c = 'D'
       case (SEQT%UNDEF)
          c = '?'
       case default
@@ -161,6 +164,9 @@ contains
 
       else if (c == 'C' .or. c == 'c') then
          i = SEQT%C
+
+      else if (c == 'D' .or. c == 'd') then
+         i = SEQT%D
 
       else
          i = SEQT%UNDEF
