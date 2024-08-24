@@ -22,7 +22,7 @@ subroutine job_md()
                              flg_twz, ntwz_DCF, twz_DCF_forces, twz_DCF_direction, &
                              flg_bias_rg, flg_timed_bias_rg, ntimed_bias_rg, timed_bias_rg_k, timed_bias_rg_0, &
                              istep_timed_bias_rg_next, timed_bias_rg_step, itimed_bias_rg, &
-                             bias_rg_k, bias_rg_0, flg_restraint
+                             bias_rg_k, bias_rg_0
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -256,9 +256,6 @@ subroutine job_md()
          istep_timed_bias_rg_next = timed_bias_rg_step(itimed_bias_rg + 1)
       endif
    endif
-
-   ! Setting up restraints
-   if (flg_restraint) call read_restraint()
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Initial energies

@@ -15,9 +15,10 @@ module const_idx
       integer :: STAGE  ! 7
       integer :: TWZ    ! 8
       integer :: RG     ! 9
+      integer :: REST   !10
       integer :: MAX
    endtype energy_types
-   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,9,9)
+   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,9,10,10)
 
    type seq_types
       integer :: UNDEF  ! -1

@@ -1125,7 +1125,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpl, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(flg_in_rest, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_restraint, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    ! Because the length of cfile_prefix is unknown...
    if (myrank == 0) strlen = len(cfile_prefix)

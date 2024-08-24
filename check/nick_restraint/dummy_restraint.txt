@@ -1,0 +1,17 @@
+# Restraint file format:
+# Columns are separated by one or more spaces. Blank lines are permitted.
+# Comments should be preceded by # at the beginning of a line.
+
+#
+# Sigmoid-to-bead:
+# The subject particles are restrained around the reference particle by the potential,
+#      U(r) = -0.5 * epsilon * (1 - tanh( (r - r0) / s ))   ...  (r < r_cut)
+# where r is the distance between the particles, epsilon is the strength of the restraint (i.e. energy scale),
+# d is the parameter that detemines the range, s is the parameter that controls the smoothness of the potential.
+# r_cut is the cut-off distance and should be specified as the point at which the potential decays to zero.
+# 
+#                Subject ID   Reference ID    epsilon      d        s       r_cut
+Sigmoid-to-bead      1            47            5.0       5.0       1.8     12.0
+Sigmoid-to-bead     48             2            5.0       5.0       1.8     12.0
+
+
