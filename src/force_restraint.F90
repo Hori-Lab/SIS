@@ -32,7 +32,7 @@ subroutine force_restraint(irep, forces)
          coef = 0.5_PREC * eps / s * (1.0_PREC - tanh((r-d)/s)**2) / r
 
          forces(:, imp) = forces(:, imp) - coef * v(:)
-         forces(:, jmp) = forces(:, jmp) + coef * v(:)
+         !forces(:, jmp) = forces(:, jmp) + coef * v(:)
       enddo
 
    endif
