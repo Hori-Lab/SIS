@@ -154,7 +154,7 @@ module var_potential
    logical, save :: flg_restraint
    logical, save :: flg_rest_sigb
    integer, save :: nrest_sigb
-   integer, allocatable :: rest_sigb_id(:,:)        ! (1:2, nrest_sig) 1=subject ID, 2=reference ID
+   integer, allocatable :: rest_sigb_id(:,:)        ! (1:2, nrest_sig) 1-2=particle ID
    real(PREC), allocatable :: rest_sigb_rcut(:)     ! (nrest_sig) Cutoff distance, r_cut
    real(PREC), allocatable :: rest_sigb_para(:, :)  ! (1:3, nrest_sig) 1=epsilon, 2=r_bound, 3=delta
 

@@ -148,7 +148,7 @@ subroutine read_restraint()
 #endif
 
    if (flg_rest_sigb) then
-      print '(a)', '# Sigmoid-to-bead:   ID   subject reference  epsilon     d        s     r_cut'
+      print '(a)', '# Sigmoid-to-bead:   ID    bead1    bead2    epsilon     d        s     r_cut'
       do irest_sigb = 1, nrest_sigb
          print '(a, i4, 2(1x,i8), 4(1x,f8.2))', '# Sigmoid-to-bead: ', &
                     irest_sigb, (rest_sigb_id(i, irest_sigb), i=1,2), &
