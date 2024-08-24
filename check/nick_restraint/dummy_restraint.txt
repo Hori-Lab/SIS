@@ -4,7 +4,7 @@
 
 # Sigmoid:
 # Two particles specified are restrained the potential,
-#      U(r) = -0.5 * epsilon * (1 - tanh( (r - r0) / s ))   ...  (r < r_cut)
+#      U(r) = -0.5 * epsilon * (1 - tanh( (r - d) / s ))   ...  (r < r_cut)
 # where r is the distance between the particles, 
 #       epsilon is the strength of the restraint (i.e. energy scale),
 #       d is the parameter that detemines the range,

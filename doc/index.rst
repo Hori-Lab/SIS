@@ -7,6 +7,7 @@ Welcome to SIS's documentation.
 
    replica
    tweezers
+   restraint
    references
 
 ..
