@@ -12,13 +12,14 @@ subroutine force_restraint(irep, forces)
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: forces(3, nmp)
 
-   integer :: imp, jmp, irest
+   integer :: imp, jmp, irest, itype
    real(PREC) :: r, eps, d, s, coef, v(3)
 
    if (flg_rest_sigb) then
       do irest = 1, nrest_sigb
-         imp = rest_sigb_id(1, irest)
-         jmp = rest_sigb_id(2, irest)
+         imp = rest_sigb_id(1, irest)   ! subject if Sigmoid-to-bead
+         jmp = rest_sigb_id(2, irest)   ! reference if Sigmoid-to-bead
+         itype = rest_sigb_id(3, irest) ! 1, Sigmoid; 2, Sigmoid-to-bead
 
          v(:) = pbc_vec_d(xyz(:, imp, irep), xyz(:, jmp, irep))
          r = norm2(v)
@@ -32,7 +33,11 @@ subroutine force_restraint(irep, forces)
          coef = 0.5_PREC * eps / s * (1.0_PREC - tanh((r-d)/s)**2) / r
 
          forces(:, imp) = forces(:, imp) - coef * v(:)
-         !forces(:, jmp) = forces(:, jmp) + coef * v(:)
+
+         ! Force on the reference bead
+         if (itype == 1) then
+            forces(:, jmp) = forces(:, jmp) + coef * v(:)
+         endif
       enddo
 
    endif

@@ -16,6 +16,7 @@ subroutine read_restraint()
    integer :: i, imp, jmp
    real(PREC) :: eps, d, s, rcut
    character(CHAR_FILE_LINE) :: cline
+   logical :: flg_type1, flg_type2
 
    if (myrank == 0) then
       print '(a)', 'Reading restraint file: '//trim(cfile_rest_in)
@@ -31,6 +32,8 @@ subroutine read_restraint()
       endif
 
       flg_rest_sigb = .False.
+      flg_type1 = .False.   ! Sigmoid
+      flg_type2 = .False.   ! Sigmoid-to-bead
       nrest_sigb = 0
 
       ! Count the number of restraint
@@ -53,6 +56,11 @@ subroutine read_restraint()
 
          if (cline(1:15) == 'Sigmoid-to-bead') then
             nrest_sigb = nrest_sigb + 1
+            flg_type2 = .True.
+
+         else if (cline(1:7) == 'Sigmoid') then
+            nrest_sigb = nrest_sigb + 1
+            flg_type1 = .True.
 
          else
             print *, 'Error: Unknown restraint type in the restraint file'
@@ -66,7 +74,7 @@ subroutine read_restraint()
       if (nrest_sigb > 0) then
          flg_rest_sigb = .True.
 
-         allocate(rest_sigb_id(2, nrest_sigb))
+         allocate(rest_sigb_id(3, nrest_sigb))
          allocate(rest_sigb_rcut(nrest_sigb))
          allocate(rest_sigb_para(3, nrest_sigb))
          rest_sigb_id(:,:) = 0
@@ -98,8 +106,21 @@ subroutine read_restraint()
             irest_sigb = irest_sigb + 1
 
             read(cline(16:), *) imp, jmp, eps, d, s, rcut
-            rest_sigb_id(1, irest_sigb) = imp 
-            rest_sigb_id(2, irest_sigb) = jmp 
+            rest_sigb_id(1, irest_sigb) = imp
+            rest_sigb_id(2, irest_sigb) = jmp
+            rest_sigb_id(3, irest_sigb) = 2
+            rest_sigb_para(1, irest_sigb) = eps
+            rest_sigb_para(2, irest_sigb) = d
+            rest_sigb_para(3, irest_sigb) = s
+            rest_sigb_rcut(irest_sigb) = rcut
+
+         else if (cline(1:7) == 'Sigmoid') then
+            irest_sigb = irest_sigb + 1
+
+            read(cline(8:), *) imp, jmp, eps, d, s, rcut
+            rest_sigb_id(1, irest_sigb) = imp
+            rest_sigb_id(2, irest_sigb) = jmp
+            rest_sigb_id(3, irest_sigb) = 1
             rest_sigb_para(1, irest_sigb) = eps
             rest_sigb_para(2, irest_sigb) = d
             rest_sigb_para(3, irest_sigb) = s
@@ -143,18 +164,33 @@ subroutine read_restraint()
       call MPI_BCAST(rest_sigb_id, 2*nrest_sigb, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
       call MPI_BCAST(rest_sigb_para, 3*nrest_sigb, PREC_MPI, 0, MPI_COMM_WORLD, istat)
       call MPI_BCAST(rest_sigb_rcut, nrest_sigb, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(flg_type1, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(flg_type2, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    endif
 
 #endif
 
    if (flg_rest_sigb) then
-      print '(a)', '# Sigmoid-to-bead:   ID    bead1    bead2    epsilon     d        s     r_cut'
-      do irest_sigb = 1, nrest_sigb
-         print '(a, i4, 2(1x,i8), 4(1x,f8.2))', '# Sigmoid-to-bead: ', &
+      if (flg_type1) then
+         print '(a)', '# Sigmoid        :   ID    bead1    bead2    epsilon     d        s     r_cut'
+         do irest_sigb = 1, nrest_sigb
+            if (rest_sigb_id(3, irest_sigb) /= 1) cycle
+            print '(a, i4, 2(1x,i8), 4(1x,f8.2))', '# Sigmoid        : ', &
                     irest_sigb, (rest_sigb_id(i, irest_sigb), i=1,2), &
                     (rest_sigb_para(i, irest_sigb), i=1,3), &
                     rest_sigb_rcut(irest_sigb)
-      enddo
+         enddo
+      endif
+      if (flg_type2) then
+         print '(a)', '# Sigmoid-to-bead:   ID  subject  reference  epsilon     d        s     r_cut'
+         do irest_sigb = 1, nrest_sigb
+            if (rest_sigb_id(3, irest_sigb) /= 2) cycle
+            print '(a, i4, 2(1x,i8), 4(1x,f8.2))', '# Sigmoid-to-bead: ', &
+                    irest_sigb, (rest_sigb_id(i, irest_sigb), i=1,2), &
+                    (rest_sigb_para(i, irest_sigb), i=1,3), &
+                    rest_sigb_rcut(irest_sigb)
+         enddo
+      endif
    endif
 
    print *
