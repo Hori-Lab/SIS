@@ -14,7 +14,7 @@ subroutine read_input(cfilepath)
                       flg_in_ct, flg_in_bpseq, flg_in_bpl, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
-                      cfile_bias_rg_in, cfile_ct_in, cfile_bpseq_in, cfile_bpl_in
+                      cfile_bias_rg_in, cfile_ct_in, cfile_bpseq_in, cfile_bpl_in, cfile_rest_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  tempK_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          flg_variable_box, variable_box_step, variable_box_change, &
@@ -27,7 +27,7 @@ subroutine read_input(cfilepath)
                              ntwz_FR, twz_FR_pairs, twz_FR_k, twz_FR_speed, &
                              flg_bias_ss, bias_ss_force, &
                              flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0, &
-                             flg_timed_bias_rg
+                             flg_timed_bias_rg, flg_restraint
    use var_top, only : nrepeat, nchains, inp_no_charge, dummy_has_charge,&
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
@@ -159,18 +159,21 @@ subroutine read_input(cfilepath)
          call get_value(node, "bpl", cfile_bpl_in)
          call get_value(node, "anneal", cfile_anneal_in)
          call get_value(node, "bias_Rg", cfile_bias_rg_in)
+         call get_value(node, "restraint", cfile_rest_in)
 
       else
          print '(a)', context%report("Files.In section required.", 0)
          call sis_abort()
       endif
 
+      flg_restraint = .False.
       if (allocated(cfile_pdb_ini)) flg_in_pdb = .True.
       if (allocated(cfile_xyz_ini)) flg_in_xyz = .True.
       if (allocated(cfile_fasta_in)) flg_in_fasta = .True.
       if (allocated(cfile_ct_in)) flg_in_ct = .True.
       if (allocated(cfile_bpseq_in)) flg_in_bpseq = .True.
       if (allocated(cfile_bpl_in)) flg_in_bpl = .True.
+      if (allocated(cfile_rest_in)) flg_restraint = .True.
 
       if ((flg_in_ct .and. flg_in_bpseq) .or. (flg_in_bpseq .and. flg_in_bpl) &
            .or. (flg_in_ct .and. flg_in_bpl)) then
@@ -1112,7 +1115,8 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(job, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
    !! File names (cfile_ff, cfile_dcd_in, cfile_pdb_ini, cfile_xyz_ini, cfile_fast_in, cfile_ct_in,
-   !! cfile_bpseq_in, cfile_anneal_in) do not need to be sent becuase it will be read by myrank = 0
+   !! cfile_bpseq_in, cfile_anneal_in, cfile_bias_rg_in, cfile_rest_in)
+   !! do not need to be sent becuase it will be read by myrank = 0
 
    call MPI_BCAST(flg_in_fasta, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    !call MPI_BCAST(flg_gen_init_struct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
@@ -1121,6 +1125,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpl, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_in_rest, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    ! Because the length of cfile_prefix is unknown...
    if (myrank == 0) strlen = len(cfile_prefix)
@@ -1292,6 +1297,8 @@ subroutine read_input(cfilepath)
       if (flg_in_bpseq) print '(a,a)', '# Files.In, bpseq: ', trim(cfile_bpseq_in)
       if (flg_in_bpl) print '(a,a)', '# Files.In, bpl: ', trim(cfile_bpl_in)
       if (opt_anneal > 0) print '(a,a)', '# Files.In, anneal: ', trim(cfile_anneal_in)
+      if (flg_timed_bias_rg) print '(a,a)', '# Files.In, bias_Rg: ', trim(cfile_bias_rg_in)
+      if (flg_restraint) print '(a,a)', '# Files.In, restraint: ', trim(cfile_rest_in)
       print '(a)', '#'
    endif
 

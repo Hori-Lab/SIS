@@ -32,6 +32,9 @@ type = "MD"
         # Schedule file for bias_Rg.
         # Required only when potential = 'timed-flat-bottomed' in [Bias_Rg].
 
+    restraint = "./restraint.txt"
+        # Restraint file containing a list of pre-defined restraints
+
     ## Specific secondary structure.
     ## If either 'ct' or 'bpseq' is given, only base pairs that constitute 
     ## the secondary structure are enabled.
@@ -39,6 +42,8 @@ type = "MD"
         # CT (Connectivity Table) file
     bpseq = "./test.bpseq"
         # BPSEQ file (no comment line allowed)
+    bpl = "./test.bpl"
+        # Basepair list file (no comment line allowed)
 
     [Files.Out]
     prefix = "./test"
@@ -270,3 +275,4 @@ potential = 'harmonic'
 #potential = 'timed-flat-bottomed'
 k = 1.0
 Rg0 = 12.0
+

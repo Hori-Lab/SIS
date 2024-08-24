@@ -150,4 +150,10 @@ module var_potential
    integer :: itimed_bias_rg
    integer(INT64) :: istep_timed_bias_rg_next
 
+   ! Restraint
+   logical, save :: flg_restraint
+   integer, save :: nrest_sigb
+   integer, allocatable :: rest_sigb_id(:,:)   ! (1:2, nrest_sig) 1=subject ID, 2=reference ID
+   real(PREC), allocatable :: rest_sigb_para(:, :)  ! (1:3, nrest_sig) 1=epsilon, 2=r_cut, 3=delta
+
 end module var_potential

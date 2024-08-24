@@ -5,3 +5,4 @@ build_mpi/
 sis
 sis.mpi
 .DS_Store
+__pycache__
