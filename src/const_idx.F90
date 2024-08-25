@@ -127,6 +127,16 @@ module const_idx
    endtype potential_types
    type(potential_types), parameter :: POTT = potential_types(1,2)
 
+   type tomlfstatus_types
+      integer :: SUCCESS          !  0
+      integer :: FATAL            ! -1
+      integer :: DUPLICATE_KEY    ! -2
+      integer :: TYPE_MISMATCH    ! -3
+      integer :: CONVERSION_ERROR ! -4
+      integer :: MISSING_KEY      ! -5
+   endtype tomlfstatus_types
+   type(tomlfstatus_types), parameter :: TOMLFSTAT = tomlfstatus_types(0,-1,-2,-3,-4,-5)
+
 contains
    function seqt2char(i) result(c)
       integer, intent(in) :: i

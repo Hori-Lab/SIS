@@ -6,7 +6,7 @@ subroutine read_input(cfilepath)
    use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM, MAX_REP_DIM
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT, POTT
+   use const_idx, only : JOBT, INTGRT, REPT, POTT, TOMLFSTAT
    use pbc, only : flg_pbc, set_pbc_size
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &
@@ -1135,10 +1135,23 @@ subroutine read_input(cfilepath)
 
          !----------------- Rg0 -----------------
          call get_value(group, "Rg0", bias_rg_0_inp, stat=istat, origin=origin)
-         if (istat /= 0 .or. bias_rg_0_inp < 0.0_PREC) then
-            print '(a)', context%report("invalid Rg0 value in [Bias_Rg].", origin, "expected a positive real value.")
+
+         ! Rg0 key is not needed when nrep(REPT%RG) > 1
+         if (istat == TOMLFSTAT%MISSING_KEY .and. nrep(REPT%RG) > 1) then
+            continue
+         ! It is needed otherwise, and it has to be positive real value.
+         else if (istat /= 0 .or. bias_rg_0_inp < 0.0_PREC) then
+            print '(a)', context%report("1 invalid Rg0 value in [Bias_Rg].", origin, "expected a positive real value.")
+            print *, 'istat=',istat
             call sis_abort()
          endif
+
+      endif
+
+      ! [Bias_Rg] is required when nrep(REPT%RG) > 1
+      if (nrep(REPT%RG) > 1 .and. .not. flg_bias_rg) then
+         print '(a)', 'Error: [Bias_Rg] block is require in the input file when [Replica] nrep_rg > 1.'
+         call sis_abort()
       endif
 
       !#############################################
