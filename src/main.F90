@@ -11,6 +11,7 @@ program sis
                       hdl_out, hdl_bp, hdl_bpall, hdl_bpe
    use var_parallel, only : init_parallel, end_parallel
    use var_replica, only : nrep_proc, flg_replica
+   use pbc, only : flg_pbc, init_pbc
    !use mt19937_64, only : init_genrand64
 
    implicit none
@@ -80,6 +81,10 @@ program sis
    !! Load force field
    call read_force_field()
 
+   if (flg_pbc) then
+      call init_pbc(restarted)
+      ! RSTBLK%PBC and RSTBLK%PBCRESIZE will be read in the subroutine
+   endif
 
    !! Read annealing file
    if (opt_anneal > 0) then

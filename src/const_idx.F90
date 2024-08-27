@@ -72,8 +72,9 @@ module const_idx
       integer :: PRNG    ! 7
       integer :: PRNGREP ! 8
       integer :: TWZ     ! 9
+      integer :: PBC     ! 10
    endtype rst_block
-   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6,7,8,9)
+   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6,7,8,9,10)
 
    type replica_type
       integer :: TEMP

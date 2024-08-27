@@ -8,6 +8,7 @@ subroutine read_rst(itype_wanted, rst_status)
    use var_state, only : xyz, velos, accels, istep, ianneal, mts, mts_rep
    use var_replica, only : nrep_all, rep2lab, lab2rep, grep2rank, grep2irep
    use var_potential, only : ntwz_FR, twz_FR_init
+   use pbc, only : pbc_box
 #ifdef PAR_MPI
    use const, only : L_INT
    use var_replica, only : nrep_proc
@@ -377,6 +378,22 @@ subroutine read_rst(itype_wanted, rst_status)
                exit
             endif
 
+         !----------------------------
+         ! PBC
+         !----------------------------
+         case(RSTBLK%PBC)
+            read (hdl_in_rst) (pbc_box(i), i=1,3)
+#ifdef PAR_MPI
+            ! This is to signal that PRNGREP was successfully loaded
+            call MPI_BCAST(0, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+
+            call MPI_BCAST(pbc_box, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+#endif
+            flg_done(:) = .true.
+            write(6, '(a)') '## RESTART: PBC data has been loaded.'
+            flush(6)
+            exit
+
          case default
             print '(a,i3)', 'Error: Unknown block-identifier in the restart file. itype=',itype
             error stop
@@ -563,6 +580,23 @@ subroutine read_rst(itype_wanted, rst_status)
             flush(6)
          endif
 
+      !----------------------------
+      ! PBC
+      !----------------------------
+      case(RSTBLK%PBC)
+
+         ! This is to signal that PRNGREP was successfully loaded
+         call MPI_BCAST(i, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+         if (i == -1) then
+            rst_status = -1
+            return
+         endif
+
+         call MPI_BCAST(pbc_box, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+
+         write(6, '(a)') '## RESTART: PBC data has been received.'
+         flush(6)
+
       case default
          print '(a,i3)', 'Error: Logical error undefined itype_wanted used.' ,itype_wanted
          error stop
@@ -622,6 +656,13 @@ contains
          do rank = 1, nprocs-1
             call MPI_SEND(-1, 1, MPI_INTEGER, rank, TAG, MPI_COMM_WORLD, istat)
          enddo
+#endif
+         rst_status = -1
+         return
+
+      else if (itype_wanted == RSTBLK%PBC) then
+#ifdef PAR_MPI
+         call MPI_BCAST(-1, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 #endif
          rst_status = -1
          return

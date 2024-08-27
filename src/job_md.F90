@@ -5,14 +5,13 @@ subroutine job_md()
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL, JOUL2KCAL_MOL
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT, INTGRT
    use progress, only : progress_init, progress_update, wall_time_sec
-   use pbc, only : pbc_box, set_pbc_size, flg_pbc
+   use pbc, only : flg_pbc, pbc_box, flg_pbc_resize, pbc_resize_step, pbc_resize
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp, flg_freeze, is_frozen
    use var_state, only : restarted, reset_step, flg_bp_energy, ionic_strength, integrator, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
                          nstep_check_stop, stop_wall_time_sec, fix_com_origin, &
                          nl_margin, Ekinetic, &
-                         flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next, &
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status, rg
@@ -22,7 +21,7 @@ subroutine job_md()
                              flg_twz, ntwz_DCF, twz_DCF_forces, twz_DCF_direction, &
                              flg_bias_rg, flg_timed_bias_rg, ntimed_bias_rg, timed_bias_rg_k, timed_bias_rg_0, &
                              istep_timed_bias_rg_next, timed_bias_rg_step, itimed_bias_rg, &
-                             bias_rg_k, bias_rg_0
+                             bias_rg_k, bias_rg_0, flg_restraint
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -324,6 +323,7 @@ subroutine job_md()
       if (flg_twz  ) print '(a, g13.6)', 'E_tweezers', energies(ENE%TWZ, irep)
       if (flg_bias_rg) print '(a, g13.6)', 'E_rg      ', energies(ENE%RG, irep)
       if (flg_bias_rg) print '(a, g13.6)', 'Rg        ', rg(irep)
+      if (flg_restraint) print '(a, g13.6)', 'E_rest    ', energies(ENE%REST, irep)
       print *
 
       if (.not. restarted) then
@@ -569,17 +569,23 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Update the box size
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (flg_variable_box) then
-         if (mod(istep, variable_box_step) == 0) then
-            call set_pbc_size(pbc_box(:) + variable_box_change(:))
+      if (flg_pbc_resize) then
+         if (mod(istep, pbc_resize_step) == 0) then
+
+            call pbc_resize()
+
             do irep = 1, nrep_proc
                fdcd(irep)%box(:) = pbc_box(:)
 
                call neighbor_list(irep)
                xyz_move(:,:,irep) = 0.0e0_PREC
             enddo
+            print '(a,i12,a,3(1x,f8.3))', 'PBC resized: step = ',istep, ', box size =', pbc_box(1:3)
 
-            print '(a,i12,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
+            ! If the flag is set to False, this is the last update.
+            if (.not. flg_pbc_resize) then
+               print '(a)', 'The target box size has been reached.'
+            endif
          endif
       endif
 
@@ -683,7 +689,6 @@ contains
 
       ! Coefficients that do not depend on replicas
       if (flg_first) then
-         print *, 'job_md: flg_first'
 
          if (integrator == INTGRT%LD_GJF2GJ) then
             do imp = 1, nmp

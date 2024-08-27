@@ -75,11 +75,6 @@ module var_state
    real(PREC) :: tempK_ref
    real(PREC), allocatable :: diele_dTcoef(:)
 
-   ! variable box
-   logical, save :: flg_variable_box
-   integer(INT64), save :: variable_box_step
-   real(PREC), save :: variable_box_change(3)
-
    real(PREC), allocatable :: rg(:)
 
 #ifdef DUMPFORCE

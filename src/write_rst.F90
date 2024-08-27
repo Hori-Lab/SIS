@@ -11,6 +11,7 @@ subroutine write_rst()
    use var_potential, only : flg_twz, ntwz_FR, twz_FR_init
    use var_replica, only : nrep_proc, nrep_all, rep2lab, irep2grep
    use var_parallel, only : myrank
+   use pbc, only : flg_pbc, pbc_box
 
    implicit none
 
@@ -128,6 +129,16 @@ subroutine write_rst()
       write(lunout) grep    ! M_INT
       call save(mts(irep), lunout)
       !call print(mts(irep))
+
+      ! PBC
+      if (myrank == 0 .and. irep == 1) then
+         if (flg_pbc) then
+            write(lunout) RSTBLK%PBC
+            nblock_size = calc_size(0, 0, 3, 0)
+            write(lunout) nblock_size
+            write(lunout) (pbc_box(i), i=1,3)  ! PREC
+         endif
+      endif
 
       close(lunout)
 

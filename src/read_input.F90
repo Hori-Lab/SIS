@@ -7,7 +7,9 @@ subroutine read_input(cfilepath)
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
    use const_idx, only : JOBT, INTGRT, REPT, POTT, TOMLFSTAT
-   use pbc, only : flg_pbc, set_pbc_size
+   use pbc, only : flg_pbc, pbc_box_input, flg_pbc_ignore_rst, &
+                   flg_pbc_resize, pbc_resize_change, pbc_resize_step, &
+                   flg_pbc_resize_target, pbc_resize_target
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &
                       flg_out_bpcoef, flg_out_bp, flg_out_bpe, flg_out_bpall, flg_out_twz, &
@@ -17,7 +19,6 @@ subroutine read_input(cfilepath)
                       cfile_bias_rg_in, cfile_ct_in, cfile_bpseq_in, cfile_bpl_in, cfile_rest_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  tempK_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
-                         flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, stop_wall_time_sec, nstep_check_stop, fix_com_origin, &
                          ionic_strength, length_per_charge, nstep_bp_MC
    use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
@@ -50,6 +51,7 @@ subroutine read_input(cfilepath)
    integer :: i
    integer :: nrepdim
    integer :: istat, origin
+   integer :: istatx, istaty, istatz
    integer :: hdl
    integer :: len_array
 #ifdef PAR_MPI
@@ -745,24 +747,120 @@ subroutine read_input(cfilepath)
       ! (optional)
       ! If this section is given, periodic boundary condition is enabled.
       flg_pbc = .False.
+      flg_pbc_ignore_rst = .False.
+      flg_pbc_resize = .False.
+      flg_pbc_resize_target = .False.
+      pbc_resize_step = INVALID_INT_VALUE
+      pbc_resize_change(1:3) = INVALID_VALUE
+      pbc_resize_target(1:3) = INVALID_VALUE
+
       call get_value(table, "PBC_box", group, requested=.False.)
       if (associated(group)) then 
          flg_pbc = .True.
-         call get_value(group, "x", boxsize(1))
-         call get_value(group, "y", boxsize(2))
-         call get_value(group, "z", boxsize(3))
+
+         !----------------- size -----------------
+         call get_value(group, "size", array, stat=istat, origin=origin)
+
+         if (len(array) == 3) then
+            do i = 1, 3
+               call get_value(array, i, boxsize(i), stat=istat, origin=origin)
+               if (istat /= 0 .or. boxsize(i) < 0.0) then
+                  print '(a)', context%report("invalid [PBC_box] size.", origin, "expected an array of three positive values.")
+                  call sis_abort()
+               endif
+            enddo
+
+         else
+            !----------------- x=, y=, z= (deprecated) -----------------
+            call get_value(group, "x", boxsize(1), stat=istatx)
+            call get_value(group, "y", boxsize(2), stat=istaty)
+            call get_value(group, "z", boxsize(3), stat=istatz)
+
+            if (istatx == TOMLFSTAT%SUCCESS .and. istaty == TOMLFSTAT%SUCCESS .and. istaty == TOMLFSTAT%SUCCESS) then
+               if (any(boxsize < 0.0) ) then
+                  print '(a)', context%report("invalid value in [PBC_box] x/y/z.", origin, "expected a positive real value.")
+                  call sis_abort()
+               endif
+               print *, 'Warning: the format used to define PBC box (x=, y=, z=) in the input file is deprecated.'
+               print *, '         Use size = [x, y, z] format.'
+               flush(OUTPUT_UNIT)
+            else
+               print '(a)', context%report("invalid value in [PBC_box] size.", origin, "expected an array of three positive values.")
+               call sis_abort()
+            endif
+         endif
+
+         !----------------- ignore_rst -----------------
+         call get_value(group, "ignore_rst", flg_pbc_ignore_rst, stat=istat, origin=origin)
+
+         !----------------- resize_step -----------------
+         call get_value(group, "resize_step", pbc_resize_step, stat=istat, origin=origin)
+
+         if (istat == TOMLFSTAT%SUCCESS) then
+            if (pbc_resize_step > 0) then
+               flg_pbc_resize = .True.
+            else
+               print '(a)', context%report("invalid value in [PBC_box] resize_step.", origin, "expected a positive integer.")
+               call sis_abort()
+            endif
+
+         else if (istat == TOMLFSTAT%MISSING_KEY) then
+            continue
+
+         else
+            print '(a)', context%report("invalid value in [PBC_box] resize_step.", origin, "expected a positive integer.")
+            call sis_abort()
+         endif
+
+         if (flg_pbc_resize) then
+            !----------------- resize_chage -----------------
+            call get_value(group, "resize_change", array, stat=istat, origin=origin)
+            if (istat /= TOMLFSTAT%SUCCESS .or. len(array) /= 3) then
+               print '(a)', context%report("invalid [PBC_box] resize_change.", origin, "expected an array of three real values.")
+               call sis_abort()
+            endif
+            do i = 1, 3
+               call get_value(array, i, pbc_resize_change(i), stat=istat, origin=origin)
+               if (istat /= 0 .or. pbc_resize_change(i) > INVALID_JUDGE) then
+                  print '(a)', context%report("invalid [PBC_box] resize_change.", origin, "expected an array of three real values.")
+                  call sis_abort()
+               endif
+            enddo
+
+            !----------------- resize_target -----------------
+            call get_value(group, "resize_target", array, stat=istat, origin=origin)
+            if (len(array) == 3) then
+               do i = 1, 3
+                  call get_value(array, i, pbc_resize_target(i), stat=istat, origin=origin)
+                  if (istat /= 0 .or. pbc_resize_target(i) > INVALID_JUDGE .or. pbc_resize_target(i) < 0.0_PREC) then
+                     print '(a)', context%report("invalid [PBC_box] resize_target.", origin, "expected an array of three positive values.")
+                     call sis_abort()
+                  endif
+               enddo
+               flg_pbc_resize_target = .True.
+
+            !else if (istat == TOMLFSTAT%MISSING_KEY) then
+            !   continue
+            !
+            !else if (istat /= TOMLFSTAT%SUCCESS .or. len(array) /= 3) then
+            !   print '(a)', context%report("invalid [PBC_box] resize_target.", origin, "expected an array of three real values.")
+            !   call sis_abort()
+            endif
+
+         endif ! flg_pbc_resize
       endif
 
-      !################# [variable_box] #################
-      ! (optional)
-      flg_variable_box = .False.
-      call get_value(table, "Variable_box", group, requested=.False.)
-      if (associated(group)) then 
-         flg_variable_box = .True.
-         call get_value(group, "step", variable_box_step)
-         call get_value(group, "change_x", variable_box_change(1))
-         call get_value(group, "change_y", variable_box_change(2))
-         call get_value(group, "change_z", variable_box_change(3))
+      !################# [Variable_box] #################
+      if (flg_pbc .and. .not. flg_pbc_resize) then
+         ! (optional)
+         call get_value(table, "Variable_box", group, requested=.False.)
+         if (associated(group)) then 
+            flg_pbc_resize = .True.
+            call get_value(group, "step", pbc_resize_step)
+            call get_value(group, "change_x", pbc_resize_change(1))
+            call get_value(group, "change_y", pbc_resize_change(2))
+            call get_value(group, "change_z", pbc_resize_change(3))
+         endif
       endif
 
       !################# [Progress] #################
@@ -1142,7 +1240,6 @@ subroutine read_input(cfilepath)
          ! It is needed otherwise, and it has to be positive real value.
          else if (istat /= 0 .or. bias_rg_0_inp < 0.0_PREC) then
             print '(a)', context%report("1 invalid Rg0 value in [Bias_Rg].", origin, "expected a positive real value.")
-            print *, 'istat=',istat
             call sis_abort()
          endif
 
@@ -1249,10 +1346,13 @@ subroutine read_input(cfilepath)
 
    call MPI_BCAST(flg_pbc, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(boxsize, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_pbc_ignore_rst, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(flg_variable_box, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(variable_box_step, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(variable_box_change, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_pbc_resize, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(pbc_resize_step, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(pbc_resize_change, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_pbc_resize_target, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(pbc_resize_target, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(flg_progress, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(step_progress, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -1310,7 +1410,7 @@ subroutine read_input(cfilepath)
 
    kT = BOLTZ_KCAL_MOL * tempK
 
-   if (flg_pbc) call set_pbc_size(boxsize)
+   if (flg_pbc) pbc_box_input(:) = boxsize(:)
 
    if (myrank /= 0) then
       print '(a)', "Input data received via MPI."
@@ -1428,20 +1528,22 @@ subroutine read_input(cfilepath)
       print '(a)', '#'
    endif
 
+   print '(a,l1)', '# PBC: ', flg_pbc
    if (flg_pbc) then
-      print '(a,g15.8)', '# pbc_box x: ', boxsize(1)
-      print '(a,g15.8)', '# pbc_box y: ', boxsize(2)
-      print '(a,g15.8)', '# pbc_box z: ', boxsize(3)
-      print '(a)', '#'
-   endif
+      print '(a,3(1x,g15.8))', '# PBC size: ', boxsize(1:3)
+      print '(a,l1)',    '# PBC ignore rst: ', flg_pbc_ignore_rst
+      print '(a,l1)', '# PBC resize: ', flg_pbc_resize
 
-   if (flg_variable_box) then
-      print '(a,i16)', '# variable_box step: ', variable_box_step
-      print '(a,g15.8)', '# variable_box change_x: ', variable_box_change(1)
-      print '(a,g15.8)', '# variable_box change_y: ', variable_box_change(2)
-      print '(a,g15.8)', '# variable_box change_z: ', variable_box_change(3)
-      print '(a)', '#'
+      if (flg_pbc_resize) then
+         print '(a,i16)',   '# PBC resize step: ', pbc_resize_step
+         print '(a,3(1x,g15.8))', '# PBC resize change: ', pbc_resize_change(1:3)
+         print '(a,l1)', '# PBC resize target: ', flg_pbc_resize_target
+         if (flg_pbc_resize_target) then
+            print '(a,3(1x,g15.8))', '# PBC resize target size: ', pbc_resize_target(1:3)
+         endif
+      endif
    endif
+   print '(a)', '#'
 
    if (flg_progress) then
       print '(a,i16)', '# Progress step: ', step_progress

@@ -118,6 +118,11 @@ program show_rst
             write(*,*) r1,r2,r3
          enddo
 
+      case(RSTBLK%PBC)
+         write(*,*) '# PBC'
+         read (luninp) r1,r2,r3
+         write(*,*) r1,r2,r3
+
       case(RSTBLK%PRNGREP)
          write(*,*) '# PRNGREP, mts_rep for replica exchange'
          call set_mt19937()
