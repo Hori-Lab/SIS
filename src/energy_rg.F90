@@ -11,7 +11,7 @@ subroutine energy_rg(irep, Erg)
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: Erg
 
-   integer :: imp, grep
+   integer :: imp
    real(PREC) :: s2, v(3), cm(3)
 
    ! Center of mass

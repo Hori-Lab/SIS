@@ -217,7 +217,7 @@ contains
       print '(a)', 'Authors: N. Hori, H.T. Vu, J.A. Robins'
       print '(a)', 'Source: https://github.com/Hori-Lab/SIS'
       if (git(1:1) == '?') then
-         print '(a)', 'Version: 2023.04'
+         print '(a)', 'Version: 2024.08'
       else
          print '(2a)', 'Git commit: ', git
       endif

@@ -148,24 +148,24 @@ subroutine read_ss()
             ! Either 5' or 3' end
             if (i == 1 .or. i == nmp_chain(ichain)) then
                print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered because (i) is a chain end.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' (imp= ', imp, ')  - ', seqt2char(seq(i, ichain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' (imp= ', jmp, ')  - ', seqt2char(seq(j, jchain))
                cycle
             endif
 
             ! Either 5' or 3' end
             if (j == 1 .or. j == nmp_chain(jchain)) then
                print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered because (j) is a chain end.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' (imp= ', imp, ')  - ', seqt2char(seq(i, ichain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' (imp= ', jmp, ')  - ', seqt2char(seq(j, jchain))
                cycle
             endif
 
             ! Minimum loop length
             if (ichain == jchain .and. i + bp_min_loop >= j) then
                print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered due to the minimum loop length required.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' (imp= ', imp, ')  - ', seqt2char(seq(i, ichain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' (imp= ', jmp, ')  - ', seqt2char(seq(j, jchain))
                cycle
             endif
 
@@ -174,8 +174,8 @@ subroutine read_ss()
                if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
                    .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
                   print '(a)', 'Warning: The following pair in CT/BPSEQ file will not be considered because it is an isolated base pair.'
-                  print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-                  print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
+                  print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' (imp= ', imp, ') - ', seqt2char(seq(i, ichain))
+                  print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' (imp= ', jmp, ') - ', seqt2char(seq(j, jchain))
                   cycle
                endif
             endif
@@ -203,8 +203,8 @@ subroutine read_ss()
 
             else
                print '(a)', 'Warning: The following pair in CT/BPSEQ file does not form any known types of base pairs.'
-               print '(a,i5,a,i3,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' - ', seqt2char(seq(i, ichain))
-               print '(a,i5,a,i3,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' - ', seqt2char(seq(j, jchain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide i ',  i, ' of chain ', ichain, ' (imp= ', imp, ') - ', seqt2char(seq(i, ichain))
+               print '(a,i5,a,i3,a,i6,a,a)', '         Nucleotide j ',  j, ' of chain ', jchain, ' (imp= ', jmp, ') - ', seqt2char(seq(j, jchain))
 
             endif
 
