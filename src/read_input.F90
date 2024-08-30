@@ -21,7 +21,8 @@ subroutine read_input(cfilepath)
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
                          rng_seed, stop_wall_time_sec, nstep_check_stop, fix_com_origin, &
                          ionic_strength, length_per_charge, nstep_bp_MC
-   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
+   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
+                             ele_exclude_covalent_bond_pairs, ele_exclude_covalent_angle_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
@@ -741,6 +742,14 @@ subroutine read_input(cfilepath)
             call sis_abort()
          endif
 
+         !----------------- exclude_covalent_angle_pairs -----------------
+         ! (optional) true / false
+         call get_value(group, "exclude_covalent_angle_pairs", ele_exclude_covalent_angle_pairs, .True., stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("[Electrostatic] ele_exclude_covalent_angle_pairs value is invalid.", origin, "expected either true or false.")
+            call sis_abort()
+         endif
+
       endif
 
       !################# [PBC_box] #################
@@ -1328,6 +1337,7 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(length_per_charge, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(dummy_has_charge, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ele_exclude_covalent_bond_pairs, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(ele_exclude_covalent_angle_pairs, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    if (myrank == 0) then
       i = 0
@@ -1525,6 +1535,7 @@ subroutine read_input(cfilepath)
          enddo
       endif
       print '(a,l1)', '# Electrostatic, exclude_covalent_bond_pairs: ', ele_exclude_covalent_bond_pairs
+      print '(a,l1)', '# Electrostatic, exclude_covalent_angle_pairs: ', ele_exclude_covalent_angle_pairs
       print '(a)', '#'
    endif
 

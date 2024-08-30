@@ -9,7 +9,8 @@ subroutine neighbor_list(irep)
    use var_potential, only : wca_sigma, nwca, nwca_max, wca_mp, &
                              bp_cutoff_dist, bp_mp, bp_coef, nbp, nbp_max, bp_map, &
                              ele_cutoff_type, ele_cutoff, ele_cutoff_inp, &
-                             nele, nele_max, ele_mp, flg_ele, ele_exclude_covalent_bond_pairs, &
+                             nele, nele_max, ele_mp, flg_ele, &
+                             ele_exclude_covalent_bond_pairs, ele_exclude_covalent_angle_pairs, &
                              bp3_dH, bp3_dS, bp3_map, &
                              flg_bias_ss
    use var_replica, only : nrep_proc
@@ -139,12 +140,9 @@ subroutine neighbor_list(irep)
                   if (has_charge(imp) .and. has_charge(jmp)) then
 
                      flg_add = .True.
-                     if (ele_exclude_covalent_bond_pairs) then
-                        if (ichain == jchain) then
-                           if (j == i+1) then
-                              flg_add = .False.
-                           endif
-                        endif
+                     if (ichain == jchain) then
+                        if (j == i + 1 .and. ele_exclude_covalent_bond_pairs) flg_add = .False.
+                        if (j == i + 2 .and. ele_exclude_covalent_angle_pairs) flg_add = .False.
                      endif
 
                      if (flg_add) then
