@@ -236,6 +236,7 @@ subroutine read_input(cfilepath)
                flg_out_bpe = .True.
             else if (cline == "twz") then
                flg_out_twz = .True.
+               ! This will be turned on (True) regardless of this settting, when [Tweezers.Force_Ramp] option is used.
             else
                print '(a)', context%report("invalid output type.", origin, "expected either bpcoef, bp, bpall, or bpe.")
                call sis_abort()
@@ -1086,6 +1087,9 @@ subroutine read_input(cfilepath)
             endif
 
             if (ntwz_FR > 0) then
+
+               ! Output twz file by deafult
+               flg_out_twz = .True.
 
                ! Spring constant
                call get_value(node, "spring_const", array, stat=istat, origin=origin)

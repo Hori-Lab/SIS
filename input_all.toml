@@ -275,12 +275,12 @@ id_ranges = [[1, 5], [10,14]]
 [Tweezers]
     [Tweezers.Dual_Constant_Force]
     id_pairs = [[1, 5],]
-    forces_pN = [[5.0, 0.0, 0.0],]
+    forces_pN = [[5.0, 0.0, 0.0],]   # in pN
 
     [Tweezers.Force_Ramp]
     id_pairs = [[1, 27]]
-    spring_const = [[20.0, 20.0],]
-    trap_speed = [[0.0, 5.0]]
+    spring_const = [[0.0030, 0.0030],]   # in kcal/mol/(angstrom^2)
+    trap_speed = [[0.0, 1.5e-6]]        # in angstrom per step
     ## In the Force_Ramp mode, a pair of particles (i, j) is specified by id_pairs = [[i, j],].
     ## The two particles are each trapped by tweezers with spring constants k_i and k_j 
     ## specified by spring_const = [[k_i, k_j],]. The positions of the two traps are initially 
@@ -288,7 +288,7 @@ id_ranges = [[1, 5], [10,14]]
     ## The trap positions move along the simulation at the speed given by trap_speed = [[v_i, v_j],]. 
     ## The direction of movement is determined by the initial positions and is (xyz_j(0) - xyz_i(0)),
     ## i.e. the direction from xyz_i(0) to xyz_j(0).
-    ## DO NOT FORGET to add "twz" in [Files.Out] types to get information of extension and forces.
+    ## 'twz' output file will contain informaion of the extension and forces.
 
 [Bias_SS]
 force_pN = 20.0
