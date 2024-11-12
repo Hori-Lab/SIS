@@ -58,7 +58,7 @@ module const_idx
    endtype bp_types
    type(bp_types), parameter :: BPT = bp_types(0,1,2,3,4,5,6,7,7)
 
-   character(len=*), dimension(6), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU', 'CG', 'UA', 'UG', 'AA'/)
+   character(len=*), dimension(7), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU', 'CG', 'UA', 'UG', 'AA'/)
 
    type rst_block
       integer :: STEP    ! 1
