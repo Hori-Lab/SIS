@@ -53,11 +53,12 @@ module const_idx
       integer :: CG      ! 4
       integer :: UA      ! 5
       integer :: UG      ! 6
+      integer :: AA      ! 7
       integer :: MAX
    endtype bp_types
-   type(bp_types), parameter :: BPT = bp_types(0,1,2,3,4,5,6,6)
+   type(bp_types), parameter :: BPT = bp_types(0,1,2,3,4,5,6,7,7)
 
-   character(len=*), dimension(6), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU', 'CG', 'UA', 'UG'/)
+   character(len=*), dimension(6), parameter ::  BPTYPE_CHAR = (/'GC', 'AU', 'GU', 'CG', 'UA', 'UG', 'AA'/)
 
    type rst_block
       integer :: STEP    ! 1
@@ -102,10 +103,11 @@ module const_idx
       integer :: GG_UU
       integer :: GU_UG
       integer :: AG_UU
+      integer :: AA_AA
       integer :: MAX
    endtype nn_types
    type(nn_types), parameter :: NNT = nn_types(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, &
-                                               16,17,18,19,20,21,21)
+                                               16,17,18,19,20,21,22,22)
 
    type nnend_types
       integer :: AUonAU
@@ -207,6 +209,8 @@ contains
          i = NNT%GU_UG
       else if (c == 'AG_UU' .or. c == 'UU_GA') then
          i = NNT%AG_UU
+      else if (c == 'AA_AA') then
+         i = NNT%AA_AA
       endif
 
    endfunction char2nnt
@@ -257,6 +261,8 @@ contains
          c = 'GU_UG'
       else if (i == NNT%AG_UU) then
          c = 'AG_UU'
+      else if (i == NNT%AA_AA) then
+         c = 'AA_AA'
       endif
    endfunction nnt2char
 
@@ -279,7 +285,7 @@ contains
       is_complement = .False.
 
       if (s1 == SEQT%A) then
-         if (s2 == SEQT%U) then
+         if (s2 == SEQT%U .or. s2 == SEQT%A) then
             is_complement = .True.
          endif
 

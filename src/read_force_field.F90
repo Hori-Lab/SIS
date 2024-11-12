@@ -257,6 +257,25 @@ subroutine read_force_field()
             bp_paras(BPT%UG)%angl_k4 = bp_paras(BPT%GU)%angl_k3
          endif
 
+         call get_value(node, "AA", subnode)
+         if (associated(subnode)) then
+            call get_value(subnode, "U0", bp_paras(BPT%AA)%U0)
+            call get_value(subnode, "bond_k", bp_paras(BPT%AA)%bond_k)
+            call get_value(subnode, "bond_r", bp_paras(BPT%AA)%bond_r)
+            call get_value(subnode, "angl_k1", bp_paras(BPT%AA)%angl_k1)
+            call get_value(subnode, "angl_k2", bp_paras(BPT%AA)%angl_k2)
+            call get_value(subnode, "angl_k3", bp_paras(BPT%AA)%angl_k3)
+            call get_value(subnode, "angl_k4", bp_paras(BPT%AA)%angl_k4)
+            call get_value(subnode, "angl_theta1", bp_paras(BPT%AA)%angl_theta1)
+            call get_value(subnode, "angl_theta2", bp_paras(BPT%AA)%angl_theta2)
+            call get_value(subnode, "angl_theta3", bp_paras(BPT%AA)%angl_theta3)
+            call get_value(subnode, "angl_theta4", bp_paras(BPT%AA)%angl_theta4)
+            call get_value(subnode, "dihd_k1", bp_paras(BPT%AA)%dihd_k1)
+            call get_value(subnode, "dihd_k2", bp_paras(BPT%AA)%dihd_k2)
+            call get_value(subnode, "dihd_phi1", bp_paras(BPT%AA)%dihd_phi1)
+            call get_value(subnode, "dihd_phi2", bp_paras(BPT%AA)%dihd_phi2)
+         endif
+
       else
          print '(a)', 'Error: [basepair] parameters required in FF file'
          call sis_abort()
@@ -533,6 +552,7 @@ subroutine read_force_field()
    call check_bp_paras(BPT%CG)
    call check_bp_paras(BPT%UA)
    call check_bp_paras(BPT%UG)
+   call check_bp_paras(BPT%AA)
 
    if (wca_sigma > INVALID_JUDGE) then
       print '(a)', "INVALID wca_sigma " // trim(csource)

@@ -242,6 +242,13 @@ subroutine init_bp()
             else if (seq(i,ichain) == SEQT%U .and. seq(j, jchain) == SEQT%G) then
                bp_map(imp, jmp) = BPT%UG
                bp_map(jmp, imp) = BPT%UG
+            
+            else if (seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%A) then
+               bp_map(imp, jmp) = BPT%AA
+               bp_map(jmp, imp) = BPT%AA
+            else if (seq(i,ichain) == SEQT%A .and. seq(j, jchain) == SEQT%A) then
+               bp_map(imp, jmp) = BPT%AA
+               bp_map(jmp, imp) = BPT%AA
             endif
 
          enddo
