@@ -50,7 +50,7 @@ subroutine init_bp()
 
             !! Centre has to be paired.
             if (.not. is_complement(x,y)) cycle
-               print '(a)', 'is complement'
+               
             !! Upper base pair
             do w = 0, 3   ! A, U, G, C
                do z = 0, 3   ! A, U, G, C
@@ -59,7 +59,6 @@ subroutine init_bp()
                   if (comp_wz) then
                      dH = 0.5_PREC * (NN_dH(seqt2nnt(w, x, z, y)) - dH0)
                      dS = 0.5_PREC * (NN_dS(seqt2nnt(w, x, z, y)) - dS0)
-                     print '(a)', 'comp_wz'
                   else
                      dH = 0.0_PREC
                      dS = 0.0_PREC
@@ -82,7 +81,6 @@ subroutine init_bp()
                         if (comp_uv) then
                            bp3_dH(h) = dH + 0.5_PREC * (NN_dH(seqt2nnt(x, u, y, v)) - dH0)
                            bp3_dS(h) = (dS + 0.5_PREC * (NN_dS(seqt2nnt(x, u, y, v)) - dS0)) * 1.0e-3_PREC
-                           print '(a)', 'comp_uv'
                         else
                            bp3_dH(h) = dH
                            bp3_dS(h) = dS * 1.0e-3_PREC
@@ -92,6 +90,8 @@ subroutine init_bp()
                         if (flg_NNend) then
                            ! u-v is not paired
                            if (comp_wz .and. (.not. comp_uv)) then
+                              print *, comp_wz
+                              print *, comp_uv
                               ! AU on AU/CG/GU
                               if ((x == SEQT%A .and. y == SEQT%U) .or. (x == SEQT%U .and. y == SEQT%A)) then
                                  if ((w == SEQT%A .and. z == SEQT%U) .or. (w == SEQT%U .and. z == SEQT%A)) then
