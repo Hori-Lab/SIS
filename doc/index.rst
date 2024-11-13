@@ -6,7 +6,9 @@ Welcome to SIS's documentation.
    :caption: Contents:
 
    replica
+   pbc
    tweezers
+   restraint
    references
 
 ..

@@ -3,7 +3,7 @@ subroutine init_bp()
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const, only : PREC
    use const_idx, only : SEQT, BPT, seqt2nnt, NNENDT, is_complement
-   use var_io, only : flg_in_ct, flg_in_bpseq
+   use var_io, only : flg_in_ct, flg_in_bpseq, flg_in_bpl
    use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
    use var_potential, only : bp_model, bp_map, bp_min_loop, & !bp_map_dG, bp_map_0, &
                              bp_paras, bp_cutoff_energy, bp_cutoff_dist, bp3_map, &
@@ -174,13 +174,7 @@ subroutine init_bp()
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Specific pairs given in CT file
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   if (flg_in_ct .or. flg_in_bpseq) then
-
-      if (.not. flg_in_ct .and. .not. flg_in_bpseq) then
-         print '(a)', 'Error: either .ct or .bpseq file is required for [Basepair] model = 2.'
-         flush(output_unit)
-         error stop
-      endif
+   if (flg_in_ct .or. flg_in_bpseq .or. flg_in_bpl) then
 
       call read_ss()   ! set bp_map according to ct/bpseq files
 

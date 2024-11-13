@@ -6,27 +6,31 @@ subroutine read_input(cfilepath)
    use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM, MAX_REP_DIM
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT
-   use pbc, only : flg_pbc, set_pbc_size
+   use const_idx, only : JOBT, INTGRT, REPT, POTT, TOMLFSTAT
+   use pbc, only : flg_pbc, pbc_box_input, flg_pbc_ignore_rst, &
+                   flg_pbc_resize, pbc_resize_change, pbc_resize_step, &
+                   flg_pbc_resize_target, pbc_resize_target
    use var_io, only : iopen_hdl, & !flg_gen_init_struct, &
                       flg_progress, step_progress, &
                       flg_out_bpcoef, flg_out_bp, flg_out_bpe, flg_out_bpall, flg_out_twz, &
-                      flg_in_ct, flg_in_bpseq, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
+                      flg_in_ct, flg_in_bpseq, flg_in_bpl, flg_in_fasta, flg_in_pdb, flg_in_xyz, &
                       cfile_ff, cfile_dcd_in, &
                       cfile_prefix, cfile_pdb_ini, cfile_xyz_ini, cfile_fasta_in, cfile_anneal_in, &
-                      cfile_ct_in, cfile_bpseq_in
+                      cfile_bias_rg_in, cfile_ct_in, cfile_bpseq_in, cfile_bpl_in, cfile_rest_in
    use var_state, only : job, tempK, kT, viscosity_Pas, opt_anneal, temp_independent,  tempK_ref, &
                          nstep, dt, nstep_save, nstep_save_rst, integrator, nl_margin, &
-                         flg_variable_box, variable_box_step, variable_box_change, &
                          rng_seed, stop_wall_time_sec, nstep_check_stop, fix_com_origin, &
                          ionic_strength, length_per_charge, nstep_bp_MC
-   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, ele_exclude_covalent_bond_pairs, &
+   use var_potential, only : flg_ele, ele_cutoff_type, ele_cutoff_inp, &
+                             ele_exclude_covalent_bond_pairs, ele_exclude_covalent_angle_pairs, &
                              bp_min_loop, max_bp_per_nt, bp_model, &
                              flg_stage, stage_sigma, stage_eps, &
                              flg_twz, ntwz_DCF, twz_DCF_pairs, twz_DCF_direction, &
                              ntwz_FR, twz_FR_pairs, twz_FR_k, twz_FR_speed, &
-                             flg_bias_ss, bias_ss_force
-   use var_top, only : nrepeat, nchains, inp_no_charge, &
+                             flg_bias_ss, bias_ss_force, &
+                             flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0_inp, &
+                             flg_timed_bias_rg, flg_restraint
+   use var_top, only : nrepeat, nchains, inp_no_charge, dummy_has_charge,&
                        flg_freeze, frz_ranges
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
                            replica_values, flg_replica, flg_repvar
@@ -48,6 +52,7 @@ subroutine read_input(cfilepath)
    integer :: i
    integer :: nrepdim
    integer :: istat, origin
+   integer :: istatx, istaty, istatz
    integer :: hdl
    integer :: len_array
 #ifdef PAR_MPI
@@ -154,21 +159,28 @@ subroutine read_input(cfilepath)
          call get_value(node, "fasta", cfile_fasta_in)
          call get_value(node, "ct", cfile_ct_in)
          call get_value(node, "bpseq", cfile_bpseq_in)
+         call get_value(node, "bpl", cfile_bpl_in)
          call get_value(node, "anneal", cfile_anneal_in)
+         call get_value(node, "bias_Rg", cfile_bias_rg_in)
+         call get_value(node, "restraint", cfile_rest_in)
 
       else
          print '(a)', context%report("Files.In section required.", 0)
          call sis_abort()
       endif
 
+      flg_restraint = .False.
       if (allocated(cfile_pdb_ini)) flg_in_pdb = .True.
       if (allocated(cfile_xyz_ini)) flg_in_xyz = .True.
       if (allocated(cfile_fasta_in)) flg_in_fasta = .True.
       if (allocated(cfile_ct_in)) flg_in_ct = .True.
       if (allocated(cfile_bpseq_in)) flg_in_bpseq = .True.
+      if (allocated(cfile_bpl_in)) flg_in_bpl = .True.
+      if (allocated(cfile_rest_in)) flg_restraint = .True.
 
-      if (flg_in_ct .and. flg_in_bpseq) then
-         print '(a)', 'Error: only one of ct and bpseq files can be specified.'
+      if ((flg_in_ct .and. flg_in_bpseq) .or. (flg_in_bpseq .and. flg_in_bpl) &
+           .or. (flg_in_ct .and. flg_in_bpl)) then
+         print '(a)', 'Error: only one of ct, bpseq, and bpl files can be specified.'
          call sis_abort()
       endif
 
@@ -224,6 +236,7 @@ subroutine read_input(cfilepath)
                flg_out_bpe = .True.
             else if (cline == "twz") then
                flg_out_twz = .True.
+               ! This will be turned on (True) regardless of this settting, when [Tweezers.Force_Ramp] option is used.
             else
                print '(a)', context%report("invalid output type.", origin, "expected either bpcoef, bp, bpall, or bpe.")
                call sis_abort()
@@ -450,8 +463,19 @@ subroutine read_input(cfilepath)
             call sis_abort()
          endif
 
-         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2 .and. nrep(REPT%ION) < 2) then
-            print '(a)', 'Error in input file: There should be more than one replica specified in any of nrep_temp, nrep_force, or nrep_ion'
+         nrep(REPT%RG) = 0
+         call get_value(group, "nrep_rg", nrep(REPT%RG))
+
+         if (nrep(REPT%RG) > MAX_REP_PER_DIM) then
+            print '(a)', 'Error in input file: Number of replicas (nrep_rg) exceeds MAX_REP_PER_DIM in [Replica].'
+            print '(a)', 'Please reduce the number of replicas or increase MAX_REP_PER_DIM in const.F90.'
+            call sis_abort()
+         endif
+
+         if (nrep(REPT%TEMP) < 2 .and. nrep(REPT%TWZDCF) <2 .and. &
+             nrep(REPT%ION) < 2  .and. nrep(REPT%RG) < 2    ) then
+            print '(a)', 'Error in input file: There should be more than one replica specified in'
+            print '(a)', '                     any of nrep_temp, nrep_force, nrep_ion, or nrep_rg.'
             call sis_abort()
          endif
 
@@ -549,6 +573,32 @@ subroutine read_input(cfilepath)
             nrep(REPT%ION) = 1
          endif
 
+         !----------------- Replica.Rg -----------------
+         if (nrep(REPT%RG) > 1) then
+
+            flg_repvar(REPT%RG) = .True.
+            nrepdim = nrepdim + 1
+
+            call get_value(group, "Rg", node, requested=.False.)
+            if (associated(node)) then
+               do i = 1, nrep(REPT%RG)
+                  write(cquery, '(i0)') i
+                  call get_value(node, cquery, replica_values(i, REPT%RG))
+
+                  if (replica_values(i, REPT%RG) > INVALID_JUDGE) then
+                     print '(a,i4,a)', 'Error: Invalid value for replica(', i, ') in [Replica.Rg].'
+                     call sis_abort()
+                  endif
+               enddo
+            else
+               print '(a)', 'Error in input file: [Replica.Rg] is required.'
+               call sis_abort()
+            endif
+
+         else
+            ! Ignore if nrep_rg = 0 or 1
+            nrep(REPT%RG) = 1
+         endif
 
          if (nrepdim > MAX_REP_DIM) then
             print '(a)', 'Error in input file: Number of replica dimensions exceeds MAX_REP_DIM in [Replica].'
@@ -675,12 +725,29 @@ subroutine read_input(cfilepath)
             enddo
          endif
 
+         !----------------- dummy_has_charge -----------------
+         ! (optional) default is false
+         ! If true, dummy particles (D) will have the same charge as normal RNA particles.
+         ! These charges can be individually disabled by the 'no_charge' option below.
+         call get_value(group, "dummy_has_charge", dummy_has_charge, .False., stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("[Electrostatic] dummy_has_charge value is invalid.", origin, "expected either true or false.")
+            call sis_abort()
+         endif
+
          !----------------- exclude_covalent_bond_pairs -----------------
          ! (optional) true / false
          call get_value(group, "exclude_covalent_bond_pairs", ele_exclude_covalent_bond_pairs, .True., stat=istat, origin=origin)
-
          if (istat /= 0) then
             print '(a)', context%report("[Electrostatic] ele_exclude_covalent_bond_pairs value is invalid.", origin, "expected either true or false.")
+            call sis_abort()
+         endif
+
+         !----------------- exclude_covalent_angle_pairs -----------------
+         ! (optional) true / false
+         call get_value(group, "exclude_covalent_angle_pairs", ele_exclude_covalent_angle_pairs, .True., stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report("[Electrostatic] ele_exclude_covalent_angle_pairs value is invalid.", origin, "expected either true or false.")
             call sis_abort()
          endif
 
@@ -690,24 +757,120 @@ subroutine read_input(cfilepath)
       ! (optional)
       ! If this section is given, periodic boundary condition is enabled.
       flg_pbc = .False.
+      flg_pbc_ignore_rst = .False.
+      flg_pbc_resize = .False.
+      flg_pbc_resize_target = .False.
+      pbc_resize_step = INVALID_INT_VALUE
+      pbc_resize_change(1:3) = INVALID_VALUE
+      pbc_resize_target(1:3) = INVALID_VALUE
+
       call get_value(table, "PBC_box", group, requested=.False.)
       if (associated(group)) then 
          flg_pbc = .True.
-         call get_value(group, "x", boxsize(1))
-         call get_value(group, "y", boxsize(2))
-         call get_value(group, "z", boxsize(3))
+
+         !----------------- size -----------------
+         call get_value(group, "size", array, stat=istat, origin=origin)
+
+         if (len(array) == 3) then
+            do i = 1, 3
+               call get_value(array, i, boxsize(i), stat=istat, origin=origin)
+               if (istat /= 0 .or. boxsize(i) < 0.0) then
+                  print '(a)', context%report("invalid [PBC_box] size.", origin, "expected an array of three positive values.")
+                  call sis_abort()
+               endif
+            enddo
+
+         else
+            !----------------- x=, y=, z= (deprecated) -----------------
+            call get_value(group, "x", boxsize(1), stat=istatx)
+            call get_value(group, "y", boxsize(2), stat=istaty)
+            call get_value(group, "z", boxsize(3), stat=istatz)
+
+            if (istatx == TOMLFSTAT%SUCCESS .and. istaty == TOMLFSTAT%SUCCESS .and. istaty == TOMLFSTAT%SUCCESS) then
+               if (any(boxsize < 0.0) ) then
+                  print '(a)', context%report("invalid value in [PBC_box] x/y/z.", origin, "expected a positive real value.")
+                  call sis_abort()
+               endif
+               print *, 'Warning: the format used to define PBC box (x=, y=, z=) in the input file is deprecated.'
+               print *, '         Use size = [x, y, z] format.'
+               flush(OUTPUT_UNIT)
+            else
+               print '(a)', context%report("invalid value in [PBC_box] size.", origin, "expected an array of three positive values.")
+               call sis_abort()
+            endif
+         endif
+
+         !----------------- ignore_rst -----------------
+         call get_value(group, "ignore_rst", flg_pbc_ignore_rst, stat=istat, origin=origin)
+
+         !----------------- resize_step -----------------
+         call get_value(group, "resize_step", pbc_resize_step, stat=istat, origin=origin)
+
+         if (istat == TOMLFSTAT%SUCCESS) then
+            if (pbc_resize_step > 0) then
+               flg_pbc_resize = .True.
+            else
+               print '(a)', context%report("invalid value in [PBC_box] resize_step.", origin, "expected a positive integer.")
+               call sis_abort()
+            endif
+
+         else if (istat == TOMLFSTAT%MISSING_KEY) then
+            continue
+
+         else
+            print '(a)', context%report("invalid value in [PBC_box] resize_step.", origin, "expected a positive integer.")
+            call sis_abort()
+         endif
+
+         if (flg_pbc_resize) then
+            !----------------- resize_chage -----------------
+            call get_value(group, "resize_change", array, stat=istat, origin=origin)
+            if (istat /= TOMLFSTAT%SUCCESS .or. len(array) /= 3) then
+               print '(a)', context%report("invalid [PBC_box] resize_change.", origin, "expected an array of three real values.")
+               call sis_abort()
+            endif
+            do i = 1, 3
+               call get_value(array, i, pbc_resize_change(i), stat=istat, origin=origin)
+               if (istat /= 0 .or. pbc_resize_change(i) > INVALID_JUDGE) then
+                  print '(a)', context%report("invalid [PBC_box] resize_change.", origin, "expected an array of three real values.")
+                  call sis_abort()
+               endif
+            enddo
+
+            !----------------- resize_target -----------------
+            call get_value(group, "resize_target", array, stat=istat, origin=origin)
+            if (len(array) == 3) then
+               do i = 1, 3
+                  call get_value(array, i, pbc_resize_target(i), stat=istat, origin=origin)
+                  if (istat /= 0 .or. pbc_resize_target(i) > INVALID_JUDGE .or. pbc_resize_target(i) < 0.0_PREC) then
+                     print '(a)', context%report("invalid [PBC_box] resize_target.", origin, "expected an array of three positive values.")
+                     call sis_abort()
+                  endif
+               enddo
+               flg_pbc_resize_target = .True.
+
+            !else if (istat == TOMLFSTAT%MISSING_KEY) then
+            !   continue
+            !
+            !else if (istat /= TOMLFSTAT%SUCCESS .or. len(array) /= 3) then
+            !   print '(a)', context%report("invalid [PBC_box] resize_target.", origin, "expected an array of three real values.")
+            !   call sis_abort()
+            endif
+
+         endif ! flg_pbc_resize
       endif
 
-      !################# [variable_box] #################
-      ! (optional)
-      flg_variable_box = .False.
-      call get_value(table, "Variable_box", group, requested=.False.)
-      if (associated(group)) then 
-         flg_variable_box = .True.
-         call get_value(group, "step", variable_box_step)
-         call get_value(group, "change_x", variable_box_change(1))
-         call get_value(group, "change_y", variable_box_change(2))
-         call get_value(group, "change_z", variable_box_change(3))
+      !################# [Variable_box] #################
+      if (flg_pbc .and. .not. flg_pbc_resize) then
+         ! (optional)
+         call get_value(table, "Variable_box", group, requested=.False.)
+         if (associated(group)) then 
+            flg_pbc_resize = .True.
+            call get_value(group, "step", pbc_resize_step)
+            call get_value(group, "change_x", pbc_resize_change(1))
+            call get_value(group, "change_y", pbc_resize_change(2))
+            call get_value(group, "change_z", pbc_resize_change(3))
+         endif
       endif
 
       !################# [Progress] #################
@@ -925,6 +1088,9 @@ subroutine read_input(cfilepath)
 
             if (ntwz_FR > 0) then
 
+               ! Output twz file by deafult
+               flg_out_twz = .True.
+
                ! Spring constant
                call get_value(node, "spring_const", array, stat=istat, origin=origin)
                if (istat /= 0) then
@@ -1020,7 +1186,7 @@ subroutine read_input(cfilepath)
       if (associated(group)) then
          flg_bias_ss = .True.
 
-         if (.not. (flg_in_ct .or. flg_in_bpseq)) then
+         if (.not. (flg_in_ct .or. flg_in_bpseq .or. flg_in_bpl)) then
             print '(a)', "Incompatible setup in [Bias_SS]. To use Bias_SS, either a ct or bpseq file is required in [Files.In]."
             call sis_abort()
          endif
@@ -1036,6 +1202,69 @@ subroutine read_input(cfilepath)
          bias_ss_force = bias_ss_force * (JOUL2KCAL_MOL * 1.0e-22)
       endif
 
+      !################# [Bias_Rg] #################
+      ! (optional)
+      flg_bias_rg = .False.
+      call get_value(table, "Bias_Rg", group, requested=.False.)
+
+      if (associated(group)) then
+         flg_bias_rg = .True.
+         flg_timed_bias_rg = .False.
+
+         !----------------- potential -----------------
+         bias_rg_pott = POTT%HARMONIC  ! Default
+         call get_value(group, "potential", cline, stat=istat, origin=origin)
+         !if (istat < 0) then
+         !   print '(a)', context%report("invalid potential in [Bias_Rg].", origin, "expected either harmonic or flat-bottomed!.")
+         !   call sis_abort()
+         !endif
+         if (istat == 0) then
+            if (cline == 'harmonic') then
+               bias_rg_pott = POTT%HARMONIC
+            else if (cline == 'flat-bottomed') then
+               bias_rg_pott = POTT%FLATBOTTOMED
+            else if (cline == 'timed-flat-bottomed') then
+               flg_timed_bias_rg = .True.
+               bias_rg_pott = POTT%FLATBOTTOMED
+            else
+               print '(a)', context%report("invalid potential in [Bias_Rg].", origin, "expected either harmonic or flat-bottomed.")
+               call sis_abort()
+            endif
+         endif
+
+         if (flg_timed_bias_rg .and. .not. allocated(cfile_bias_rg_in)) then
+            print '(a)', 'Error: if timed potential is slected in [Biaas_Rg], bias_Rg is needed in [files.in].'
+            call sis_abort()
+         endif
+
+         !----------------- k -----------------
+         call get_value(group, "k", bias_rg_k, stat=istat, origin=origin)
+         if (istat /= 0 .or. bias_rg_k < 0.0_PREC) then
+            print '(a)', context%report("invalid k value in [Bias_Rg].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+
+         !----------------- Rg0 -----------------
+         call get_value(group, "Rg0", bias_rg_0_inp, stat=istat, origin=origin)
+
+         ! Rg0 key is not needed when nrep(REPT%RG) > 1
+         if (istat == TOMLFSTAT%MISSING_KEY .and. nrep(REPT%RG) > 1) then
+            continue
+         ! It is needed otherwise, and it has to be positive real value.
+         else if (istat /= 0 .or. bias_rg_0_inp < 0.0_PREC) then
+            print '(a)', context%report("1 invalid Rg0 value in [Bias_Rg].", origin, "expected a positive real value.")
+            call sis_abort()
+         endif
+
+      endif
+
+      ! [Bias_Rg] is required when nrep(REPT%RG) > 1
+      if (nrep(REPT%RG) > 1 .and. .not. flg_bias_rg) then
+         print '(a)', 'Error: [Bias_Rg] block is require in the input file when [Replica] nrep_rg > 1.'
+         call sis_abort()
+      endif
+
+      !#############################################
       call table%destroy
 
    endif ! myrank == 0
@@ -1046,7 +1275,8 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(job, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
    !! File names (cfile_ff, cfile_dcd_in, cfile_pdb_ini, cfile_xyz_ini, cfile_fast_in, cfile_ct_in,
-   !! cfile_bpseq_in, cfile_anneal_in) do not need to be sent becuase it will be read by myrank = 0
+   !! cfile_bpseq_in, cfile_anneal_in, cfile_bias_rg_in, cfile_rest_in)
+   !! do not need to be sent becuase it will be read by myrank = 0
 
    call MPI_BCAST(flg_in_fasta, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    !call MPI_BCAST(flg_gen_init_struct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
@@ -1054,6 +1284,8 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_in_xyz, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_ct, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_in_bpseq, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_in_bpl, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_restraint, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    ! Because the length of cfile_prefix is unknown...
    if (myrank == 0) strlen = len(cfile_prefix)
@@ -1107,7 +1339,9 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(ele_cutoff_type, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ele_cutoff_inp, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(length_per_charge, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(dummy_has_charge, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(ele_exclude_covalent_bond_pairs, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(ele_exclude_covalent_angle_pairs, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
    if (myrank == 0) then
       i = 0
@@ -1126,10 +1360,13 @@ subroutine read_input(cfilepath)
 
    call MPI_BCAST(flg_pbc, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(boxsize, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_pbc_ignore_rst, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
-   call MPI_BCAST(flg_variable_box, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(variable_box_step, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(variable_box_change, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_pbc_resize, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(pbc_resize_step, L_INT, MPI_BYTE, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(pbc_resize_change, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_pbc_resize_target, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(pbc_resize_target, 3, PREC_MPI, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(flg_progress, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(step_progress, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -1175,11 +1412,19 @@ subroutine read_input(cfilepath)
       call MPI_BCAST(bias_ss_force, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    endif
 
+   call MPI_BCAST(flg_bias_rg, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   call MPI_BCAST(flg_timed_bias_rg, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+   if (flg_bias_rg) then
+      call MPI_BCAST(bias_rg_pott, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(bias_rg_k, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+      call MPI_BCAST(bias_rg_0_inp, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
+   endif
+
 #endif
 
    kT = BOLTZ_KCAL_MOL * tempK
 
-   if (flg_pbc) call set_pbc_size(boxsize)
+   if (flg_pbc) pbc_box_input(:) = boxsize(:)
 
    if (myrank /= 0) then
       print '(a)', "Input data received via MPI."
@@ -1214,7 +1459,10 @@ subroutine read_input(cfilepath)
       if (flg_in_fasta) print '(a,a)', '# Files.In, fasta: ', trim(cfile_fasta_in)
       if (flg_in_ct) print '(a,a)', '# Files.In, ct: ', trim(cfile_ct_in)
       if (flg_in_bpseq) print '(a,a)', '# Files.In, bpseq: ', trim(cfile_bpseq_in)
+      if (flg_in_bpl) print '(a,a)', '# Files.In, bpl: ', trim(cfile_bpl_in)
       if (opt_anneal > 0) print '(a,a)', '# Files.In, anneal: ', trim(cfile_anneal_in)
+      if (flg_timed_bias_rg) print '(a,a)', '# Files.In, bias_Rg: ', trim(cfile_bias_rg_in)
+      if (flg_restraint) print '(a,a)', '# Files.In, restraint: ', trim(cfile_rest_in)
       print '(a)', '#'
    endif
 
@@ -1283,6 +1531,7 @@ subroutine read_input(cfilepath)
 
       print '(a,g15.8)', '# Electrostatic, cutoff: ', ele_cutoff_inp
       print '(a,g15.8)', '# Electrostatic, length per charge: ', length_per_charge
+      print '(a,l1)', '# Electrostatic, dummy_has_charge: ', dummy_has_charge
       if (allocated(inp_no_charge)) then
          print '(a)', "# Electrostatic, no charges on the following particles:"
          do i = 1, size(inp_no_charge)
@@ -1290,23 +1539,26 @@ subroutine read_input(cfilepath)
          enddo
       endif
       print '(a,l1)', '# Electrostatic, exclude_covalent_bond_pairs: ', ele_exclude_covalent_bond_pairs
+      print '(a,l1)', '# Electrostatic, exclude_covalent_angle_pairs: ', ele_exclude_covalent_angle_pairs
       print '(a)', '#'
    endif
 
+   print '(a,l1)', '# PBC: ', flg_pbc
    if (flg_pbc) then
-      print '(a,g15.8)', '# pbc_box x: ', boxsize(1)
-      print '(a,g15.8)', '# pbc_box y: ', boxsize(2)
-      print '(a,g15.8)', '# pbc_box z: ', boxsize(3)
-      print '(a)', '#'
-   endif
+      print '(a,3(1x,g15.8))', '# PBC size: ', boxsize(1:3)
+      print '(a,l1)',    '# PBC ignore rst: ', flg_pbc_ignore_rst
+      print '(a,l1)', '# PBC resize: ', flg_pbc_resize
 
-   if (flg_variable_box) then
-      print '(a,i16)', '# variable_box step: ', variable_box_step
-      print '(a,g15.8)', '# variable_box change_x: ', variable_box_change(1)
-      print '(a,g15.8)', '# variable_box change_y: ', variable_box_change(2)
-      print '(a,g15.8)', '# variable_box change_z: ', variable_box_change(3)
-      print '(a)', '#'
+      if (flg_pbc_resize) then
+         print '(a,i16)',   '# PBC resize step: ', pbc_resize_step
+         print '(a,3(1x,g15.8))', '# PBC resize change: ', pbc_resize_change(1:3)
+         print '(a,l1)', '# PBC resize target: ', flg_pbc_resize_target
+         if (flg_pbc_resize_target) then
+            print '(a,3(1x,g15.8))', '# PBC resize target size: ', pbc_resize_target(1:3)
+         endif
+      endif
    endif
+   print '(a)', '#'
 
    if (flg_progress) then
       print '(a,i16)', '# Progress step: ', step_progress
@@ -1349,6 +1601,23 @@ subroutine read_input(cfilepath)
    if (flg_bias_ss) then
       print '(a)', '# Bias_SS: On'
       print '(a,x,f7.2)', '# Bias_SS, force', bias_ss_force / (JOUL2KCAL_MOL*1.0e-22)  ! in pN
+      print '(a)', '#'
+   endif
+
+   if (flg_bias_rg) then
+      print '(a)', '# Bias_Rg: On'
+      if (bias_rg_pott == POTT%HARMONIC) then
+         print '(a)', '# Bias_Rg, potential: harmonic'
+      else if (bias_rg_pott == POTT%FLATBOTTOMED) then
+         print '(a)', '# Bias_Rg, potential: flat-bottomed'
+      endif
+
+      if (flg_timed_bias_rg) then
+         print '(a)', '# Bias_Rg, timing file: ' // trim(cfile_bias_rg_in)
+      else
+         print '(a,x,f7.2)', '# Bias_Rg, k:', bias_rg_k
+         print '(a,x,f7.2)', '# Bias_Rg, Rg0:', bias_rg_0_inp
+      endif
       print '(a)', '#'
    endif
 

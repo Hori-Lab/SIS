@@ -1,6 +1,6 @@
 module var_state
 
-   use,intrinsic :: ISO_FORTRAN_ENV, only: INT64
+   use, intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const
    use const_idx, only : ENE
    use mt_stream, only : mt_state
@@ -9,6 +9,7 @@ module var_state
   
    ! ----------------------------------------------------------------
    logical, save :: restarted
+   logical, save :: reset_step
 
    integer, save :: job
 
@@ -74,10 +75,7 @@ module var_state
    real(PREC) :: tempK_ref
    real(PREC), allocatable :: diele_dTcoef(:)
 
-   ! variable box
-   logical, save :: flg_variable_box
-   integer(INT64), save :: variable_box_step
-   real(PREC), save :: variable_box_change(3)
+   real(PREC), allocatable :: rg(:)
 
 #ifdef DUMPFORCE
    logical, save :: flg_step_dump_force

@@ -1,0 +1,45 @@
+title = "sis input"
+
+[Job]
+type = "MD"
+
+[Files]
+    [Files.In]
+    ff = "../../htv23_5.0_ee-17.ff"
+    fasta = "./nick_dumbbell.fasta"
+
+    pdb_ini = "./nick_dumbbell.pdb"
+    bpl = "./nick_dumbbell.bpl"
+
+    restraint = "./dummy_restraint.txt"
+
+    [Files.Out]
+    prefix = "./md"
+    types = ["bpcoef", "bp",]
+
+[Condition]
+tempK = 300.00
+rng_seed = 123
+
+[MD]
+integrator = "GJF-2GJ"
+dt = 0.2
+nstep = 100
+nstep_save = 1
+nstep_save_rst = 100
+neighbor_list_margin = 10.0
+viscosity_Pas = 0.00001
+
+#stop_wall_time_hour = 47.9
+#nstep_check_stop = 1000
+
+fix_com_origin = 1
+
+[Basepair]
+model = 5
+min_loop = 3
+nstep_MC = 0
+max_bp_per_nt = 1
+
+[Progress]
+step = 100000

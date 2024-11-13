@@ -4,18 +4,20 @@ program sis
    use const, only : CHAR_FILE_PATH, init_const, PREC, FILENAME_DIGIT_REPLICA
    use const_phys, only : BOLTZ_KCAL_MOL
    use const_idx, only : ENE, JOBT, REPT, RSTBLK
-   use var_potential, only : flg_ele, flg_twz
-   use var_state, only : restarted, xyz, tempK, kT, job, opt_anneal, anneal_tempK
+   use var_potential, only : flg_ele, flg_twz, flg_bias_rg, flg_restraint
+   use var_state, only : restarted, xyz, tempK, kT, job, opt_anneal, anneal_tempK, reset_step
    use var_top, only : nmp, flg_freeze
    use var_io, only : flg_out_bp, flg_out_bpall, flg_out_bpe, hdl_in_rst, &
                       hdl_out, hdl_bp, hdl_bpall, hdl_bpe
    use var_parallel, only : init_parallel, end_parallel
    use var_replica, only : nrep_proc, flg_replica
+   use pbc, only : flg_pbc, init_pbc
    !use mt19937_64, only : init_genrand64
 
    implicit none
 
    character(len=CHAR_FILE_PATH) :: cfile_inp, cfile_rst
+   character(len=CHAR_FILE_PATH) :: carg
 
    integer :: nargs
    integer :: istat
@@ -31,9 +33,21 @@ program sis
 
    nargs = command_argument_count()
 
-   if (nargs < 1 .or. 2 < nargs) then
-      print *, 'Usage: PROGRAM input.toml [restart file (.rst)]'
+   if (nargs < 1 .or. 3 < nargs) then
+      print *, 'Usage: PROGRAM input.toml [restart file (.rst)] [--reset-step]'
       stop
+   endif
+
+   reset_step = .False.
+   if (nargs == 3) then
+      !! Check the third argument
+      call get_command_argument(3, carg)
+      if (trim(carg) == '--reset-step') then
+         reset_step = .True.
+      else
+         print *, 'Usage: PROGRAM input.toml [restart file (.rst)] [--reset-step]'
+         stop
+      endif
    endif
 
    !! Read input file
@@ -67,6 +81,10 @@ program sis
    !! Load force field
    call read_force_field()
 
+   if (flg_pbc) then
+      call init_pbc(restarted)
+      ! RSTBLK%PBC and RSTBLK%PBCRESIZE will be read in the subroutine
+   endif
 
    !! Read annealing file
    if (opt_anneal > 0) then
@@ -113,6 +131,10 @@ program sis
    if (flg_freeze) call init_freeze()
 
    if (flg_twz) call init_tweezers()
+
+   if (flg_restraint) call read_restraint()
+
+   if (flg_bias_rg) call init_bias_rg()
 
    !! Construct pair lists of local potentials
    call list_local()
@@ -195,7 +217,7 @@ contains
       print '(a)', 'Authors: N. Hori, H.T. Vu, J.A. Robins'
       print '(a)', 'Source: https://github.com/Hori-Lab/SIS'
       if (git(1:1) == '?') then
-         print '(a)', 'Version: 2023.04'
+         print '(a)', 'Version: 2024.08'
       else
          print '(2a)', 'Git commit: ', git
       endif

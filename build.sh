@@ -21,6 +21,8 @@ elif [[ ${hostname:12:5} == 'cosma' ]]; then
     FC=ifort cmake .. -DCMAKE_BUILD_TYPE=Release
 elif [[ ${hostname:(-22)} == 'pharm.nottingham.ac.uk' ]]; then
     FC=gfortran cmake .. -DCMAKE_BUILD_TYPE=Release -DMT_USE_NORANGECHECK=ON -DMT_USE_ALLOWINVALIDBOZ=OFF
+elif [[ ${hostname:(-20)} == 'ada.nottingham.ac.uk' ]]; then
+    FC=ifort cmake .. -DCMAKE_BUILD_TYPE=Release
 else
     #FC=ifort cmake .. -DCMAKE_BUILD_TYPE=Debug
     FC=gfortran cmake .. -DCMAKE_BUILD_TYPE=Release

@@ -1,21 +1,141 @@
 module pbc
 
-   use const, only : PREC
+   use const, only : PREC, L_INT
 
    logical, save :: flg_pbc
+
+   ! Current box size
    real(PREC), save :: pbc_box(3)
    real(PREC), save :: pbc_box_half(3)
 
+   ! Store values from the input file
+   real(PREC), save :: pbc_box_input(3)
+   logical, save :: flg_pbc_ignore_rst
+
+   ! Resizing  box
+   logical, save :: flg_pbc_resize
+   logical, save :: flg_pbc_resize_target
+   integer(L_INT), save :: pbc_resize_step
+   integer(L_INT), save :: pbc_resize_count(3)
+   real(PREC), save :: pbc_box_original(3)
+   real(PREC), save :: pbc_resize_change(3)
+   real(PREC), save :: pbc_resize_target(3)
+
 contains
 
-   subroutine set_pbc_size(boxsize)
+   subroutine init_pbc(restarted)
+      use,intrinsic :: ISO_FORTRAN_ENV, only: OUTPUT_UNIT, INT64
+      use const_idx, only : RSTBLK
+      logical, intent(in) :: restarted
 
-      real(PREC), intent(in) :: boxsize(3)
+      integer :: rst_status
 
-      pbc_box(:) = boxsize(:)
-      pbc_box_half(:) = 0.5_PREC * boxsize(:)
+      print '(a)', 'Setting up the Periodic Boundary Conditon'
+      print '(a, 3(1x,g15.8))', 'PBC box size in the input file:  ', pbc_box_input(:)
+      pbc_box(:) = pbc_box_input(:)
 
-   endsubroutine set_pbc_size
+      if (restarted .and. .not. flg_pbc_ignore_rst) then
+         call read_rst(RSTBLK%PBC, rst_status)
+         ! If the restart file conatins PBC block, pbc_box will be overwritten.
+         if (rst_status == 0) then
+            print '(a, 3(1x,g15.8))', 'PBC box size in the restart file:', pbc_box(:)
+         else
+            print '(a)', 'PBC record was not found in the restart file.'
+         endif
+      endif
+
+      print '(a, 3(1x,g15.8))', 'Set the PBC box size to          ', pbc_box(:)
+      pbc_box_half(:) = 0.5_PREC * pbc_box(:)
+
+      ! Initialise values for resize
+      pbc_resize_count(1:3) = 0
+      pbc_box_original(:) = pbc_box(:)
+
+      if (flg_pbc_resize) then
+         print '(a, i12, a)',        'Resizing scheme enabled: For every ', pbc_resize_step, ' steps,'
+         print '(a, 3(1x,g15.8),a)', 'the PBC box will be resized by   ', pbc_resize_change(:)
+         if (flg_pbc_resize_target) then
+            do i = 1, 3
+               if (pbc_resize_change(i) > 0.0_PREC) then
+                  if (pbc_resize_target(i) < pbc_box(i)) then
+                     print *, 'Error: inconsistent setup for PBC resize, target < initial size while the change > 0.'
+                     call sis_abort()
+                  endif
+               else
+                  if (pbc_resize_target(i) > pbc_box(i)) then
+                     print *, 'Error: inconsistent setup for PBC resize, target > initial size while the change < 0.'
+                     call sis_abort()
+                  endif
+               endif
+            enddo
+            print '(a, 3(1x,g15.8),a)', 'until reaching the target size,  ', pbc_resize_target(:)
+         endif
+      endif
+
+      print *
+
+   endsubroutine init_pbc
+
+   subroutine pbc_resize()
+      use const_phys, only : SMALL_VALUE 
+      integer :: i
+      real(PREC) :: x
+      logical :: reach_target(3)
+
+      reach_target(:) = .False.
+
+      do i = 1, 3
+         ! Do nothing if change is zero
+         if ((abs(pbc_resize_change(i)) < SMALL_VALUE)) then
+            reach_target(i) = .True.
+            cycle
+         endif
+
+         ! Do nothing if the current size is already the target
+         if (flg_pbc_resize_target) then
+            if (abs(pbc_box(i) - pbc_resize_target(i)) < SMALL_VALUE) then
+               reach_target(i) = .True.
+               cycle
+            endif
+         endif
+
+         pbc_resize_count(i) = pbc_resize_count(i) + 1
+         x = pbc_box_original(i) + pbc_resize_change(i) * pbc_resize_count(i)
+
+         ! Compress
+         if (pbc_resize_change(i) < 0.0_PREC) then
+            if (flg_pbc_resize_target) then
+               if (x - pbc_resize_target(i) < SMALL_VALUE) then
+                  pbc_box(i) = pbc_resize_target(i)
+                  reach_target(i) = .True.
+               else
+                  pbc_box(i) = x
+               endif
+            else
+               pbc_box(i) = x
+            endif
+
+         else ! Expand
+            if (flg_pbc_resize_target) then
+               if (x - pbc_resize_target(i) > SMALL_VALUE) then
+                  pbc_box(i) = pbc_resize_target(i)
+                  reach_target(i) = .True.
+               else
+                  pbc_box(i) = x
+               endif
+            else
+               pbc_box(i) = x
+            endif
+         endif
+      enddo
+
+      pbc_box_half(:) = 0.5_PREC * pbc_box(:)
+
+      if (all(reach_target)) then
+         flg_pbc_resize = .False.
+      endif
+
+   endsubroutine pbc_resize
 
    pure function pbc_vec_d(v1, v2) result (new_vec)
 
@@ -104,5 +224,13 @@ contains
       enddo
 
    endsubroutine pbc_wrap
+
+
+!   subroutine pbc_wrap_chain(irep)
+!
+!   TO be implemented
+!
+!   endsubroutine pbc_wrap_chain
+
 
 endmodule pbc

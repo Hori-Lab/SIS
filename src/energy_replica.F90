@@ -4,7 +4,8 @@ subroutine energy_replica(energies, replica_energies, flg_replica_exchange, flg_
    use const_idx, only : REPT, ENE
    use var_replica, only : nrep_all, nrep_proc, irep2grep, &
                            lab2val, rep2lab, flg_repvar, get_pair, rep2val
-   use var_potential, only : flg_ele, nbp_max, ntwz_DCF, twz_DCF_forces, twz_DCF_direction
+   use var_potential, only : flg_ele, nbp_max, ntwz_DCF, twz_DCF_forces, twz_DCF_direction, &
+                             bias_rg_0
    use var_state, only : flg_bp_energy, tempK, ionic_strength, bp_status, ene_bp
 
    implicit none
@@ -103,6 +104,10 @@ subroutine energy_replica(energies, replica_energies, flg_replica_exchange, flg_
             twz_DCF_forces(:, 1:ntwz_DCF, irep) = lab2val(label_opp, REPT%TWZDCF) * twz_DCF_direction(:, 1:ntwz_DCF)
          endif
 
+         if (flg_repvar(REPT%RG)) then
+            bias_rg_0(irep) = lab2val(label_opp, REPT%RG)
+         endif
+
          !#############################################
          ! Re-calculate replica-dependent coefficients
          !#############################################
@@ -133,6 +138,10 @@ subroutine energy_replica(energies, replica_energies, flg_replica_exchange, flg_
 
          if (flg_repvar(REPT%TWZDCF)) then
             twz_DCF_forces(:, 1:ntwz_DCF, irep) = lab2val(label_own, REPT%TWZDCF) * twz_DCF_direction(:, 1:ntwz_DCF)
+         endif
+
+         if (flg_repvar(REPT%RG)) then
+            bias_rg_0(irep) = lab2val(label_own, REPT%RG)
          endif
 
          !#############################################

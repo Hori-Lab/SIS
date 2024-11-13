@@ -49,10 +49,12 @@ subroutine init_mts()
    if (restarted) then
       print '(a)', 'Loading MT streams from the restart file.'
 
-      if (flg_replica) call read_rst(RSTBLK%PRNGREP, rst_status)
+      if (flg_replica) then
+         call read_rst(RSTBLK%PRNGREP, rst_status)
 
-      if (rst_status /= 0) then
-         print '(a)', '... Failed to load PRNGREP from the restart file. MT state from the given seed will be used.'
+         if (rst_status /= 0) then
+            print '(a)', '... Failed to load PRNGREP from the restart file. MT state from the given seed will be used.'
+         endif
       endif
 
       call read_rst(RSTBLK%PRNG, rst_status)

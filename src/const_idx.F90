@@ -14,9 +14,11 @@ module const_idx
       integer :: ELE    ! 6
       integer :: STAGE  ! 7
       integer :: TWZ    ! 8
+      integer :: RG     ! 9
+      integer :: REST   !10
       integer :: MAX
    endtype energy_types
-   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,8)
+   type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,9,10,10)
 
    type seq_types
       integer :: UNDEF  ! -1
@@ -24,9 +26,10 @@ module const_idx
       integer :: U   ! 1
       integer :: G   ! 2
       integer :: C   ! 3
+      integer :: D   ! 4
       integer :: MAX
    endtype seq_types
-   type(seq_types), parameter :: SEQT = seq_types(-1,0,1,2,3,3)
+   type(seq_types), parameter :: SEQT = seq_types(-1,0,1,2,3,4,4)
 
    type job_types
       integer :: DEBUG       ! 0
@@ -70,16 +73,18 @@ module const_idx
       integer :: PRNG    ! 7
       integer :: PRNGREP ! 8
       integer :: TWZ     ! 9
+      integer :: PBC     ! 10
    endtype rst_block
-   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6,7,8,9)
+   type(rst_block), parameter :: RSTBLK = rst_block(1,2,3,4,5,6,7,8,9,10)
 
    type replica_type
       integer :: TEMP
       integer :: TWZDCF
       integer :: ION
+      integer :: RG
       integer :: MAX
    endtype replica_type
-   type(replica_type), parameter :: REPT = replica_type(1,2,3,3)
+   type(replica_type), parameter :: REPT = replica_type(1,2,3,4,4)
 
    type nn_types
       integer :: GC_CG
@@ -119,6 +124,22 @@ module const_idx
    endtype nnend_types
    type(nnend_types), parameter :: NNENDT = nnend_types(1,2,3,4,5,6)
 
+   type potential_types
+      integer :: HARMONIC
+      integer :: FLATBOTTOMED
+   endtype potential_types
+   type(potential_types), parameter :: POTT = potential_types(1,2)
+
+   type tomlfstatus_types
+      integer :: SUCCESS          !  0
+      integer :: FATAL            ! -1
+      integer :: DUPLICATE_KEY    ! -2
+      integer :: TYPE_MISMATCH    ! -3
+      integer :: CONVERSION_ERROR ! -4
+      integer :: MISSING_KEY      ! -5
+   endtype tomlfstatus_types
+   type(tomlfstatus_types), parameter :: TOMLFSTAT = tomlfstatus_types(0,-1,-2,-3,-4,-5)
+
 contains
    function seqt2char(i) result(c)
       integer, intent(in) :: i
@@ -133,6 +154,8 @@ contains
          c = 'G'
       case (SEQT%C)
          c = 'C'
+      case (SEQT%D)
+         c = 'D'
       case (SEQT%UNDEF)
          c = '?'
       case default
@@ -156,6 +179,9 @@ contains
 
       else if (c == 'C' .or. c == 'c') then
          i = SEQT%C
+
+      else if (c == 'D' .or. c == 'd') then
+         i = SEQT%D
 
       else
          i = SEQT%UNDEF

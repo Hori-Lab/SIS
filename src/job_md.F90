@@ -1,25 +1,27 @@
 subroutine job_md()
 
-   use, intrinsic :: iso_fortran_env, Only : iostat_end, INT64, output_unit
+   use, intrinsic :: iso_fortran_env, Only : output_unit, INT64
    use const, only : PREC
    use const_phys, only : KCAL2JOUL, N_AVO, PI, BOLTZ_KCAL_MOL, JOUL2KCAL_MOL
    use const_idx, only : ENE, SEQT, RSTBLK, BPT, REPT, INTGRT
    use progress, only : progress_init, progress_update, wall_time_sec
-   use pbc, only : pbc_box, set_pbc_size, flg_pbc
+   use pbc, only : flg_pbc, pbc_box, flg_pbc_resize, pbc_resize_step, pbc_resize
    use var_top, only : nmp, seq, mass, lmp_mp, ichain_mp, flg_freeze, is_frozen
-   use var_state, only : restarted, flg_bp_energy, ionic_strength, integrator, &
+   use var_state, only : restarted, reset_step, flg_bp_energy, ionic_strength, integrator, &
                          viscosity_Pas, xyz,  energies, dt, velos, accels, tempK, &
                          nstep, nstep_save, nstep_save_rst, &
                          nstep_check_stop, stop_wall_time_sec, fix_com_origin, &
                          nl_margin, Ekinetic, &
-                         flg_variable_box, variable_box_step, variable_box_change, &
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next, &
-                         nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status
+                         nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status, rg
    use var_io, only : flg_progress, step_progress, hdl_dcd, cfile_dcd, hdl_rep
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage, flg_ele, &
-                             flg_twz, ntwz_DCF, twz_DCF_forces, twz_DCF_direction
+                             flg_twz, ntwz_DCF, twz_DCF_forces, twz_DCF_direction, &
+                             flg_bias_rg, flg_timed_bias_rg, ntimed_bias_rg, timed_bias_rg_k, timed_bias_rg_0, &
+                             istep_timed_bias_rg_next, timed_bias_rg_step, itimed_bias_rg, &
+                             bias_rg_k, bias_rg_0, flg_restraint
    use var_replica, only : nrep_all, nrep_proc, flg_replica, rep2val, irep2grep, rep2lab, &
                            nstep_rep_exchange, nstep_rep_save, nrep_all, flg_repvar, flg_exchange
    use var_parallel
@@ -80,6 +82,7 @@ subroutine job_md()
    allocate(energies(0:ENE%MAX, nrep_proc))
    allocate(Ekinetic(nrep_proc))
    !allocate(replica_energies(2, nrep_all))
+   allocate(rg(nrep_proc))
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Set up constants for the dynamics
@@ -118,6 +121,8 @@ subroutine job_md()
             mass(imp) = 304.182_PREC
          case (SEQT%U)
             mass(imp) = 305.164_PREC
+         case (SEQT%D)
+            mass(imp) = 320.443_PREC
          case default
             write(*,*) 'Error: Unknown seq type, ', seq(lmp_mp(imp), ichain_mp(imp)), ' imp=',imp
             call sis_abort()
@@ -190,7 +195,7 @@ subroutine job_md()
    enddo
    xyz_move(:,:,:) = 0.0e0_PREC
 
-   if (restarted) then
+   if (restarted .and. .not. reset_step) then
       call read_rst(RSTBLK%STEP, rst_status)
    else
       istep = 0_INT64
@@ -216,6 +221,43 @@ subroutine job_md()
 
       if (ianneal < nanneal) then
          istep_anneal_next = anneal_step(ianneal+1)
+      endif
+   endif
+
+   ! Setting up Timed bias-Rg
+   if (flg_timed_bias_rg) then
+
+      if (flg_repvar(REPT%RG)) then
+         write(*,*) 'Error: timed-bias-rg does not work with nrep_rg > 1.'
+         call sis_abort()
+      endif
+
+      call read_timed_bias_rg()
+
+      itimed_bias_rg = 1
+
+      if (istep >= timed_bias_rg_step(ntimed_bias_rg)) then
+         itimed_bias_rg = ntimed_bias_rg
+         flg_timed_bias_rg = .False.
+
+      else if (restarted) then
+
+         do while (timed_bias_rg_step(itimed_bias_rg + 1) <= istep)
+
+            itimed_bias_rg = itimed_bias_rg + 1
+
+            if (itimed_bias_rg == ntimed_bias_rg) then
+               flg_timed_bias_rg = .False.
+               exit
+            endif
+         enddo
+      endif
+
+      bias_rg_k = timed_bias_rg_k(itimed_bias_rg)
+      bias_rg_0(:) = timed_bias_rg_0(itimed_bias_rg)
+
+      if (itimed_bias_rg < ntimed_bias_rg) then
+         istep_timed_bias_rg_next = timed_bias_rg_step(itimed_bias_rg + 1)
       endif
    endif
 
@@ -279,6 +321,9 @@ subroutine job_md()
       if (flg_ele  ) print '(a, g13.6)', 'E_ele     ', energies(ENE%ELE, irep)
       if (flg_stage) print '(a, g13.6)', 'E_stage   ', energies(ENE%STAGE, irep)
       if (flg_twz  ) print '(a, g13.6)', 'E_tweezers', energies(ENE%TWZ, irep)
+      if (flg_bias_rg) print '(a, g13.6)', 'E_rg      ', energies(ENE%RG, irep)
+      if (flg_bias_rg) print '(a, g13.6)', 'Rg        ', rg(irep)
+      if (flg_restraint) print '(a, g13.6)', 'E_rest    ', energies(ENE%REST, irep)
       print *
 
       if (.not. restarted) then
@@ -459,7 +504,6 @@ subroutine job_md()
          enddo
       endif
 
-
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Replica exchange
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -512,6 +556,10 @@ subroutine job_md()
                   k = rep2val(grep, REPT%TWZDCF)
                   twz_DCF_forces(:, 1:ntwz_DCF, irep) = k * twz_DCF_direction(:, 1:ntwz_DCF)
                endif
+
+               if (flg_repvar(REPT%RG)) then
+                  bias_rg_0(irep) = rep2val(grep, REPT%RG)
+               endif
             enddo
 
          endif
@@ -521,15 +569,23 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Update the box size
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (flg_variable_box) then
-         if (mod(istep, variable_box_step) == 0) then
-            call set_pbc_size(pbc_box(:) + variable_box_change(:))
-            fdcd(irep)%box(:) = pbc_box(:)
+      if (flg_pbc_resize) then
+         if (mod(istep, pbc_resize_step) == 0) then
 
-            call neighbor_list(irep)
-            xyz_move(:,:,irep) = 0.0e0_PREC
+            call pbc_resize()
 
-            print '(a,i12,a,f8.3)', 'Box size updated: step = ',istep, ', box size = ', pbc_box(1)
+            do irep = 1, nrep_proc
+               fdcd(irep)%box(:) = pbc_box(:)
+
+               call neighbor_list(irep)
+               xyz_move(:,:,irep) = 0.0e0_PREC
+            enddo
+            print '(a,i12,a,3(1x,f8.3))', 'PBC resized: step = ',istep, ', box size =', pbc_box(1:3)
+
+            ! If the flag is set to False, this is the last update.
+            if (.not. flg_pbc_resize) then
+               print '(a)', 'The target box size has been reached.'
+            endif
          endif
       endif
 
@@ -551,6 +607,20 @@ subroutine job_md()
          endif
       endif
 
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !!! Timed bias-Rg
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (flg_timed_bias_rg .and. istep + 1 == istep_timed_bias_rg_next) then
+         itimed_bias_rg = itimed_bias_rg + 1
+         bias_rg_k = timed_bias_rg_k(itimed_bias_rg)
+         bias_rg_0(:) = timed_bias_rg_0(itimed_bias_rg)
+
+         if (itimed_bias_rg < ntimed_bias_rg) then
+            istep_timed_bias_rg_next = timed_bias_rg_step(itimed_bias_rg + 1)
+         else
+            flg_timed_bias_rg = .False.
+         endif
+      endif
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Write progress
@@ -619,7 +689,6 @@ contains
 
       ! Coefficients that do not depend on replicas
       if (flg_first) then
-         print *, 'job_md: flg_first'
 
          if (integrator == INTGRT%LD_GJF2GJ) then
             do imp = 1, nmp

@@ -5,8 +5,8 @@ subroutine job_dcd()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_box, pbc_box_half
    use var_top, only : nmp
-   use var_state, only : xyz, energies, flg_bp_energy, tempK, nstep_bp_MC, flg_bp_MC, Ekinetic
    use var_io, only : cfile_dcd_in, iopen_hdl
+   use var_state, only : xyz, energies, flg_bp_energy, tempK, nstep_bp_MC, flg_bp_MC, Ekinetic, rg
    use dcd, only : file_dcd, DCD_OPEN_MODE
    use var_replica, only : nrep_proc
 #ifdef DUMPFORCE
@@ -54,6 +54,7 @@ subroutine job_dcd()
 
    allocate(xyz(3, nmp, IREP))
    allocate(energies(0:ENE%MAX, IREP))
+   allocate(rg(IREP))
 
    call write_out_header(IREP)
 

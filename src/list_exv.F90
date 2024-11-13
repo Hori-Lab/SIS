@@ -2,7 +2,7 @@ subroutine list_exv()
 
    use const
    use const_idx, only : SEQT
-   use var_top, only : nmp_chain, imp_chain, nchains
+   use var_top, only : nmp_chain, imp_chain, nchains, seq
    use var_potential, only : nwca, wca_mp
    use var_replica, only : nrep_proc
 
@@ -17,7 +17,7 @@ subroutine list_exv()
    endif
 
    do n = 1, 2
-   
+
       iwca = 0
 
       do ichain = 1, nchains 
@@ -26,8 +26,10 @@ subroutine list_exv()
 
             do i = 1, nmp_chain(ichain)
 
+               if (seq(i, ichain) == SEQT%D) cycle
+
                imp = imp_chain(i, ichain)
-    
+
                if (ichain == jchain) then
                   j_start = i + 3
                else
@@ -35,7 +37,9 @@ subroutine list_exv()
                endif
     
                do j = j_start, nmp_chain(jchain)
-                  
+
+                  if (seq(j, jchain) == SEQT%D) cycle
+
                   jmp = imp_chain(j, jchain)
     
                   iwca = iwca + 1
@@ -44,10 +48,10 @@ subroutine list_exv()
                      wca_mp(1, iwca, 1:nrep_proc) = imp
                      wca_mp(2, iwca, 1:nrep_proc) = jmp
                   endif
-    
+
                enddo
             enddo
-    
+
          enddo
       enddo
 

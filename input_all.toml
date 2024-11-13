@@ -22,11 +22,18 @@ type = "MD"
         # and any sequence information therein will be ignored.
 
     dcd = "./trajectory.dcd"
-        # DCD file to read. Required if type = "DCD" in [job].
+        # DCD file to read. Required only if type = "DCD" in [Job].
 
     anneal = "./annealing_schedule.txt"
         # Annealing-schedule file.
         # Required only when opt_anneal > 0 in [Condition].
+
+    bias_Rg = "./bias_Rg_schedule.txt"
+        # Schedule file for bias_Rg.
+        # Required only when potential = 'timed-flat-bottomed' in [Bias_Rg].
+
+    restraint = "./restraint.txt"
+        # Restraint file containing a list of pre-defined restraints.
 
     ## Specific secondary structure.
     ## If either 'ct' or 'bpseq' is given, only base pairs that constitute 
@@ -35,6 +42,8 @@ type = "MD"
         # CT (Connectivity Table) file
     bpseq = "./test.bpseq"
         # BPSEQ file (no comment line allowed)
+    bpl = "./test.bpl"
+        # Basepair list file (no comment line allowed)
 
     [Files.Out]
     prefix = "./test"
@@ -49,6 +58,7 @@ type = "MD"
 nrep_temp = 8
 nrep_force = 0
 nrep_ion = 0
+nrep_rg = 0
 
 nstep_exchange = 10
 nstep_save = 100
@@ -88,6 +98,17 @@ exchange = true
     7 = 0.50
     8 = 0.80
 
+    [Replica.Rg]
+    ## Rg in Angstrom. [Bias_Rg] is required when nrep_rg > 1.
+    1 = 10.0
+    2 = 12.0
+    3 = 14.0
+    4 = 16.0
+    5 = 18.0
+    6 = 20.0
+    7 = 22.0
+    8 = 24.0
+
 [Condition]
 tempK = 310.15
     # Specify the simulation temperature in Kelvin.
@@ -96,6 +117,7 @@ tempK = 310.15
 rng_seed = 123
     # (optional, but highly recommended to set)
     # Seed value for the pseudorandom number generator.
+
     # Set a 64-bit integer. If omitted, it will be set based on SYSTEM_CLOCK.
 
 opt_anneal = 0
@@ -112,13 +134,6 @@ tempK_ref = 328.15
 [Repeat]
 n_repeat = 47
 n_chain = 64
-
-[PBC_box]
-    # (optional)
-    # If this section is given, periodic boundary condition is enabled.
-x = 809.972
-y = 809.972
-z = 809.972
 
 
 [MD]
@@ -203,6 +218,11 @@ cutoff = 50.0
     # Either distance (cutoff_type = 1) or multiple (cutoff_type = 2),
     # depending on the choice of cutoff_type.
 
+dummy_has_charge = false
+    # (optional) default is false
+    # If true, dummy particles (D) will have the same charge as normal RNA particles.
+    # These charges can be individually disabled by the 'no_charge' option below.
+
 no_charge = [1, 27]
     # (optional) array of positive integeres.
     # Particles having no charges.
@@ -211,16 +231,33 @@ length_per_charge = 4.38178046
     # Paremeter in ion-condensation theory in Angstrom.
 
 exclude_covalent_bond_pairs = true
-    # If true, no electrostatic interaction between covalent-bond pairs (i)-(i+1). (default)
+    # If true, no electrostatic interaction between covalent-bond pairs (i)-(i+1). (default true)
+#exclude_covalent_angle_pairs = true
+#    # If true, no electrostatic interaction between covalent-angle pairs (i)-(i+3). (default false)
 
 [Progress]
     # (optional)
     # If this section is given, progress information will be output to STDOUT. 
-step = 1000
+step = 1000000
 
+[PBC_box]
+    # (optional)
+    # If this section is given, the Periodic Boundary Condition (PBC) is enabled.
+size = [809.972, 809,972, 809.972]
+#x = 809.972
+#y = 809.972
+#z = 809.972
+    # These 'x=', 'y=', 'z=' are an older way to specify the box size,
+    # which is deprecated and will be removed in a future version.
+    # Use size =[x, y, z] format.
+
+resize_change = [ -0.1,  -0.1,  -0.1]
+resize_target = [500.0, 500.0, 500.0]
+resize_step = 1000
 
 [Variable_box]
-    # (optional)
+    # This option is deprecated and will be removed in a future version.
+    # Use [PBC_box] resize_step, resize_change, and resize_target for the feature.
 step = 1000
 change_x = -1.0
 change_y = -1.0
@@ -228,6 +265,7 @@ change_z = -1.0
 
 [Stage]
     # (optional)
+    # Stage potential
 sigma = 10.0
 epsilon = 1.2
 
@@ -237,12 +275,12 @@ id_ranges = [[1, 5], [10,14]]
 [Tweezers]
     [Tweezers.Dual_Constant_Force]
     id_pairs = [[1, 5],]
-    forces_pN = [[5.0, 0.0, 0.0],]
+    forces_pN = [[5.0, 0.0, 0.0],]   # in pN
 
     [Tweezers.Force_Ramp]
     id_pairs = [[1, 27]]
-    spring_const = [[20.0, 20.0],]
-    trap_speed = [[0.0, 5.0]]
+    spring_const = [[0.0030, 0.0030],]   # in kcal/mol/(angstrom^2)
+    trap_speed = [[0.0, 1.5e-6]]        # in angstrom per step
     ## In the Force_Ramp mode, a pair of particles (i, j) is specified by id_pairs = [[i, j],].
     ## The two particles are each trapped by tweezers with spring constants k_i and k_j 
     ## specified by spring_const = [[k_i, k_j],]. The positions of the two traps are initially 
@@ -250,7 +288,15 @@ id_ranges = [[1, 5], [10,14]]
     ## The trap positions move along the simulation at the speed given by trap_speed = [[v_i, v_j],]. 
     ## The direction of movement is determined by the initial positions and is (xyz_j(0) - xyz_i(0)),
     ## i.e. the direction from xyz_i(0) to xyz_j(0).
-    ## DO NOT FORGET to add "twz" in [Files.Out] types to get information of extension and forces.
+    ## 'twz' output file will contain informaion of the extension and forces.
 
 [Bias_SS]
 force_pN = 20.0
+
+[Bias_Rg]
+potential = 'harmonic'
+#potential = 'flat-bottomed'
+#potential = 'timed-flat-bottomed'
+k = 1.0
+Rg0 = 12.0
+

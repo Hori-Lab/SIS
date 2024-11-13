@@ -1,14 +1,16 @@
 subroutine neighbor_list(irep)
 
    use const, only : PREC
+   use const_idx, only : SEQT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
-   use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge
+   use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge, seq
    use var_state, only : xyz, bp_status, bp_status_MC, nstep_bp_MC, &
                          ene_bp, for_bp, nt_bp_excess, nl_margin, lambdaD
    use var_potential, only : wca_sigma, nwca, nwca_max, wca_mp, &
                              bp_cutoff_dist, bp_mp, bp_coef, nbp, nbp_max, bp_map, &
                              ele_cutoff_type, ele_cutoff, ele_cutoff_inp, &
-                             nele, nele_max, ele_mp, flg_ele, ele_exclude_covalent_bond_pairs, &
+                             nele, nele_max, ele_mp, flg_ele, &
+                             ele_exclude_covalent_bond_pairs, ele_exclude_covalent_angle_pairs, &
                              bp3_dH, bp3_dS, bp3_map, &
                              flg_bias_ss
    use var_replica, only : nrep_proc
@@ -17,7 +19,7 @@ subroutine neighbor_list(irep)
 
    integer, intent(in) :: irep
 
-   integer :: ichain, jchain, i, imp, j, jmp, j_start
+   integer :: ichain, jchain, i, imp, j, jmp, j_start, iseq, jseq
    integer :: iwca, ibp, iele
    logical :: flg_add
    real(PREC) :: d2, v(3)
@@ -101,6 +103,7 @@ subroutine neighbor_list(irep)
          do i = 1, nmp_chain(ichain)
 
             imp = imp_chain(i, ichain)
+            iseq = seq(i, ichain)
    
             if (ichain == jchain) then
                j_start = i + 1
@@ -111,21 +114,23 @@ subroutine neighbor_list(irep)
             do j = j_start, nmp_chain(jchain)
                
                jmp = imp_chain(j, jchain)
+               jseq = seq(j, jchain)
    
                v(:) = pbc_vec_d(xyz(:,imp,irep), xyz(:,jmp,irep))
                d2 = dot_product(v,v)
 
                ! WCA
-               if (d2 <= wca_nl_cut2) then
-                  if (ichain /= jchain .or. i+2 < j) then
-                     iwca = iwca + 1
-                     if (iwca > nwca_max) then
-                        !write(*,*) 'Error: iwca > nwca_max. iwca =', iwca, 'nwca_max = ', nwca_max
-                        call reallocate_wca_mp()
-                     endif
+               if (iseq /= SEQT%D .and. jseq /= SEQT%D) then
+                  if (d2 <= wca_nl_cut2) then
+                     if (ichain /= jchain .or. i+2 < j) then
+                        iwca = iwca + 1
+                        if (iwca > nwca_max) then
+                           call reallocate_wca_mp()
+                        endif
 
-                     wca_mp(1, iwca, irep) = imp
-                     wca_mp(2, iwca, irep) = jmp
+                        wca_mp(1, iwca, irep) = imp
+                        wca_mp(2, iwca, irep) = jmp
+                     endif
                   endif
                endif
 
@@ -135,12 +140,9 @@ subroutine neighbor_list(irep)
                   if (has_charge(imp) .and. has_charge(jmp)) then
 
                      flg_add = .True.
-                     if (ele_exclude_covalent_bond_pairs) then
-                        if (ichain == jchain) then
-                           if (j == i+1) then
-                              flg_add = .False.
-                           endif
-                        endif
+                     if (ichain == jchain) then
+                        if (j == i + 1 .and. ele_exclude_covalent_bond_pairs) flg_add = .False.
+                        if (j == i + 2 .and. ele_exclude_covalent_angle_pairs) flg_add = .False.
                      endif
 
                      if (flg_add) then

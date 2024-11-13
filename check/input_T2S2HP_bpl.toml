@@ -8,13 +8,11 @@ type = "MD"
       ff = "./para.ff"
       fasta = "T2S2HP.fasta"
       pdb_ini = "T2S2HP_random.pdb"
-      #xyz_ini = "T2S2HP_random.xyz"
-      #ct = "T2S2HP.ct"
-      bpseq = "T2S2HP.bpseq"
+      bpl = "T2S2HP.bpl"
 
       [Files.Out]
       types = ["bp", "bpe", "bpall"]
-      prefix = "./test_T2S2HP_go"
+      prefix = "./test_T2S2HP_bpl"
 
 [Condition]
       tempK = 348.15

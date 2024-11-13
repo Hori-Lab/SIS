@@ -1,5 +1,6 @@
 module var_potential
 
+   use, intrinsic :: ISO_FORTRAN_ENV, only: INT64
    use const, only : PREC
    use const_idx, only : BPT
 
@@ -99,6 +100,7 @@ module var_potential
    ! Electrostatic parameters
    logical, save :: flg_ele
    logical, save :: ele_exclude_covalent_bond_pairs
+   logical, save :: ele_exclude_covalent_angle_pairs
    integer, save :: ele_cutoff_type
    real(PREC), save :: ele_cutoff_inp
    real(PREC), allocatable :: ele_cutoff(:)  ! (nrep_proc)
@@ -133,5 +135,31 @@ module var_potential
    ! Bias_SS
    logical, save :: flg_bias_ss
    real(PREC), save :: bias_ss_force
+
+   ! Bias_Rg
+   logical, save :: flg_bias_rg
+   integer, save :: bias_rg_pott  ! potential type (POTT%HARMONIC or POTT%FLATBOTTOMED)
+   real(PREC), save :: bias_rg_k
+   real(PREC), save :: bias_rg_0_inp        ! Value from the input file
+   real(PREC), allocatable :: bias_rg_0(:)  ! (1:nrep_proc)
+                                            ! bias_rg_0 = bias_rg_0_inp if not Rg-REMD
+
+   ! Time-dependent Bias-Rg
+   logical, save :: flg_timed_bias_rg
+   integer, save :: ntimed_bias_rg
+   integer(INT64), allocatable, save :: timed_bias_rg_step(:)
+   real(PREC), allocatable, save :: timed_bias_rg_k(:)
+   real(PREC), allocatable, save :: timed_bias_rg_0(:)
+   integer :: itimed_bias_rg
+   integer(INT64) :: istep_timed_bias_rg_next
+
+   ! Restraint
+   logical, save :: flg_restraint
+   logical, save :: flg_rest_sigb
+   integer, save :: nrest_sigb
+   integer, allocatable :: rest_sigb_id(:,:)        ! (1:3, nrest_sig) 1=target ID, 2=reference ID, 3=type
+                                                    ! type = 1, Sigmoid; 2, Sigmoid-to-bead
+   real(PREC), allocatable :: rest_sigb_rcut(:)     ! (nrest_sig) Cutoff distance, r_cut
+   real(PREC), allocatable :: rest_sigb_para(:, :)  ! (1:3, nrest_sig) 1=epsilon, 2=r_bound, 3=delta
 
 end module var_potential

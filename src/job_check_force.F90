@@ -5,7 +5,7 @@ subroutine job_check_force()
    use const_idx, only : ENE
    use pbc, only : flg_pbc, pbc_wrap
    use var_top, only : nmp
-   use var_state, only : xyz, energies, flg_bp_energy, mts, tempK
+   use var_state, only : xyz, energies, flg_bp_energy, mts, tempK, rg
    use var_potential, only: flg_stage
    use var_io, only : hdl_out, cfile_pdb_ini, cfile_xyz_ini
    !use mt19937_64
@@ -24,6 +24,7 @@ subroutine job_check_force()
 
    allocate(forces(3, nmp))
    allocate(energies(0:ENE%MAX, IREP))
+   allocate(rg(IREP))
 
    if (len(cfile_pdb_ini) > 0) then
       call read_pdb(cfile_pdb_ini, nmp, xyz)
