@@ -90,8 +90,8 @@ subroutine init_bp()
                         if (flg_NNend) then
                            ! u-v is not paired
                            if (comp_wz .and. (.not. comp_uv)) then
-                              print *, comp_wz
-                              print *, comp_uv
+                              print *, x
+                              print *, y
                               ! AU on AU/CG/GU
                               if ((x == SEQT%A .and. y == SEQT%U) .or. (x == SEQT%U .and. y == SEQT%A)) then
                                  if ((w == SEQT%A .and. z == SEQT%U) .or. (w == SEQT%U .and. z == SEQT%A)) then
