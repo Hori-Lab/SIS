@@ -58,7 +58,7 @@ program sis
    !! Open restart file if given
    restarted = .False.
 
-   if (nargs == 2) then
+   if (nargs >= 2) then
       call get_command_argument(2, cfile_rst)
 
       open(hdl_in_rst, file=cfile_rst, status='old', action='read', iostat=istat, form='unformatted', access='stream')
