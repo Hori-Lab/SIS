@@ -21,9 +21,9 @@ if args.seq is not None:
     seq = args.seq
     n_nt = len(seq)
 
-elif args.seqfile is not None:
+elif args.fasta is not None:
     seq = ''
-    for l in args.seqfile:
+    for l in args.fasta:
         if l[0] == '>' or l[0] == '#' or l[0] == ';':
             continue
         seq += l.strip()
