@@ -1,13 +1,14 @@
 subroutine list_local()
 
    use const
-   use var_top, only : nmp_chain, imp_chain, nchains
+   use const_idx, only : MOLT
+   use var_top, only : nmp_chain, imp_chain, nchains, moltypes
    use var_potential, only : nbond, bond_mp, nangl, angl_mp, ndih, dih_mp, flg_dih_cos, flg_dih_exp
 
    implicit none
 
    integer :: ichain
-   integer :: n, i, imp
+   integer :: n, i, imp, imp_ini, imp_end
    integer :: ibond, iangl, idih
 
    print '(a)', 'Making lists of local interactions.'
@@ -53,6 +54,55 @@ subroutine list_local()
             endif
 
          enddo
+
+         ! Circular
+         if (moltypes(ichain) == MOLT%CIRCRNA) then
+
+            if (n == 1) then
+               ibond = ibond + 1
+               iangl = iangl + 2
+               idih = idih + 3
+
+            else
+               imp_ini = imp_chain(1, ichain)
+               imp_end = imp_chain(nmp_chain(ichain), ichain)
+
+               ibond = ibond + 1
+               bond_mp(1, ibond) = imp_end
+               bond_mp(2, ibond) = imp_ini
+
+               iangl = iangl + 1
+               angl_mp(1, iangl) = imp_end - 1
+               angl_mp(2, iangl) = imp_end
+               angl_mp(3, iangl) = imp_ini
+
+               iangl = iangl + 1
+               angl_mp(1, iangl) = imp_end
+               angl_mp(2, iangl) = imp_ini
+               angl_mp(3, iangl) = imp_ini + 1
+
+               if (flg_dih_cos .or. flg_dih_exp) then
+                  idih = idih + 1
+                  dih_mp(1, idih) = imp_end - 2
+                  dih_mp(2, idih) = imp_end - 1
+                  dih_mp(3, idih) = imp_end
+                  dih_mp(4, idih) = imp_ini
+
+                  idih = idih + 1
+                  dih_mp(1, idih) = imp_end - 1
+                  dih_mp(2, idih) = imp_end
+                  dih_mp(3, idih) = imp_ini
+                  dih_mp(4, idih) = imp_ini + 1
+
+                  idih = idih + 1
+                  dih_mp(1, idih) = imp_end
+                  dih_mp(2, idih) = imp_ini
+                  dih_mp(3, idih) = imp_ini + 1
+                  dih_mp(4, idih) = imp_ini + 2
+               endif
+            endif
+         endif
+
       enddo
 
       if (n == 1) then

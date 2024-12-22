@@ -39,7 +39,7 @@ subroutine init_sequence()
    print *
    do i = 1, nchains
       print '(a, i0)', 'Chain ', i
-      print '(a, a)',  'type: ', molt2char(moltypes(i))
+      print '(a, a)',  'Molecule: ', molt2char(moltypes(i))
       print '(a, i0)', 'Nnt: ', nmp_chain(i)
       k = 0
       do j = 1, nmp_chain(i)
@@ -53,6 +53,7 @@ subroutine init_sequence()
       if (k /= 0) then
          write(6, *) ''
       endif
+      write(6, *) ''
    enddo
    print '(a)', '################################'
    print *
