@@ -6,7 +6,7 @@ subroutine read_input(cfilepath)
    use const, only : PREC, L_INT, CHAR_FILE_PATH, MAX_REPLICA, MAX_REP_PER_DIM, MAX_REP_DIM
    use const_phys, only : BOLTZ_KCAL_MOL, JOUL2KCAL_MOL, &
                           INVALID_JUDGE, INVALID_VALUE, INVALID_INT_JUDGE, INVALID_INT_VALUE
-   use const_idx, only : JOBT, INTGRT, REPT, POTT, TOMLFSTAT
+   use const_idx, only : JOBT, INTGRT, REPT, POTT, TOMLFSTAT, MOLT, molt2char, char2molt
    use pbc, only : flg_pbc, pbc_box_input, flg_pbc_ignore_rst, &
                    flg_pbc_resize, pbc_resize_change, pbc_resize_step, &
                    flg_pbc_resize_target, pbc_resize_target
@@ -30,8 +30,8 @@ subroutine read_input(cfilepath)
                              flg_bias_ss, bias_ss_force, &
                              flg_bias_rg, bias_rg_pott, bias_rg_k, bias_rg_0_inp, &
                              flg_timed_bias_rg, flg_restraint
-   use var_top, only : nrepeat, nchains, inp_no_charge, dummy_has_charge,&
-                       flg_freeze, frz_ranges
+   use var_top, only : nchains, inp_no_charge, dummy_has_charge,&
+                       flg_freeze, frz_ranges, moltypes
    use var_replica, only : nrep, nstep_rep_exchange, nstep_rep_save, flg_exchange, &
                            replica_values, flg_replica, flg_repvar
    use var_parallel
@@ -248,6 +248,34 @@ subroutine read_input(cfilepath)
          call sis_abort()
       endif
 
+      !################# [Molecules] #################
+      call get_value(table, "Molecules", group, requested=.False.)
+
+      nchains = 0
+      if (associated(group)) then
+         call get_value(group, "n_chain", nchains, stat=istat, origin=origin)
+         if (istat /= 0) then
+            print '(a)', context%report('[Molecules] n_chain value is invalid.', origin, "Abort.")
+            call sis_abort()
+         endif
+
+         allocate(moltypes(nchains))
+         moltypes(:) = MOLT%RNA
+
+         do i = 1, nchains
+            write(cquery, '(i0)') i
+            call get_value(group, cquery, cline, stat=istat, origin=origin)
+            moltypes(i) = char2molt(cline)
+
+            if (istat == 0) then
+               if (moltypes(i) <= MOLT%UNDEF .or. moltypes(i) > MOLT%MAX) then
+                  print '(a,i4,a)', 'Error: Invalid value for ', i, ' in [Molecules].'
+                  call sis_abort()
+               endif
+            endif
+         enddo
+      endif
+
       !################# [Condition] #################
       call get_value(table, "Condition", group, requested=.False.)
       if (.not. associated(group)) then
@@ -308,17 +336,6 @@ subroutine read_input(cfilepath)
             print '(a)', context%report("Error: invalid tempK_ref in [Condition]", origin, "expected positive real value.")
             call sis_abort()
          endif
-      endif
-
-      !################# Repeat sequence #################
-      if (.not. allocated(cfile_fasta_in)) then
-         call get_value(table, "Repeat", group)
-         if (associated(group)) then
-            call get_value(group, "n_repeat", nrepeat)
-            call get_value(group, "n_chain", nchains)
-         endif
-      else
-         nrepeat = 0
       endif
 
       !################# MD #################
@@ -1298,6 +1315,12 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(flg_out_bpe, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_out_bpall, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
 
+   call MPI_BCAST(nchains, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   if (nchains > 0) then
+      if (myrank /= 0) allocate(moltypes(nchains)) 
+      call MPI_BCAST(moltypes, nchains, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
+   endif
+
    call MPI_BCAST(flg_replica, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(flg_repvar, REPT%MAX, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(nrep, REPT%MAX, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
@@ -1312,9 +1335,6 @@ subroutine read_input(cfilepath)
    call MPI_BCAST(tempK, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(temp_independent, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(tempK_ref, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
-
-   call MPI_BCAST(nrepeat, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
-   call MPI_BCAST(nchains, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
 
    call MPI_BCAST(integrator, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, istat)
    call MPI_BCAST(dt, 1, PREC_MPI, 0, MPI_COMM_WORLD, istat)
@@ -1473,6 +1493,14 @@ subroutine read_input(cfilepath)
    print '(a,L)', '# Files.Out, bpe: ', flg_out_bpe
    print '(a)', '#'
 
+   if (allocated(moltypes)) then
+      print '(a,i0)', '# Molecules, n_chain: ', nchains
+      do i = 1, nchains
+         print '(a,i6,1x,a,a)', '# Molecules, ', i, ': ', molt2char(moltypes(i))
+      enddo
+      print '(a)', '#'
+   endif
+
    print '(a,g15.8)', '# Condition, tempK: ', tempK
    print '(a,i16)', '# Condition, rng_seed: ', rng_seed
    print '(a,i16)', '# Condition, temp_independent: ', temp_independent
@@ -1480,12 +1508,6 @@ subroutine read_input(cfilepath)
       print '(a,g15.8)', '# Condition, tempK_ref: ', tempK_ref
    endif
    print '(a)', '#'
-
-   if (nrepeat > 0) then
-      print '(a,i10)', '# Repeat n_repeat: ', nrepeat
-      print '(a,i10)', '# Repeat n_chains: ', nchains
-      print '(a)', '#'
-   endif
 
    if (job == JOBT%MD) then
       if (integrator == INTGRT%LD_GJF2GJ) then

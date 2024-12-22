@@ -13,7 +13,7 @@ type = "MD"
         # Force-field file. Required.
 
     fasta = "./beta-globin.fasta"
-        # FASTA sequence file. Required unless [Repeat] section is specified.
+        # FASTA sequence file. Required.
 
     pdb_ini = "initial.pdb"
     xyz_ini = "initial.xyz"
@@ -53,6 +53,15 @@ type = "MD"
         # "bp": bp energy trajectory in binary format.
         # "bpe": bp energy trajecotry in ASCII format.
         # "twz": information of tweezers (force values for Force_Ramp)
+
+[Molecules]
+    # (optional)
+    # This [Molecules] block is required unless the system contains only linear RNA chains.
+    # If this block is omitted, the number of chains is set equal to the number of chains 
+    # in the FASTA file and all chains are assumed to be linear RNA.
+n_chain = 2
+1 = 'linearRNA'  # default
+2 = 'circRNA'
 
 [Replica]
 nrep_temp = 8
@@ -130,10 +139,6 @@ temp_independent = 0
     # 0: Use the original (temperature-dependent) potential. (default)
     # 1: Use temperature-independent potential. temp_ref is required.
 tempK_ref = 328.15
-
-[Repeat]
-n_repeat = 47
-n_chain = 64
 
 
 [MD]

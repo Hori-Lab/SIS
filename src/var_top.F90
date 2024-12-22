@@ -6,8 +6,6 @@ module var_top
    implicit none
   
    ! ----------------------------------------------------------------
-   integer :: nrepeat
-
    integer :: nunit
    integer :: nmp
    integer :: nchains
@@ -16,6 +14,7 @@ module var_top
    integer, allocatable :: ichain_mp(:)      ! ichain of imp
    integer, allocatable :: lmp_mp(:)        ! local imp (in each chain) of imp
 
+   integer, allocatable :: moltypes(:)   ! chain ID --> MOLT%XXX
    integer, allocatable :: seq(:,:)
    real(PREC), allocatable :: mass(:)
 

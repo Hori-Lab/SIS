@@ -20,6 +20,14 @@ module const_idx
    endtype energy_types
    type(energy_types), parameter :: ENE = energy_types(0,1,2,3,4,5,6,7,8,9,10,10)
 
+   type mol_types
+      integer :: UNDEF    ! 0
+      integer :: RNA      ! 1
+      integer :: CIRCRNA  ! 2
+      integer :: MAX      ! 2
+   endtype mol_types
+   type(mol_types), parameter :: MOLT = mol_types(0,1,2,2)
+
    type seq_types
       integer :: UNDEF  ! -1
       integer :: A   ! 0
@@ -139,6 +147,39 @@ module const_idx
    type(tomlfstatus_types), parameter :: TOMLFSTAT = tomlfstatus_types(0,-1,-2,-3,-4,-5)
 
 contains
+   function molt2char(i) result(c)
+      integer, intent(in) :: i
+      character(:), allocatable :: c
+
+      select case (i)
+      case (MOLT%UNDEF)
+         c = '?'
+      case (MOLT%RNA)
+         c = 'linearRNA'
+      case (MOLT%CIRCRNA)
+         c = 'circRNA'
+      case default
+         c = '?'
+      endselect
+
+   endfunction molt2char
+
+   function char2molt(c) result (i)
+      character(:), allocatable, intent(in) :: c
+      integer :: i
+
+      if (c == 'linearRNA') then
+         i = MOLT%RNA
+
+      else if (c == 'circRNA') then
+         i = MOLT%CIRCRNA
+
+      else
+         i = MOLT%UNDEF
+      endif
+
+   endfunction char2molt
+
    function seqt2char(i) result(c)
       integer, intent(in) :: i
       character(1) :: c
