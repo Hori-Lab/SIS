@@ -203,6 +203,11 @@ subroutine init_bp()
       endif
 
       do jmp = imp+1, nmp
+
+         if (flg_in_ct .or. flg_in_bpseq .or. flg_in_bpl) then
+            if (bp_map(imp, jmp) == 0) cycle
+         endif
+
          j = lmp_mp(jmp)
          jchain = ichain_mp(jmp)
 
