@@ -1,7 +1,8 @@
 subroutine list_bp()
 
    use const, only : PREC
-   use var_top, only : nmp
+   use const_idx, only : MOLT
+   use var_top, only : nmp, lmp_mp, moltypes, ichain_mp, nmp_chain
    use var_state, only : bp_status, bp_status_MC, ene_bp, for_bp, nt_bp_excess
    use var_potential, only : bp_model, nbp, bp_mp, bp_min_loop, bp_coef, &
                              bp3_map, bp3_dH, bp3_dS, bp_map
@@ -10,12 +11,14 @@ subroutine list_bp()
    implicit none
   
    integer :: n, imp, jmp
+   integer :: ichain, jchain
+   logical :: i_circ, j_circ
    integer :: ibp
 
    n = count(bp3_map /= 0)
 
    allocate(nbp(nrep_proc))
-   allocate(bp_mp(3, n, nrep_proc))
+   allocate(bp_mp(7, n, nrep_proc))
    allocate(bp_status(n, nrep_proc))
    allocate(ene_bp(n, nrep_proc))
    allocate(for_bp(3, 6, n))
@@ -45,7 +48,41 @@ subroutine list_bp()
 
          bp_mp(1, ibp, 1:nrep_proc) = imp
          bp_mp(2, ibp, 1:nrep_proc) = jmp
-         bp_mp(3, ibp, 1:nrep_proc) = bp_map(imp, jmp)
+
+         ichain = ichain_mp(imp)
+         jchain = ichain_mp(jmp)
+         i_circ = .False.
+         j_circ = .False.
+         if (moltypes(ichain) == MOLT%CIRCRNA) i_circ = .True.
+         if (moltypes(jchain) == MOLT%CIRCRNA) j_circ = .True.
+
+         ! If circular and imp is the first nucleotide,
+         ! imp-1 should be the last nucleotide of the chain.
+         if (i_circ .and. lmp_mp(imp) == 1) then
+            bp_mp(3, ibp, 1:nrep_proc) = imp + nmp_chain(ichain) - 1
+         else
+            bp_mp(3, ibp, 1:nrep_proc) = imp - 1
+         endif
+         if (j_circ .and. lmp_mp(jmp) == 1) then
+            bp_mp(4, ibp, 1:nrep_proc) = jmp + nmp_chain(jchain) - 1
+         else
+            bp_mp(4, ibp, 1:nrep_proc) = jmp - 1
+         endif
+
+         ! If circular and imp is the last nucleotide of the chain,
+         ! imp+1 should be the first nucleotide.
+         if (i_circ .and. lmp_mp(imp) == nmp_chain(ichain)) then
+            bp_mp(5, ibp, 1:nrep_proc) = imp - nmp_chain(ichain) + 1
+         else
+            bp_mp(5, ibp, 1:nrep_proc) = imp + 1
+         endif
+         if (j_circ .and. lmp_mp(jmp) == nmp_chain(jchain)) then
+            bp_mp(6, ibp, 1:nrep_proc) = jmp - nmp_chain(jchain) + 1
+         else
+            bp_mp(6, ibp, 1:nrep_proc) = jmp + 1
+         endif
+
+         bp_mp(7, ibp, 1:nrep_proc) = bp_map(imp, jmp)
 
          if (bp_model == 5) then
             bp_coef(1, ibp, 1:nrep_proc) = bp3_dH(bp3_map(imp, jmp))  ! dH

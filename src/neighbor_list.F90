@@ -1,9 +1,9 @@
 subroutine neighbor_list(irep)
 
    use const, only : PREC
-   use const_idx, only : SEQT
+   use const_idx, only : SEQT, MOLT
    use pbc, only : flg_pbc, pbc_vec_d, pbc_wrap
-   use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge, seq
+   use var_top, only : nmp_chain, imp_chain, nchains, nmp, has_charge, seq, moltypes
    use var_state, only : xyz, bp_status, bp_status_MC, nstep_bp_MC, &
                          ene_bp, for_bp, nt_bp_excess, nl_margin, lambdaD
    use var_potential, only : wca_sigma, nwca, nwca_max, wca_mp, &
@@ -45,7 +45,7 @@ subroutine neighbor_list(irep)
    else
       allocate(nbp(nrep_proc))
       nbp_max = nmp / 2
-      allocate(bp_mp(3, nbp_max, nrep_proc))
+      allocate(bp_mp(7, nbp_max, nrep_proc))
       allocate(bp_coef(2, nbp_max, nrep_proc))
       allocate(bp_status(nbp_max, nrep_proc))
       allocate(ene_bp(nbp_max, nrep_proc))
@@ -110,19 +110,32 @@ subroutine neighbor_list(irep)
             else
                j_start = 1
             endif
-   
+
             do j = j_start, nmp_chain(jchain)
-               
+
                jmp = imp_chain(j, jchain)
                jseq = seq(j, jchain)
-   
+
                v(:) = pbc_vec_d(xyz(:,imp,irep), xyz(:,jmp,irep))
                d2 = dot_product(v,v)
 
                ! WCA
                if (iseq /= SEQT%D .and. jseq /= SEQT%D) then
                   if (d2 <= wca_nl_cut2) then
-                     if (ichain /= jchain .or. i+2 < j) then
+
+                     flg_add = .True.
+                     if (ichain == jchain) then
+                        if (i + 2 >= j) then
+                           flg_add = .False.
+
+                        else if (moltypes(ichain) == MOLT%CIRCRNA) then
+                           if (j + 2 >= i + nmp_chain(ichain)) then
+                              flg_add = .False.
+                           endif
+                        endif
+                     endif
+
+                     if (flg_add) then
                         iwca = iwca + 1
                         if (iwca > nwca_max) then
                            call reallocate_wca_mp()
@@ -143,6 +156,14 @@ subroutine neighbor_list(irep)
                      if (ichain == jchain) then
                         if (j == i + 1 .and. ele_exclude_covalent_bond_pairs) flg_add = .False.
                         if (j == i + 2 .and. ele_exclude_covalent_angle_pairs) flg_add = .False.
+                        if (moltypes(ichain) == MOLT%CIRCRNA) then
+                           if (i == 1) then
+                              if (j == nmp_chain(ichain) .and. ele_exclude_covalent_bond_pairs) flg_add = .False.
+                              if (j == nmp_chain(ichain) - 1 .and. ele_exclude_covalent_angle_pairs) flg_add = .False.
+                            else if (i == 2) then
+                              if (j == nmp_chain(ichain) .and. ele_exclude_covalent_angle_pairs) flg_add = .False.
+                           endif
+                        endif
                      endif
 
                      if (flg_add) then
@@ -166,17 +187,44 @@ subroutine neighbor_list(irep)
                      !write(*,*) 'Error: ibp > nbp_max. ibp =', ibp, 'nbp_max = ', nbp_max
                      call reallocate_bp_mp()
                   endif
+
                   bp_mp(1, ibp, irep) = imp
                   bp_mp(2, ibp, irep) = jmp
-                  bp_mp(3, ibp, irep) = bp_map(imp, jmp)
+
+                  if (i == 1) then
+                     bp_mp(3, ibp, irep) = imp + nmp_chain(ichain) - 1
+                  else
+                     bp_mp(3, ibp, irep) = imp - 1
+                  endif
+
+                  if (j == 1) then
+                     bp_mp(4, ibp, irep) = jmp + nmp_chain(jchain) - 1
+                  else
+                     bp_mp(4, ibp, irep) = jmp - 1
+                  endif
+
+                  if (i == nmp_chain(ichain)) then
+                     bp_mp(5, ibp, irep) = imp + 1 - nmp_chain(ichain)
+                  else
+                     bp_mp(5, ibp, irep) = imp + 1
+                  endif
+
+                  if (j == nmp_chain(ichain)) then
+                     bp_mp(6, ibp, irep) = jmp + 1 - nmp_chain(jchain)
+                  else
+                     bp_mp(6, ibp, irep) = jmp + 1
+                  endif
+
+                  bp_mp(7, ibp, irep) = bp_map(imp, jmp)
+
                   bp_coef(1, ibp, irep) = bp3_dH(bp3_map(imp, jmp))  ! dH
                   bp_coef(2, ibp, irep) = bp3_dS(bp3_map(imp, jmp))  ! dS (0.001 already multiplied so that the unit is kcal/mol/K)
 
                endif
-   
+
             enddo
          enddo
-   
+
       enddo
    enddo
 
@@ -234,11 +282,11 @@ contains
    subroutine reallocate_bp_mp()
       
       integer :: old_max
-      integer :: tmp(3, nbp_max, nrep_proc)
+      integer :: tmp(7, nbp_max, nrep_proc)
       real(PREC) :: tmp2(2, nbp_max, nrep_proc)
 
       old_max = nbp_max   
-      tmp(1:3, 1:old_max, 1:nrep_proc) = bp_mp(1:3, 1:old_max, 1:nrep_proc)
+      tmp(1:7, 1:old_max, 1:nrep_proc) = bp_mp(1:7, 1:old_max, 1:nrep_proc)
       tmp2(1:2, 1:old_max, 1:nrep_proc) = bp_coef(1:2, 1:old_max, 1:nrep_proc)
 
       deallocate(bp_mp)
@@ -249,14 +297,14 @@ contains
 
       nbp_max = int(nbp_max * 1.2)
 
-      allocate(bp_mp(3, nbp_max, nrep_proc))
+      allocate(bp_mp(7, nbp_max, nrep_proc))
       allocate(bp_coef(2, nbp_max, nrep_proc))
       allocate(bp_status(nbp_max, nrep_proc))
       allocate(ene_bp(nbp_max, nrep_proc))
       allocate(for_bp(3, 6, nbp_max))
 
       bp_mp(:, :, :) = 0
-      bp_mp(1:3, 1:old_max, 1:nrep_proc) = tmp(1:3, 1:old_max, 1:nrep_proc)
+      bp_mp(1:7, 1:old_max, 1:nrep_proc) = tmp(1:7, 1:old_max, 1:nrep_proc)
 
       bp_coef(:, :, :) = 0.0_PREC
       bp_coef(1:2, 1:old_max, 1:nrep_proc) = tmp2(1:2, 1:old_max, 1:nrep_proc)

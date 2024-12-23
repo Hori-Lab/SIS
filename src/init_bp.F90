@@ -2,9 +2,9 @@ subroutine init_bp()
 
    use, intrinsic :: iso_fortran_env, Only : output_unit
    use const, only : PREC
-   use const_idx, only : SEQT, BPT, seqt2nnt, NNENDT, is_complement
+   use const_idx, only : SEQT, BPT, seqt2nnt, NNENDT, is_complement, MOLT
    use var_io, only : flg_in_ct, flg_in_bpseq, flg_in_bpl
-   use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain
+   use var_top, only : nmp, seq, lmp_mp, ichain_mp, nmp_chain, moltypes
    use var_potential, only : bp_model, bp_map, bp_min_loop, & !bp_map_dG, bp_map_0, &
                              bp_paras, bp_cutoff_energy, bp_cutoff_dist, bp3_map, &
                              NN_dH, NN_dS, dH0, dS0, bp3_dH, bp3_dS, &
@@ -17,9 +17,12 @@ subroutine init_bp()
    integer :: imp, jmp, bptype
    integer :: i, j, h, ichain, jchain
    integer :: w, x, u, z, y, v
+   integer :: i_pre, i_nxt, j_pre, j_nxt
    real(PREC) :: cutoff
    real(PREC) :: dH, dS
    logical :: comp_wz, comp_uv
+   logical :: i_circ, j_circ
+   logical :: pair_ipre_jnxt, pair_inxt_jpre
    integer :: bp3_hash(1:4**6)   ! 4**6 = 4096
 
    allocate(bp_map(nmp, nmp))
@@ -176,45 +179,89 @@ subroutine init_bp()
 
       call read_ss()   ! set bp_map according to ct/bpseq files
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! All pairwise
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   else
+   endif
 
-      do imp = 1, nmp-1
-         i = lmp_mp(imp)
-         ichain = ichain_mp(imp)
+   do imp = 1, nmp-1
+      i = lmp_mp(imp)
+      ichain = ichain_mp(imp)
+
+      i_pre = i - 1
+      i_nxt = i + 1
+
+      if (moltypes(ichain) == MOLT%CIRCRNA) then
+         i_circ = .True.
+
+         if (i == 1) i_pre = nmp_chain(ichain)
+         if (i == nmp_chain(ichain)) i_nxt = 1
+
+      else ! linear
+         i_circ = .False.
 
          ! Either 5' or 3' end
-         if (i == 1 .or. i == nmp_chain(ichain)) cycle
+         if (i == 1) cycle
+         if (i == nmp_chain(ichain)) cycle
+      endif
 
-         do jmp = imp+1, nmp
-            j = lmp_mp(jmp)
-            jchain = ichain_mp(jmp)
+      do jmp = imp+1, nmp
+         j = lmp_mp(jmp)
+         jchain = ichain_mp(jmp)
+
+         j_pre = j - 1
+         j_nxt = j + 1
+
+         if (moltypes(jchain) == MOLT%CIRCRNA) then ! circular
+            j_circ = .True.
+
+            if (j == 1) j_pre = nmp_chain(jchain)
+            if (j == nmp_chain(jchain)) j_nxt = 1
+
+         else ! linear
+            j_circ = .False.
 
             ! Either 5' or 3' end
-            if (j == 1 .or. j == nmp_chain(jchain)) cycle
+            if (j == 1) cycle
+            if (j == nmp_chain(jchain)) cycle
+         endif
 
-            ! Minimum loop length
-            if (ichain == jchain .and. i + bp_min_loop >= j) cycle
+         pair_ipre_jnxt = is_complement(seq(i_pre, ichain), seq(j_nxt, jchain))
+         pair_inxt_jpre = is_complement(seq(i_nxt, ichain), seq(j_pre, jchain))
 
-            if (bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
-               ! Isolated base pair not allowed
-               if (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)) .and. &
-                   .not. is_complement(seq(i+1, ichain), seq(j-1, jchain)) ) then
-                  cycle
-               endif
+         ! Either 5' or 3' end
+         if ((.not. i_circ) .and. i_pre == 1) pair_ipre_jnxt = .False.
+         if ((.not. j_circ) .and. j_nxt == nmp_chain(jchain)) pair_ipre_jnxt = .False.
+         if ((.not. i_circ) .and. i_nxt == nmp_chain(ichain)) pair_inxt_jpre = .False.
+         if ((.not. j_circ) .and. j_pre == 1) pair_inxt_jpre = .False.
 
-               if ((i-1 == 1 .or. j+1 == nmp_chain(jchain)) .and. &
-                  (.not. is_complement(seq(i+1, ichain), seq(j-1, jchain)))) then
-                  cycle
-               endif
-               if ((j-1 == 1 .or. i+1 == nmp_chain(ichain)) .and. &
-                  (.not. is_complement(seq(i-1, ichain), seq(j+1, jchain)))) then
-                  cycle
-               endif
+         ! Minimum loop length
+         if (ichain == jchain) then
 
+            ! i and j
+            ! linear or circular
+            if (i + bp_min_loop >= j) cycle
+
+            ! i+1 and j-1
+            if (i + 1 + bp_min_loop >= j - 1) pair_inxt_jpre = .False.
+
+            if (i_circ) then ! circular
+               ! i and j
+               if (j + bp_min_loop >= i + nmp_chain(ichain)) cycle
+
+               ! i-1 and j+1
+               if (j + 1 + bp_min_loop >= i - 1 + nmp_chain(ichain)) pair_ipre_jnxt = .False.
             endif
+         endif
+
+         if (bp_model == 3 .or. bp_model == 4 .or. bp_model == 5) then
+
+            ! Isolated base pair not allowed
+            if ((.not. pair_ipre_jnxt) .and. (.not. pair_inxt_jpre)) cycle
+
+         endif
+
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         ! All pairwise
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         if (.not. (flg_in_ct .or. flg_in_bpseq .or. flg_in_bpl)) then
 
             if (seq(i,ichain) == SEQT%G .and. seq(j, jchain) == SEQT%C) then
                bp_map(imp, jmp) = BPT%GC
@@ -237,58 +284,32 @@ subroutine init_bp()
                bp_map(imp, jmp) = BPT%UG
                bp_map(jmp, imp) = BPT%UG
             endif
+         endif
 
-         enddo
-      enddo
-   endif
-
-   if (bp_model == 5) then
-
-      do imp = 1, nmp
-         do jmp = imp+1, nmp
-
-            if (bp_map(imp, jmp) == 0) cycle
-
-            i = lmp_mp(imp)
-            ichain = ichain_mp(imp)
-            j = lmp_mp(jmp)
-            jchain = ichain_mp(jmp)
-
-            !if (ichain == jchain .and. (j+1) + bp_min_loop >= (i-1)) then
-            !   ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
-            !   bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
-            !                                             SEQT%U, seq(j, jchain), seq(j-1, jchain)))
-
-            if (i-1 == 1 .or. j+1 == nmp_chain(jchain)) then
+         if (bp_model == 5) then
+            if (.not. pair_ipre_jnxt) then
                ! (i-1) and (j+1) should be treated as unpaired (represented as U-U).
-               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i+1, ichain), &
-                                                         SEQT%U, seq(j, jchain), seq(j-1, jchain)))
+               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(SEQT%U, seq(i, ichain), seq(i_nxt, ichain), &
+                                                         SEQT%U, seq(j, jchain), seq(j_pre, jchain)))
 
-            else if (j-1 == 1 .or. i+1 == nmp_chain(ichain)) then
-               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
-                                                         seq(j+1, jchain), seq(j, jchain), SEQT%U))
-
-            else if (ichain == jchain .and. (i+1) + bp_min_loop >= (j-1)) then
+            else if (.not. pair_inxt_jpre) then
                ! (i+1) and (j-1) should be treated as unpaired (represented as U-U).
-               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), SEQT%U, &
-                                                         seq(j+1, jchain), seq(j, jchain), SEQT%U))
+               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i_pre, ichain), seq(i, ichain), SEQT%U, &
+                                                         seq(j_nxt, jchain), seq(j, jchain), SEQT%U))
 
             else
-               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i-1, ichain), seq(i, ichain), seq(i+1, ichain), &
-                                                         seq(j+1, jchain), seq(j, jchain), seq(j-1, jchain)))
-
+               bp3_map(imp, jmp) = bp3_hash(bp3_hash_key(seq(i_pre, ichain), seq(i, ichain), seq(i_nxt, ichain), &
+                                                         seq(j_nxt, jchain), seq(j, jchain), seq(j_pre, jchain)))
             endif
+         endif
 
-         enddo
+
       enddo
+   enddo
 
-   else
+   if (bp_model /= 5) then
       bp3_map(:,:) = bp_map(:,:)
-
    endif
-
-   !call set_bp_map()
-
 
    ! Calcuate BP cutoff
    ! If bp_cutoff_energy is not specified in ff, the default value is 0.001 (kcal/mol).

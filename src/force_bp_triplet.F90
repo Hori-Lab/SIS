@@ -67,7 +67,11 @@ subroutine force_bp_triplet(irep, forces)
 
       imp1 = bp_mp(1, ibp, irep)
       imp2 = bp_mp(2, ibp, irep)
-      bpp = bp_paras(bp_mp(3, ibp, irep))
+      imp3 = bp_mp(3, ibp, irep)
+      imp4 = bp_mp(4, ibp, irep)
+      imp5 = bp_mp(5, ibp, irep)
+      imp6 = bp_mp(6, ibp, irep)
+      bpp = bp_paras(bp_mp(7, ibp, irep))
 
       ! dG = dH - T * dS
       dG = bp_coef(1, ibp, irep) - tK * bp_coef(2, ibp, irep)
@@ -90,11 +94,6 @@ subroutine force_bp_triplet(irep, forces)
       else
          if (abs(d) > bpp%cutoff_ddist) cycle
       endif
-
-      imp3 = imp1 - 1
-      imp4 = imp2 - 1
-      imp5 = imp1 + 1
-      imp6 = imp2 + 1
 
       !===== Distance =====
       !d = a12 - bpp%bond_r

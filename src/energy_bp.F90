@@ -7,11 +7,11 @@ subroutine energy_bp(irep, Ebp)
    use var_potential, only : bp_paras, nbp, bp_mp, basepair_parameters, bp_cutoff_energy
 
    implicit none
-  
+
    integer, intent(in) :: irep
    real(PREC), intent(inout) :: Ebp
 
-   integer :: ibp, imp, jmp
+   integer :: ibp, imp1, imp2, imp3, imp4, imp5, imp6
    type(basepair_parameters) :: bpp
    real(PREC) :: u
    real(PREC) :: d, theta, phi
@@ -21,39 +21,43 @@ subroutine energy_bp(irep, Ebp)
       ene_bp(1:nbp(irep), irep) = 0.0e0_PREC
       bp_status(1:nbp(irep), irep) = .False.
 
-      !$omp parallel do private(imp, jmp, d, u, theta, phi, bpp)
+      !$omp parallel do private(imp1, imp2, imp3, imp4, imp5, imp6, d, u, theta, phi, bpp)
       do ibp = 1, nbp(irep)
 
          if (nstep_bp_MC > 0) then
             if (.not. bp_status_MC(ibp, irep)) cycle
          endif
 
-         imp = bp_mp(1, ibp, irep)
-         jmp = bp_mp(2, ibp, irep)
-         bpp = bp_paras(bp_mp(3, ibp, irep))
-      
-         d = norm2(pbc_vec_d(xyz(:,imp,irep), xyz(:, jmp,irep))) - bpp%bond_r
+         imp1 = bp_mp(1, ibp, irep)
+         imp2 = bp_mp(2, ibp, irep)
+         imp3 = bp_mp(3, ibp, irep)
+         imp4 = bp_mp(4, ibp, irep)
+         imp5 = bp_mp(5, ibp, irep)
+         imp6 = bp_mp(6, ibp, irep)
+         bpp = bp_paras(bp_mp(7, ibp, irep))
+
+         d = norm2(pbc_vec_d(xyz(:, imp1, irep), xyz(:, imp2, irep))) - bpp%bond_r
 
          if (abs(d) > bpp%cutoff_ddist) cycle
 
          u = bpp%bond_k * d**2
 
-         theta = mp_angle(imp, jmp, jmp-1)
+         theta = mp_angle(imp1, imp2, imp4)
          u = u + bpp%angl_k1 * (theta - bpp%angl_theta1)**2
 
-         theta = mp_angle(imp-1, imp, jmp)
+         theta = mp_angle(imp3, imp1, imp2)
          u = u + bpp%angl_k2 * (theta - bpp%angl_theta2)**2
 
-         theta = mp_angle(imp, jmp, jmp+1)
+         theta = mp_angle(imp1, imp2, imp6)
          u = u + bpp%angl_k3 * (theta - bpp%angl_theta3)**2
 
-         theta = mp_angle(imp+1, imp, jmp)
+         theta = mp_angle(imp5, imp1, imp2)
          u = u + bpp%angl_k4 * (theta - bpp%angl_theta4)**2
 
-         phi = mp_dihedral(imp-1, imp, jmp, jmp-1)
+         phi = mp_dihedral(imp3, imp1, imp2, imp4)
          u = u + bpp%dihd_k1 * (1.0_PREC + cos(phi + bpp%dihd_phi1))
 
-         phi = mp_dihedral(imp+1, imp, jmp, jmp+1)
+         phi = mp_dihedral(imp5, imp1, imp2, imp6)
          u = u + bpp%dihd_k2 * (1.0_PREC + cos(phi + bpp%dihd_phi2))
 
          u = bpp%U0 * exp(-u)
