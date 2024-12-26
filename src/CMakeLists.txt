@@ -7,6 +7,13 @@ if (BP_HALT_IEEE_EXCEPTIONS)
     set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO   "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DBP_HALT_IEEE_EXCEPTIONS")
 endif (BP_HALT_IEEE_EXCEPTIONS)
 
+option(ALLOW_ARGUMENT_MISMATCH "Use -fallow-argument-mismatch option" OFF)
+if (ALLOW_ARGUMENT_MISMATCH)
+    set(CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -fallow-argument-mismatch")
+    set(CMAKE_Fortran_FLAGS_RELEASE   "${CMAKE_Fortran_FLAGS_RELEASE} -fallow-argument-mismatch")
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO   "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -fallow-argument-mismatch")
+endif (ALLOW_ARGUMENT_MISMATCH)
+
 add_executable(${SIS_EXE}
     const.F90 const_idx.F90 const_phys.F90
     rnd_boxmuller.F90
