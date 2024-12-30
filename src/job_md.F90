@@ -15,7 +15,7 @@ subroutine job_md()
                          opt_anneal, nanneal, anneal_tempK, anneal_step, &
                          istep, ianneal, istep_anneal_next, &
                          nstep_bp_MC, flg_bp_MC, bp_status_MC, bp_status, rg
-   use var_io, only : flg_progress, step_progress, hdl_dcd, cfile_dcd, hdl_rep
+   use var_io, only : flg_progress, step_progress, hdl_dcd, cfile_dcd, hdl_rep, cfile_prefix
    use var_potential, only : stage_sigma, wca_sigma, bp_paras, bp_cutoff_energy, bp_cutoff_dist, &
                              ele_cutoff, flg_stage, flg_ele, &
                              flg_twz, ntwz_DCF, twz_DCF_forces, twz_DCF_direction, &
@@ -46,8 +46,9 @@ subroutine job_md()
    real(PREC) :: d2, d2max, d2max_2nd
    real(PREC), allocatable :: forces(:, :)
    real(PREC) :: replica_energies(2, nrep_all)
-   logical :: flg_stop
+   logical :: flg_stop, flg_stop_file
    logical :: flg_step_save, flg_step_rep_save, flg_step_rep_exchange
+   character(len=:), allocatable :: cfile_stop
 #ifdef PAR_MPI
    integer :: istat
    real(PREC) :: replica_energies_l(2, nrep_all)
@@ -74,6 +75,8 @@ subroutine job_md()
       real(PREC), intent(out), optional :: out_Zp
    endsubroutine set_ele
    endinterface
+
+   cfile_stop = trim(cfile_prefix(:index(cfile_prefix, '/', .True.))) // 'STOP_SIS'
 
    allocate(mass(nmp))
    allocate(accels(3, nmp, nrep_proc))
@@ -349,6 +352,7 @@ subroutine job_md()
    endif
 
    flg_stop = .False.
+   flg_stop_file = .False.
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !!! Main loop for time integration
@@ -635,17 +639,23 @@ subroutine job_md()
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !!! Check wall time
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (stop_wall_time_sec > 0) then
-         if (mod(istep, nstep_check_stop) == 0) then
-            if (myrank == 0) then
+      if (mod(istep, nstep_check_stop) == 0) then
+         if (myrank == 0) then
+            inquire(file=trim(cfile_stop), exist=flg_stop_file)
+            if (flg_stop_file) flg_stop = .True.
+
+            if (stop_wall_time_sec > 0) then
                if (wall_time_sec() > stop_wall_time_sec) then
                   flg_stop = .True.
                endif
             endif
-#ifdef PAR_MPI
-            call MPI_BCAST(flg_stop, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
-#endif
          endif
+#ifdef PAR_MPI
+         call MPI_BCAST(flg_stop, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+         if (flg_stop) then
+            call MPI_BCAST(flg_stop_file, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, istat)
+         endif
+#endif
       endif
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -660,7 +670,11 @@ subroutine job_md()
             call fdcd(irep)%close()
          enddo
 
-         print '(a,i13,a)', 'Wall-clock time limit reached at step ', istep, '. Stop the job.'
+         if (flg_stop_file) then
+            print '(a,i13,a)', 'STOP_SIS file was found at step ', istep, '. Stop the job.'
+         else
+            print '(a,i13,a)', 'Wall-clock time limit reached at step ', istep, '. Stop the job.'
+         endif
          flush(output_unit)
 
          exit

@@ -427,10 +427,8 @@ subroutine read_input(cfilepath)
             stop_wall_time_sec = int(rdummy * 3600.0_PREC, kind=INT64)
          endif
 
-         nstep_check_stop = 100
-         if (stop_wall_time_sec > 0) then
-            call get_value(group, "nstep_check_stop", nstep_check_stop, int(100, kind=INT64), stat=istat, origin=origin)
-         endif
+         !nstep_check_stop = 10000
+         call get_value(group, "nstep_check_stop", nstep_check_stop, int(10000, kind=INT64), stat=istat, origin=origin)
 
          !----------------- fix_com_origin -----------------
          call get_value(group, "fix_com_origin", fix_com_origin, 0, stat=istat, origin=origin)
@@ -1529,8 +1527,8 @@ subroutine read_input(cfilepath)
          print '(a,g15.8,a)', '# MD stop_wall_time_hour: -1 (wall time limit not set)'
       else
          print '(a,g15.8)', '# MD stop_wall_time_hour: ', real(stop_wall_time_sec, kind=PREC) / 3600.0_PREC
-         print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
       endif
+      print '(a,g15.8)', '# MD nstep_check_stop: ', nstep_check_stop
 
       print '(a,i5)', '# MD fix_com_origin: ', fix_com_origin
       print '(a)', '#'
