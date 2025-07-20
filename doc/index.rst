@@ -1,14 +1,21 @@
-Welcome to SIS's documentation.
+Welcome to UNISIS's documentation.
 ===============================
+
+Project Github: https://github.com/Hori-Lab/UNISIS
+
+Group website: https://hori-lab.github.io/
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :numbered:
 
+   install
+   theory
+   files
    replica
    pbc
-   tweezers
-   restraint
+   options
    references
 
 ..

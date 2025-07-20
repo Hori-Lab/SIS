@@ -9,8 +9,8 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'SIS'
-copyright = '2024, Naoto Hori'
+project = 'UNISIS'
+copyright = '2024-, Naoto Hori'
 author = 'Naoto Hori'
 version = 'Draft'
 release = 'Draft'
@@ -20,9 +20,26 @@ release = 'Draft'
 
 extensions = [
               'sphinx.ext.mathjax',
+              'sphinx.ext.extlinks',
               #'sphinx_fontawesome'
               #'nbsphinx', # for ipynb
 ]
+
+## MathJax configuration
+#mathjax_config = {
+#    'TeX': {
+#        'equationNumbers': {
+#            'autoNumber': 'AMS',
+#            'useLabelIds': True
+#        }
+#    }
+#}
+
+#mathjax_options = {
+#    'processHtmlClass': 'math',
+#    'processEnvironments': True,
+#    'processEscapes': True
+#}
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_sphinx.md', '.git']
@@ -39,7 +56,15 @@ source_suffix = {
 
 extensions += ['sphinx_rtd_theme',]
 html_theme = 'sphinx_rtd_theme'
-#html_static_path = ['_static']
+html_static_path = ['_static']
+
+html_css_files = [
+    'custom.css',
+]
+
+html_js_files = [
+    'custom.js',
+]
 
 # html_logo  # To show logo
 
@@ -62,10 +87,11 @@ html_theme_options = {
 }
 
 html_context = {
-    "display_github": False, # Integrate GitHub
+    "display_github": True, # Integrate GitHub
     "github_user": "hori-lab", # Username
-    "github_repo": "SIS", # Repo name
+    "github_repo": "sis", # Repo name
     "github_version": "master", # Version
+    #"conf_py_path": "/doc/", # Path in the checkout to the docs root
     "conf_py_path": "/doc/", # Path in the checkout to the docs root
 }
 
@@ -91,3 +117,30 @@ myst_enable_extensions = [
     #"tasklist",
 ]
 
+
+# -- Options for PDF output -----------------------------------------------
+# inside conf.py
+#latex_engine = 'xelatex'
+latex_elements = {
+    'papersize': 'a4paper',
+    'pointsize': '11pt',
+    'passoptionstopackages': r'''
+\PassOptionsToPackage{svgnames}{xcolor}
+    ''',
+#    'fontpkg': r'''
+#\setmainfont{DejaVu Serif}
+#\setsansfont{DejaVu Sans}
+#\setmonofont{DejaVu Sans Mono}
+#    ''',
+    'preamble': r'''
+\usepackage[titles]{tocloft}
+\cftsetpnumwidth {1.25cm}\cftsetrmarg{1.5cm}
+\setlength{\cftchapnumwidth}{0.75cm}
+\setlength{\cftsecindent}{\cftchapnumwidth}
+\setlength{\cftsecnumwidth}{1.25cm}
+    ''',
+    'sphinxsetup': 'TitleColor=DarkGoldenrod',
+    'fncychap': r'\usepackage[Bjornstrup]{fncychap}',
+    'printindex': r'\footnotesize\raggedright\printindex',
+}
+latex_show_urls = 'footnote'

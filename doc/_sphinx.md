@@ -1,3 +1,7 @@
+# Sphinx usage
+
+## Install
+
 ```
 $ conda install sphinx
 ```
@@ -25,9 +29,40 @@ $ conda install -c conda-forge sphinx-autobuild
 <https://myst-parser.readthedocs.io/en/latest/syntax/optional.html#linkify>
 
 
-# mamba command
+### One command for mamba
 
 ```
 $ mamba install sphinx myst-parser sphinx_rtd_theme sphinx-autobuild linkify-it-py
 ```
 
+# Build the document
+
+## HTML
+
+```
+$ make html
+```
+
+or 
+
+```
+$ sphinx-build -b html . ./_build/html
+```
+
+To update the HTML files automatically when source files are edited, enable autobuild by
+
+```
+sphinx-autobuild -b html . ./_build/html
+```
+
+## PDF via latex
+
+```
+$ make latexpdf
+```
+
+or 
+
+```
+$ sphinx-build -b latex . ./_build/latex
+```

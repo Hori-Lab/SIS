@@ -1,0 +1,88 @@
+/* Custom CSS for interactive toctree */
+
+/* Make toctree items more interactive */
+.toctree-wrapper {
+    margin: 1em 0;
+}
+
+.toctree-wrapper ul {
+    list-style: none;
+    padding-left: 1em;
+}
+
+.toctree-wrapper li {
+    margin: 0.5em 0;
+    cursor: pointer;
+}
+
+/* Add expand/collapse indicators */
+.toctree-wrapper li > ul {
+    display: none;
+    margin-left: 1em;
+}
+
+.toctree-wrapper li.expanded > ul {
+    display: block;
+}
+
+.toctree-wrapper li > a::before {
+    content: "▶";
+    margin-right: 0.5em;
+    transition: transform 0.2s;
+}
+
+.toctree-wrapper li.expanded > a::before {
+    content: "▼";
+    transform: rotate(90deg);
+}
+
+/* Hover effects */
+.toctree-wrapper li:hover > a {
+    color: #007acc;
+    text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .toctree-wrapper {
+        font-size: 0.9em;
+    }
+}
+
+/* Math equation styling */
+.math {
+    text-align: left;
+    position: relative;
+}
+
+/* Equation number positioning */
+.eqno {
+    float: right;
+    margin-left: 1em;
+    font-weight: bold;
+}
+
+/* Ensure equation numbers are properly aligned */
+div.math {
+    position: relative;
+}
+
+div.math .eqno {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 1em;
+}
+
+/* For sphinx_rtd_theme specific styling */
+.sphinx-rtd-theme .math .eqno {
+    float: right;
+    margin-left: 1em;
+    font-weight: bold;
+}
+
+/* Ensure proper spacing for equations with labels */
+.math:has(.eqno) {
+    margin-right: 3em;
+}
