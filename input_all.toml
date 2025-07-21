@@ -253,7 +253,7 @@ step = 1000000
 [PBC_box]
     # (optional)
     # If this section is given, the Periodic Boundary Condition (PBC) is enabled.
-size = [809.972, 809,972, 809.972]
+size = [809.972, 809.972, 809.972]
 #x = 809.972
 #y = 809.972
 #z = 809.972
