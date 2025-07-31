@@ -13,8 +13,8 @@ Group website: https://hori-lab.github.io/
    install
    theory
    files
-   replica
    pbc
+   replica
    options
    references
 

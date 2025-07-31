@@ -35,6 +35,10 @@ Potential functions and parameters
    C.G. Malmberg, and A.A. Maryott (1956) Dielectric constant of water from 0 to 100 C. *J Res Natl Inst Stan* 56: 1.
    `10.6028/jres.056.001 <https://doi.org/10.6028/jres.056.001>`_
 
+.. [Manning1969]
+    G.S. Manning (1969) Limiting Laws and Counterion Condensation in Polyelectrolyte Solutions I. Colligative Properties. *J Chem Phys* 51: 924–933
+   `10.1063/1.1672157 <https://doi.org/10.1063/1.1672157>`_
+
 Replica-exchange method
 
 .. [Sugita1999]

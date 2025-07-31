@@ -100,14 +100,14 @@ Because we treat the water implicitly, :math:`\varepsilon` is the dielectric con
 where :math:`T_c` is the temperature in degree Celsius [Malmberg1956]_.
 
 The Debye length :math:`\lambda_D` is calculated as :math:`\lambda_{D}^{-2}=\frac{8\pi I}{\varepsilon(T)k_{B}T}` where :math:`I` is the ionic strength and :math:`k_B` is the Boltzmann constant. 
-Finally, the magnitude of phosphate charge $Q_p$ is derived from the polyelectrolyte theory by Oosawa and Manning,
+Finally, the magnitude of phosphate charge :math:`Q_p` is derived from the polyelectrolyte theory by Oosawa and Manning [Manning1969]_,
 
 .. math::
    :label: eq_Qp
 
    Q_p=\frac{b\varepsilon(T)k_{B}T}{e^{2}}
 
-where :math:`b` is the length per unit charge. For RNA molecules, the optimized value of :math:`b` was determined to be 0.44 nm in previous studies to match known thermodynamics of small RNAs \citep{Denesyuk13JPCB,Nguyen22NatChem}.
+where :math:`b` is the length per unit charge. For RNA molecules, the optimized value of :math:`b` was determined to be 0.44 nm in previous studies to match known thermodynamics of small RNAs [Denesyuk2013]_ [Nguyen2022]_.
 
 Simulation methods
 ------------------
@@ -132,3 +132,8 @@ Simulation methods
 .. [Malmberg1956]
    C.G. Malmberg, and A.A. Maryott (1956) Dielectric constant of water from 0 to 100 C. *J Res Natl Inst Stan* 56: 1.
    `10.6028/jres.056.001 <https://doi.org/10.6028/jres.056.001>`_
+
+.. [Manning1969]
+    G.S. Manning (1969) Limiting Laws and Counterion Condensation in Polyelectrolyte Solutions I. Colligative Properties. *J Chem Phys* 51: 924–933
+   `10.1063/1.1672157 <https://doi.org/10.1063/1.1672157>`_
+  

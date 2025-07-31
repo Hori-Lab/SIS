@@ -1,4 +1,4 @@
-How to run replica exchange simulations.
+Replica exchange method.
 ========================================
 
 Input file

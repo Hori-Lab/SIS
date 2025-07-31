@@ -89,9 +89,8 @@ html_theme_options = {
 html_context = {
     "display_github": True, # Integrate GitHub
     "github_user": "hori-lab", # Username
-    "github_repo": "sis", # Repo name
+    "github_repo": "UNISIS", # Repo name
     "github_version": "master", # Version
-    #"conf_py_path": "/doc/", # Path in the checkout to the docs root
     "conf_py_path": "/doc/", # Path in the checkout to the docs root
 }
 
