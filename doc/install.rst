@@ -14,11 +14,17 @@ The build command should be something like,
 ::
 
    $ mkdir build
+   $ cd build/
    $ FC=gfortran cmake ..
    $ cd ../
 
 A convenient build script is provided as ``build.sh``. In many cases,
 the user can just execute the script from the base directory.
+By default, ``gfortran`` will be used as a compiler.
+
+::
+
+   $ ./build.sh
 
 Running a simulation
 --------------------

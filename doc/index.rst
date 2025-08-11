@@ -5,6 +5,9 @@ Project Github: https://github.com/Hori-Lab/UNISIS
 
 Group website: https://hori-lab.github.io/
 
+.. note::
+   This document is still under devlopment.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
