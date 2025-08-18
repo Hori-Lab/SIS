@@ -15,7 +15,7 @@ subroutine set_ele(irep, tempk, ionstr, out_lb, out_Zp)
    real(PREC), intent(out), optional :: out_Zp
 
    real(PREC) :: Tc, lb, Zp
-   real(PREC), parameter ::  MM_A=87.740e0_PREC, MM_B=-0.4008e0_PREC
+   real(PREC), parameter ::  MM_A=87.740e0_PREC, MM_B=-0.40008e0_PREC
    real(PREC), parameter ::  MM_C=9.398e-4_PREC, MM_D=-1.410e-6_PREC
 
 #ifdef _HTN_CONSISTENT
